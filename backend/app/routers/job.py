@@ -1,0 +1,79 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+from uuid import UUID
+
+from app.database import get_db
+from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobActivityResponse
+from app.services.job_service import job_service
+
+router = APIRouter(
+    prefix="/jobs",
+    tags=["jobs"],
+    responses={404: {"description": "Not found"}},
+)
+
+@router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
+def create_job(job: JobCreate, db: Session = Depends(get_db)):
+    return job_service.create_job(db=db, job=job)
+
+@router.get("/", response_model=List[JobResponse])
+def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, db: Session = Depends(get_db)):
+    if department_id:
+        return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit)
+    return job_service.get_jobs(db, skip=skip, limit=limit)
+
+@router.get("/department/{department_id}", response_model=List[JobResponse])
+def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit)
+
+@router.get("/{job_id}", response_model=JobResponse)
+def read_job(job_id: UUID, db: Session = Depends(get_db)):
+    db_job = job_service.get_job(db, job_id=job_id)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return db_job
+
+@router.put("/{job_id}", response_model=JobResponse)
+def update_job(job_id: UUID, job: JobUpdate, db: Session = Depends(get_db)):
+    db_job = job_service.update_job(db, job_id=job_id, job_update=job)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return db_job
+
+@router.delete("/{job_id}", response_model=JobResponse)
+def delete_job(job_id: UUID, db: Session = Depends(get_db)):
+    db_job = job_service.delete_job(db, job_id=job_id)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return db_job
+
+@router.post("/{job_id}/clone", response_model=JobResponse)
+def clone_job(job_id: UUID, db: Session = Depends(get_db)):
+    db_job = job_service.clone_job(db, job_id=job_id)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return db_job
+
+@router.put("/{job_id}/pipeline", response_model=JobResponse)
+def update_pipeline_config(job_id: UUID, config: List[dict], db: Session = Depends(get_db)):
+    db_job = job_service.update_pipeline_config(db, job_id=job_id, config=config)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return db_job
+
+from app.services.candidate_service import candidate_service
+# We need a schema for this, ideally ApplicationResponse or similar, but for now let's reuse a generic list
+# or create a temporary response model. The requirement says "return list of candidates".
+# Let's use the JobApplicationResponse from schemas.candidate if possible, or just return the raw data for now.
+# Actually, the service returns JobApplication objects with .candidate loaded.
+from app.schemas.candidate import JobApplicationResponse
+
+@router.get("/{job_id}/candidates", response_model=List[JobApplicationResponse])
+def read_job_candidates(job_id: UUID, db: Session = Depends(get_db)):
+    # Verify job exists first
+    db_job = job_service.get_job(db, job_id=job_id)
+    if db_job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    return candidate_service.get_candidates_by_job(db, job_id=job_id)
