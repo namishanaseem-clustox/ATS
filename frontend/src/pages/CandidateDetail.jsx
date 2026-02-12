@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getCandidate } from '../api/candidates';
 import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, FileText } from 'lucide-react';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
+import ActivityList from '../components/ActivityList';
 
 const CandidateDetail = () => {
     const { id } = useParams();
@@ -101,11 +102,20 @@ const CandidateDetail = () => {
                                 >
                                     Resume
                                 </button>
+                                <button
+                                    onClick={() => setActiveTab('activities')}
+                                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'activities'
+                                        ? 'border-[#00C853] text-[#00C853]'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                >
+                                    Activities
+                                </button>
                             </nav>
                         </div>
 
                         <div className="p-8 flex-1">
-                            {activeTab === 'overview' ? (
+                            {activeTab === 'overview' && (
                                 <div className="space-y-8">
                                     {/* Resume Status Alert */}
                                     <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-lg p-4">
@@ -173,7 +183,9 @@ const CandidateDetail = () => {
                                         )}
                                     </div>
                                 </div>
-                            ) : (
+                            )}
+
+                            {activeTab === 'resume' && (
                                 <div className="h-full min-h-[600px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden relative">
                                     {candidate.resume_file_path ? (
                                         <iframe
@@ -190,6 +202,12 @@ const CandidateDetail = () => {
                                             <p>No resume file attached.</p>
                                         </div>
                                     )}
+                                </div>
+                            )}
+
+                            {activeTab === 'activities' && (
+                                <div className="p-8">
+                                    <ActivityList candidateId={id} />
                                 </div>
                             )}
                         </div>

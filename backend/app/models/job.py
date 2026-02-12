@@ -62,6 +62,7 @@ class Job(Base):
     # Relationships
     department = relationship("Department", backref="jobs")
     activities = relationship("JobActivity", back_populates="job", cascade="all, delete-orphan")
+    scheduled_activities = relationship("ScheduledActivity", back_populates="job", cascade="all, delete-orphan")
 
 class JobActivity(Base):
     __tablename__ = "job_activities"

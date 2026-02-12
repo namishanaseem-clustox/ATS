@@ -99,6 +99,8 @@ class JobApplicationBase(BaseModel):
 class JobApplicationCreate(JobApplicationBase):
     pass
 
+from app.schemas.job import JobResponse
+
 class JobApplicationResponse(JobApplicationBase):
     id: UUID
     candidate_id: UUID
@@ -107,6 +109,7 @@ class JobApplicationResponse(JobApplicationBase):
     
     # Include nested candidate data for frontend (without applications to prevent circular ref)
     candidate: Optional[CandidateBasicResponse] = None
+    job: Optional[JobResponse] = None
 
     class Config:
         from_attributes = True

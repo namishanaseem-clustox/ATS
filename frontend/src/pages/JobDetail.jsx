@@ -4,6 +4,7 @@ import { getJob, updatePipeline, cloneJob, deleteJob, updateJob, updateCandidate
 import { getJobCandidates } from '../api/candidates';
 import JobPipeline from '../components/JobPipeline';
 import CandidateCard from '../components/CandidateCard';
+import ActivityList from '../components/ActivityList';
 import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users } from 'lucide-react';
 
 const JobDetail = () => {
@@ -273,9 +274,15 @@ const JobDetail = () => {
                 )}
 
                 {activeTab === 'activity' && (
-                    <div className="p-8">
+                    <div className="p-8 space-y-8">
+                        {/* New Scheduled Activities Section */}
                         <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Activity Log</h3>
+                            <ActivityList jobId={id} />
+                        </div>
+
+                        {/* Existing Audit Log */}
+                        <div className="bg-white rounded-lg shadow-sm p-6">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">Activity Log (Audit)</h3>
                             {job.activities && job.activities.length > 0 ? (
                                 <ul className="space-y-4">
                                     {job.activities.map(activity => (
@@ -293,7 +300,7 @@ const JobDetail = () => {
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-gray-500">No activity recorded.</p>
+                                <p className="text-gray-500">No audit logs recorded.</p>
                             )}
                         </div>
                     </div>

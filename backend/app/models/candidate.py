@@ -50,6 +50,7 @@ class Candidate(Base):
 
     # Relationships
     applications = relationship("JobApplication", back_populates="candidate", cascade="all, delete-orphan")
+    scheduled_activities = relationship("ScheduledActivity", back_populates="candidate", cascade="all, delete-orphan")
 
 class JobApplication(Base):
     __tablename__ = "job_applications"

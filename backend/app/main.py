@@ -4,14 +4,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import departments, job, candidate
+from app.routers import departments, job, candidate, activity
 from app.database import Base, engine
 
 
 from fastapi.staticfiles import StaticFiles
 
 # Create tables if not using Alembic (for dev/testing simplicity before migration setup)
-# Base.metadata.create_all(bind=engine) 
+Base.metadata.create_all(bind=engine) 
 
 app = FastAPI(title="Clustox ATS API")
 
@@ -36,6 +36,7 @@ app.add_middleware(
 app.include_router(departments.router)
 app.include_router(job.router)
 app.include_router(candidate.router)
+app.include_router(activity.router)
 
 @app.get("/")
 def read_root():
