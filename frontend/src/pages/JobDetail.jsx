@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getJob, updatePipeline, cloneJob, deleteJob, updateJob } from '../api/jobs';
+import { getJob, updatePipeline, cloneJob, deleteJob, updateJob, updateCandidateStage } from '../api/jobs';
 import { getJobCandidates } from '../api/candidates';
 import JobPipeline from '../components/JobPipeline';
 import CandidateCard from '../components/CandidateCard';
@@ -63,6 +63,7 @@ const JobDetail = () => {
     };
 
     const handleMoveCandidate = async (candidateId, newStage) => {
+        console.log("Moving candidate:", candidateId, "to stage:", newStage);
         // Optimistic update
         setCandidates(prev => prev.map(app =>
             app.candidate.id === candidateId

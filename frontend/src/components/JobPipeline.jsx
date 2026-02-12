@@ -33,6 +33,7 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
 
             // Only trigger update if stage changed (reordering within stage not persisted yet)
             if (source.droppableId !== destination.droppableId) {
+                console.log("JobPipeline: Drag detected", draggableId, "to", newStageId);
                 onMoveCandidate(draggableId, newStageId);
             }
         }
