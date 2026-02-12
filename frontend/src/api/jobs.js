@@ -40,3 +40,8 @@ export const updateCandidateStage = async (jobId, candidateId, stage) => {
     const { data } = await client.put(`/jobs/${jobId}/candidates/${candidateId}/stage`, { stage });
     return data;
 };
+
+export const updateCandidateScore = async (jobId, candidateId, scoreData) => {
+    const { data } = await client.put(`/jobs/${jobId}/candidates/${candidateId}/score`, scoreData);
+    return data;
+};

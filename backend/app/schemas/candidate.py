@@ -101,11 +101,23 @@ class JobApplicationCreate(JobApplicationBase):
 
 from app.schemas.job import JobResponse
 
+class ApplicationScoreCreate(BaseModel):
+    technical_score: int
+    communication_score: int
+    culture_fit_score: int
+    problem_solving_score: int
+    leadership_score: int
+    recommendation: str
+
 class JobApplicationResponse(JobApplicationBase):
     id: UUID
     candidate_id: UUID
     applied_at: datetime
     job_title: Optional[str] = None
+    
+    score_details: Optional[Dict[str, int]] = None
+    overall_score: Optional[float] = None
+    recommendation: Optional[str] = None
     
     # Include nested candidate data for frontend (without applications to prevent circular ref)
     candidate: Optional[CandidateBasicResponse] = None

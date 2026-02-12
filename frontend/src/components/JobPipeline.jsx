@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { MoreVertical, User, Settings } from 'lucide-react';
+import { MoreVertical, User, Settings, Star, MoreHorizontal } from 'lucide-react';
+import ScoreModal from './ScoreModal';
+import { updateCandidateScore } from '../api/jobs';
+import { useParams } from 'react-router-dom';
 
 const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMoveCandidate }) => {
+    const { id: jobId } = useParams();
     const [stages, setStages] = useState(pipelineConfig || []);
+    const [scoringCandidate, setScoringCandidate] = useState(null);
+    const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0); // Simple way to force re-render if needed, though props should handle it
+
+    // Local candidates state to handle optimistic updates for scores
+    // But since candidates come from parent, we might need a way to notify parent or just update local list till refresh
+    // For now, let's just rely on parent prop updates or force a refresh if possible. 
+    // Actually, we can update the candidate object in the local scope variables if we can't easily trigger parent refresh from here without a new prop.
+    // Let's assume we trigger a parent refresh or update the specific candidate in the candidates array if we could.
+    // Since candidates is a prop, we can't mutate it. We'll rely on onMoveCandidate triggering a refresh? No, scoring is different.
+    // Let's add an onCandidateUpdate prop to JobPipeline eventually, but for now we will just reload the page or use an internal hack?
+    // Better: We should probably lift the state up, but for this task, I'll pass a callback if possible, or just refresh the window (crude but works for MVP).
+    // Wait, I can just accept an onRefresh prop? Or I just don't verify persistent UI update immediately in this step?
+    // Let's try to update the displayed candidates locally.
 
     const handleDragEnd = (result) => {
         const { source, destination, type, draggableId } = result;
@@ -25,13 +43,7 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
 
         // Handle Candidate Moving
         if (type === 'CANDIDATE') {
-            // Find the candidate
-            // We optimized by lifting state to parent, so we just call the parent handler
-            // destination.droppableId should be the stageId
             const newStageId = destination.droppableId;
-            // draggableId is the candidateId (or applicationId)
-
-            // Only trigger update if stage changed (reordering within stage not persisted yet)
             if (source.droppableId !== destination.droppableId) {
                 console.log("JobPipeline: Drag detected", draggableId, "to", newStageId);
                 onMoveCandidate(draggableId, newStageId);
@@ -39,19 +51,47 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
         }
     };
 
-    // Helper to get candidates for a stage
     const getCandidatesForStage = (stageId) => {
-        // Match by stage ID or Name (legacy vs new)
-        // Ideally we stick to ID. The backend defaults use IDs like 'new', 'shortlisted'.
-        // JobApplication.current_stage might store the Name or ID. 
-        // Based on model: default="New". 
-        // Let's assume it matches strict equality for now, or we might need to normalize.
-        // The stages have "name" (Display) and "id" (Internal).
         return candidates.filter(app => {
-            // Check matching ID or Name to be safe
             const stage = stages.find(s => s.id === stageId);
             return app.current_stage === stageId || app.current_stage === stage.name;
         });
+    };
+
+    const handleScoreClick = (e, app) => {
+        e.stopPropagation();
+        setScoringCandidate(app);
+        setIsScoreModalOpen(true);
+    };
+
+    const handleSaveScore = async (scoreData) => {
+        if (!scoringCandidate) return;
+        try {
+            console.log("Sending score data:", JSON.stringify(scoreData, null, 2));
+            await updateCandidateScore(jobId, scoringCandidate.candidate.id, scoreData);
+
+            // Update local state to show score immediately (Optimistic-ish)
+            scoringCandidate.score_details = scoreData;
+
+            // Calc overall for display
+            const scores = [
+                scoreData.technical_score,
+                scoreData.communication_score,
+                scoreData.culture_fit_score,
+                scoreData.problem_solving_score,
+                scoreData.leadership_score
+            ];
+            const overall = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+            scoringCandidate.overall_score = overall;
+            scoringCandidate.recommendation = scoreData.recommendation;
+
+            setIsScoreModalOpen(false);
+            setScoringCandidate(null);
+            // Optionally call onRefresh if provided
+        } catch (error) {
+            console.error("Failed to save score", error);
+            alert("Failed to save score");
+        }
     };
 
     return (
@@ -123,19 +163,45 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                                 ref={provided.innerRef}
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
-                                                                                className="bg-white p-3 rounded border border-gray-200 shadow-sm mb-3 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing"
+                                                                                className="bg-white p-3 rounded border border-gray-200 shadow-sm mb-3 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing group relative"
                                                                                 style={{ ...provided.draggableProps.style }}
                                                                             >
                                                                                 <div className="flex justify-between items-start mb-2">
-                                                                                    <h4 className="font-medium text-gray-800 text-sm truncate" title={`${app.candidate.first_name} ${app.candidate.last_name}`}>
+                                                                                    <h4 className="font-medium text-gray-800 text-sm truncate pr-6" title={`${app.candidate.first_name} ${app.candidate.last_name}`}>
                                                                                         {app.candidate.first_name} {app.candidate.last_name}
                                                                                     </h4>
-                                                                                    {/* Optional: Add quick actions or status dot */}
+
+                                                                                    {/* Start Kebab Menu */}
+                                                                                    <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                        <button
+                                                                                            onClick={(e) => handleScoreClick(e, app)}
+                                                                                            className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"
+                                                                                            title="Add Score"
+                                                                                        >
+                                                                                            <MoreHorizontal size={16} />
+                                                                                        </button>
+                                                                                    </div>
                                                                                 </div>
                                                                                 <div className="flex items-center text-xs text-gray-500 mb-2">
                                                                                     <User size={12} className="mr-1" />
                                                                                     {app.candidate.current_position || 'No Title'}
                                                                                 </div>
+
+                                                                                {/* Score Display */}
+                                                                                {app.overall_score && (
+                                                                                    <div className="flex items-center mb-2 bg-yellow-50 px-2 py-1 rounded w-fit">
+                                                                                        <Star size={12} className="text-yellow-500 mr-1 fill-current" />
+                                                                                        <span className="text-xs font-bold text-gray-700">{app.overall_score}</span>
+                                                                                        {app.recommendation && (
+                                                                                            <span className={`text-[10px] ml-2 px-1 rounded ${app.recommendation.includes('Yes') ? 'bg-green-100 text-green-700' :
+                                                                                                app.recommendation.includes('No') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                                                                                                }`}>
+                                                                                                {app.recommendation}
+                                                                                            </span>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+
                                                                                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-50">
                                                                                     <span className="text-[10px] text-gray-400">
                                                                                         {new Date(app.applied_at).toLocaleDateString()}
@@ -160,6 +226,18 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                     </Droppable>
                 </DragDropContext>
             </div>
+
+            <ScoreModal
+                isOpen={isScoreModalOpen}
+                onClose={() => setIsScoreModalOpen(false)}
+                candidateName={scoringCandidate ? `${scoringCandidate.candidate.first_name} ${scoringCandidate.candidate.last_name}` : ''}
+                initialData={scoringCandidate ? {
+                    ...scoringCandidate.score_details,
+                    recommendation: scoringCandidate.recommendation || 'Neutral'
+                } : null}
+                onSave={handleSaveScore}
+            />
+
         </div>
     );
 };

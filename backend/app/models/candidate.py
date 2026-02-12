@@ -66,3 +66,8 @@ class JobApplication(Base):
     # Relationships
     candidate = relationship("Candidate", back_populates="applications")
     job = relationship("Job", backref="applications") # Simple backref for now
+
+    # Scoring
+    score_details = Column(JSONB, default=dict) # { "technical": 4, "communication": 5, ... }
+    overall_score = Column(Float, nullable=True) # Calculated average or manual override
+    recommendation = Column(String, nullable=True) # Strong Yes, Yes, Neutral, No, Strong No

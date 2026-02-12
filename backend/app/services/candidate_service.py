@@ -181,6 +181,38 @@ class CandidateService:
                  application.application_status = "In Progress"
         
         db.commit()
+        db.commit()
+        db.refresh(application)
+        return application
+
+    def update_application_score(self, db: Session, job_id: UUID, candidate_id: UUID, score_data: dict):
+        application = db.query(JobApplication).filter(
+            JobApplication.job_id == job_id,
+            JobApplication.candidate_id == candidate_id
+        ).first()
+
+        if not application:
+            return None
+
+        # Extract only numeric scores (exclude recommendation)
+        numeric_scores = {
+            'technical_score': score_data.get('technical_score', 0),
+            'communication_score': score_data.get('communication_score', 0),
+            'culture_fit_score': score_data.get('culture_fit_score', 0),
+            'problem_solving_score': score_data.get('problem_solving_score', 0),
+            'leadership_score': score_data.get('leadership_score', 0)
+        }
+
+        # Calculate Overall Score (Simple Average)
+        scores = list(numeric_scores.values())
+        overall = sum(scores) / len(scores) if scores else 0
+
+        # Save only numeric scores to score_details
+        application.score_details = numeric_scores
+        application.overall_score = round(overall, 1)
+        application.recommendation = score_data.get('recommendation')
+
+        db.commit()
         db.refresh(application)
         return application
 

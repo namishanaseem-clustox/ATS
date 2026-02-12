@@ -90,3 +90,17 @@ def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, d
         raise HTTPException(status_code=404, detail="Application/Job not found")
         
     return {"message": "Stage updated successfully", "application_id": str(application.id), "current_stage": application.current_stage}
+
+from app.schemas.candidate import ApplicationScoreCreate, JobApplicationResponse
+
+@router.put("/{job_id}/candidates/{candidate_id}/score", response_model=JobApplicationResponse)
+def score_candidate(job_id: UUID, candidate_id: UUID, score_data: ApplicationScoreCreate, db: Session = Depends(get_db)):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info(f"Received score data: {score_data.dict()}")
+    
+    application = candidate_service.update_application_score(db, job_id, candidate_id, score_data.dict())
+    if not application:
+        raise HTTPException(status_code=404, detail="Application/Job not found")
+    return application
+
