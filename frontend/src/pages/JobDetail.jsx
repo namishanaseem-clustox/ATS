@@ -14,6 +14,17 @@ const JobDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
 
+    const defaultPipeline = [
+        { name: "New Candidates", id: "new" },
+        { name: "Shortlisted", id: "shortlisted" },
+        { name: "Technical Review", id: "technical_review" },
+        { name: "Interview Round 1", id: "interview_round_1" },
+        { name: "Interview Round 2", id: "interview_round_2" },
+        { name: "Offer", id: "offer" },
+        { name: "Hired", id: "hired" },
+        { name: "Rejected", id: "rejected" }
+    ];
+
     useEffect(() => {
         const fetchJob = async () => {
             try {
@@ -29,7 +40,7 @@ const JobDetail = () => {
     }, [id]);
 
     useEffect(() => {
-        if (activeTab === 'candidates') {
+        if (activeTab === 'candidates' || activeTab === 'pipeline') {
             const fetchCandidates = async () => {
                 try {
                     const data = await getJobCandidates(id);
@@ -48,6 +59,22 @@ const JobDetail = () => {
             setJob(prev => ({ ...prev, pipeline_config: newConfig }));
         } catch (error) {
             console.error("Failed to update pipeline", error);
+        }
+    };
+
+    const handleMoveCandidate = async (candidateId, newStage) => {
+        // Optimistic update
+        setCandidates(prev => prev.map(app =>
+            app.candidate.id === candidateId
+                ? { ...app, current_stage: newStage }
+                : app
+        ));
+
+        try {
+            await updateCandidateStage(id, candidateId, newStage);
+        } catch (error) {
+            console.error("Failed to update candidate stage", error);
+            // Revert on failure (could implement fetching again or undo logic)
         }
     };
 
@@ -236,8 +263,10 @@ const JobDetail = () => {
                 {activeTab === 'pipeline' && (
                     <div className="h-full p-4 overflow-hidden">
                         <JobPipeline
-                            pipelineConfig={job.pipeline_config}
+                            pipelineConfig={job.pipeline_config || defaultPipeline}
+                            candidates={candidates}
                             onUpdatePipeline={handlePipelineUpdate}
+                            onMoveCandidate={handleMoveCandidate}
                         />
                     </div>
                 )}

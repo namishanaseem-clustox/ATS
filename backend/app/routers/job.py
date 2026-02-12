@@ -77,3 +77,16 @@ def read_job_candidates(job_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Job not found")
         
     return candidate_service.get_candidates_by_job(db, job_id=job_id)
+
+@router.put("/{job_id}/candidates/{candidate_id}/stage")
+def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, db: Session = Depends(get_db)):
+    # stage_data expected to be {"stage": "New Stage Name"}
+    stage = stage_data.get("stage")
+    if not stage:
+        raise HTTPException(status_code=400, detail="Stage is required")
+        
+    application = candidate_service.update_application_stage(db, job_id, candidate_id, stage)
+    if not application:
+        raise HTTPException(status_code=404, detail="Application/Job not found")
+        
+    return {"message": "Stage updated successfully", "application_id": str(application.id), "current_stage": application.current_stage}

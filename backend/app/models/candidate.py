@@ -59,7 +59,7 @@ class JobApplication(Base):
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
     
     applied_at = Column(DateTime(timezone=True), server_default=func.now())
-    current_stage = Column(String, default="New") # Matches Pipeline stages
+    current_stage = Column(String, default="new") # Matches Pipeline stages
     application_status = Column(String, default=ApplicationStatus.NEW.value)
     
     # Relationships

@@ -43,7 +43,7 @@ class CandidateService:
             application = JobApplication(
                 candidate_id=db_candidate.id,
                 job_id=job_id,
-                current_stage="New",
+                current_stage="new",
                 application_status="New"
             )
             db.add(application)
@@ -113,7 +113,7 @@ class CandidateService:
                          application = JobApplication(
                             candidate_id=existing_candidate.id,
                             job_id=job_id,
-                            current_stage="New",
+                            current_stage="new",
                             application_status="New"
                         )
                          db.add(application)
@@ -144,7 +144,7 @@ class CandidateService:
                  application = JobApplication(
                     candidate_id=db_candidate.id,
                     job_id=job_id,
-                    current_stage="New",
+                    current_stage="new",
                     application_status="New"
                 )
                  db.add(application)
@@ -158,5 +158,30 @@ class CandidateService:
         return db.query(JobApplication).filter(JobApplication.job_id == job_id).options(
             joinedload(JobApplication.candidate)
         ).all()
+
+    def update_application_stage(self, db: Session, job_id: UUID, candidate_id: UUID, stage: str):
+        # Find the application
+        application = db.query(JobApplication).filter(
+            JobApplication.job_id == job_id,
+            JobApplication.candidate_id == candidate_id
+        ).first()
+
+        if not application:
+            return None
+
+        application.current_stage = stage
+        
+        # Map stage to status if possible (simplistic mapping for now)
+        if stage in ["Rejected", "Hired", "Offer", "Shortlisted"]:
+             application.application_status = stage
+        else:
+             # Default to "Interview" or "In Progress" if it's an interview stage?
+             # For now, let's leave it or set to "In Progress" if it was New?
+             if application.application_status == "New" and stage != "New":
+                 application.application_status = "In Progress"
+        
+        db.commit()
+        db.refresh(application)
+        return application
 
 candidate_service = CandidateService()

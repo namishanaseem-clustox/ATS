@@ -35,3 +35,8 @@ export const deleteJob = async (id) => {
     const { data } = await client.delete(`/jobs/${id}`);
     return data;
 };
+
+export const updateCandidateStage = async (jobId, candidateId, stage) => {
+    const { data } = await client.put(`/jobs/${jobId}/candidates/${candidateId}/stage`, { stage });
+    return data;
+};

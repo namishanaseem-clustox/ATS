@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { getCandidates, deleteCandidate } from '../api/candidates';
-import CandidateCard from '../components/CandidateCard';
+import { useNavigate } from 'react-router-dom';
+
 import CandidateForm from '../components/CandidateForm';
 import ResumeUpload from '../components/ResumeUpload';
 
@@ -10,6 +11,7 @@ const Candidates = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [activeModalTab, setActiveModalTab] = useState('upload'); // 'upload' or 'manual'
+    const navigate = useNavigate();
 
     const fetchCandidates = async () => {
         try {
@@ -27,7 +29,8 @@ const Candidates = () => {
         fetchCandidates();
     }, []);
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (e, id) => {
+        e.stopPropagation(); // Prevent row click when deleting
         if (window.confirm("Are you sure you want to delete this candidate?")) {
             try {
                 await deleteCandidate(id);
@@ -78,17 +81,80 @@ const Candidates = () => {
             {loading ? (
                 <div className="text-center py-12 text-gray-500">Loading candidates...</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
                     {candidates.length > 0 ? (
-                        candidates.map(candidate => (
-                            <CandidateCard
-                                key={candidate.id}
-                                candidate={candidate}
-                                onDelete={handleDelete}
-                            />
-                        ))
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate Name</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Position</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Company</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notice Period</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Salary</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Salary</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Years of Exp</th>
+                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>
+                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {candidates.map((candidate) => (
+                                        <tr
+                                            key={candidate.id}
+                                            className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                            onClick={() => navigate(`/candidates/${candidate.id}`)}
+                                        >
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-[#00C853] text-white font-bold">
+                                                        {candidate.first_name && candidate.first_name[0]}{candidate.last_name && candidate.last_name[0]}
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                            {candidate.first_name} {candidate.last_name}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{candidate.current_position || '-'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-500">{candidate.current_company || '-'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{candidate.notice_period ? `${candidate.notice_period} Days` : 'Immediate'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{candidate.current_salary || 'NA'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{candidate.expected_salary || 'NA'}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{candidate.experience_years || 0}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-500">
+                                                    {candidate.education && candidate.education.length > 0 ? candidate.education[0].school : '-'}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button
+                                                    onClick={(e) => handleDelete(e, candidate.id)}
+                                                    className="text-red-600 hover:text-red-900"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     ) : (
-                        <div className="col-span-full py-16 text-center bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                        <div className="text-center py-16 bg-gray-50 border-t border-gray-200">
                             <p className="text-gray-500 text-lg mb-2">No candidates found.</p>
                             <p className="text-gray-400 text-sm">Upload a resume or add a candidate manually to get started.</p>
                         </div>

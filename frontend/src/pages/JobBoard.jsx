@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, X } from 'lucide-react';
-import JobCard from '../components/JobCard';
+
 import { getJobs } from '../api/jobs';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDepartments } from '../api/departments';
@@ -105,17 +105,7 @@ const JobBoard = () => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredJobs.map(job => (
-                    <JobCard
-                        key={job.id}
-                        job={job}
-                        onClick={() => navigate(`/jobs/${job.id}`)}
-                    />
-                ))}
-            </div>
-
-            {filteredJobs.length === 0 && (
+            {filteredJobs.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                     <p className="text-gray-500 mb-4">
                         {departmentId ? `No jobs found for ${departmentName}.` : 'No jobs found.'}
@@ -126,6 +116,63 @@ const JobBoard = () => {
                     >
                         Create your first job
                     </button>
+                </div>
+            ) : (
+                <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position Name</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Department</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Location</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Headcount</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Stage</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minimum Salary</th>
+                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maximum Salary</th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredJobs.map((job) => (
+                                    <tr
+                                        key={job.id}
+                                        className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                        onClick={() => navigate(`/jobs/${job.id}`)}
+                                    >
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm font-medium text-blue-600 hover:text-blue-800">{job.title}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {job.department ? (
+                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                    {job.department.name}
+                                                </span>
+                                            ) : (
+                                                <span className="text-sm text-gray-500">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-500">{job.location}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="text-sm text-gray-900">{job.headcount}</div>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status === 'Published' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                {job.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {job.min_salary ? job.min_salary.toLocaleString() : 'Negotiable'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {job.max_salary ? job.max_salary.toLocaleString() : 'Negotiable'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>

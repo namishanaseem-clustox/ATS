@@ -45,9 +45,11 @@ class Job(Base):
     status = Column(String, default=JobStatus.DRAFT.value)
     
     pipeline_config = Column(JSONB, default=lambda: [
-        {"name": "New", "id": "new", "type": "standard"},
+        {"name": "New Candidates", "id": "new", "type": "standard"},
         {"name": "Shortlisted", "id": "shortlisted", "type": "standard"},
-        {"name": "Interview", "id": "interview", "type": "standard"},
+        {"name": "Technical Review", "id": "technical_review", "type": "standard"},
+        {"name": "Interview Round 1", "id": "interview_round_1", "type": "standard"},
+        {"name": "Interview Round 2", "id": "interview_round_2", "type": "standard"},
         {"name": "Offer", "id": "offer", "type": "standard"},
         {"name": "Hired", "id": "hired", "type": "standard"},
         {"name": "Rejected", "id": "rejected", "type": "standard"}
