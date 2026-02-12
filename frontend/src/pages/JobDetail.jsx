@@ -6,6 +6,7 @@ import JobPipeline from '../components/JobPipeline';
 import CandidateCard from '../components/CandidateCard';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
+import JobActivityLog from '../components/JobActivityLog';
 import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote } from 'lucide-react';
 
 const JobDetail = () => {
@@ -297,26 +298,8 @@ const JobDetail = () => {
 
                         {/* Existing Audit Log */}
                         <div className="bg-white rounded-lg shadow-sm p-6">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">Activity Log (Audit)</h3>
-                            {job.activities && job.activities.length > 0 ? (
-                                <ul className="space-y-4">
-                                    {job.activities.map(activity => (
-                                        <li key={activity.id} className="border-l-2 border-gray-200 pl-4 py-2">
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {activity.action_type}
-                                                <span className="text-gray-500 font-normal ml-2">
-                                                    {new Date(activity.timestamp).toLocaleString()}
-                                                </span>
-                                            </p>
-                                            <pre className="text-xs text-gray-500 mt-1 whitespace-pre-wrap">
-                                                {JSON.stringify(activity.details, null, 2)}
-                                            </pre>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-gray-500">No audit logs recorded.</p>
-                            )}
+                            <h3 className="text-lg font-bold text-gray-800 mb-6">Activity Log (Audit)</h3>
+                            <JobActivityLog activities={job.activities} />
                         </div>
                     </div>
                 )}

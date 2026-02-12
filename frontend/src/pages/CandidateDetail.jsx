@@ -6,25 +6,28 @@ import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
 
+import CandidateModal from '../components/CandidateModal';
+
 const CandidateDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const fetchCandidate = async () => {
+        try {
+            const data = await getCandidate(id);
+            setCandidate(data);
+        } catch (error) {
+            console.error("Failed to fetch candidate", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchCandidate = async () => {
-            try {
-                const data = await getCandidate(id);
-                console.log("Candidate Data Received:", data);
-                setCandidate(data);
-            } catch (error) {
-                console.error("Failed to fetch candidate", error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchCandidate();
     }, [id]);
 
@@ -33,15 +36,28 @@ const CandidateDetail = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-8 bg-gray-50 min-h-screen">
-            <button onClick={() => navigate('/candidates')} className="flex items-center text-gray-500 hover:text-gray-900 mb-6 transition-colors">
-                <ArrowLeft size={18} className="mr-2" /> Back to Candidates
-            </button>
+            <div className="flex justify-between items-center mb-6">
+                <button onClick={() => navigate('/candidates')} className="flex items-center text-gray-500 hover:text-gray-900 transition-colors">
+                    <ArrowLeft size={18} className="mr-2" /> Back to Candidates
+                </button>
+                <div className="flex space-x-2">
+                    {/* Add any other header actions here */}
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Sidebar */}
                 <div className="lg:col-span-1 space-y-6">
                     {/* Profile Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 flex flex-col items-center">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 flex flex-col items-center relative group">
+                        <button
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-[#00C853] hover:bg-green-50 rounded-full transition-colors"
+                            title="Edit Profile"
+                        >
+                            <FileText size={20} /> {/* Using FileText as generic edit icon or import Pencil */}
+                        </button>
+
                         <div className="h-24 w-24 rounded-full bg-[#dcfce7] flex items-center justify-center text-[#166534] font-bold text-3xl mb-4">
                             {candidate.first_name?.[0]}{candidate.last_name?.[0]}
                         </div>
@@ -53,9 +69,23 @@ const CandidateDetail = () => {
                                 <span className="text-sm truncate">{candidate.email}</span>
                             </div>
                             <div className="flex items-center text-gray-600">
+                                <Phone size={16} className="mr-3 text-gray-400" />
+                                <span className="text-sm truncate">{candidate.phone || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center text-gray-600">
+                                <MapPin size={16} className="mr-3 text-gray-400" />
+                                <span className="text-sm truncate">{candidate.location || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center text-gray-600">
                                 <Briefcase size={16} className="mr-3 text-gray-400" />
                                 <span className="text-sm">{candidate.experience_years} years experience</span>
                             </div>
+                            {candidate.social_links?.linkedin && (
+                                <div className="flex items-center text-gray-600">
+                                    <Linkedin size={16} className="mr-3 text-gray-400" />
+                                    <a href={candidate.social_links.linkedin} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">LinkedIn Profile</a>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -229,6 +259,13 @@ const CandidateDetail = () => {
                     </div>
                 </div>
             </div>
+
+            <CandidateModal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                candidate={candidate}
+                onSave={fetchCandidate}
+            />
         </div>
     );
 };

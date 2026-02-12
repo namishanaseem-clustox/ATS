@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 
@@ -9,6 +10,7 @@ import { getDepartments, createDepartment, updateDepartment, deleteDepartment } 
 
 const DepartmentsPage = () => {
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
     const {
         isModalOpen,
         selectedDepartment,
@@ -119,7 +121,12 @@ const DepartmentsPage = () => {
                                                         {dept.name.substring(0, 2).toUpperCase()}
                                                     </div>
                                                     <div className="ml-4">
-                                                        <div className="text-sm font-medium text-gray-900">{dept.name}</div>
+                                                        <div
+                                                            className="text-sm font-medium text-indigo-600 hover:text-indigo-900 cursor-pointer hover:underline"
+                                                            onClick={() => navigate(`/jobs?dept=${dept.id}`)}
+                                                        >
+                                                            {dept.name}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </td>

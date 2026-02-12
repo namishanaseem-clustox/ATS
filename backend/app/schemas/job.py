@@ -66,6 +66,17 @@ class DepartmentSummary(BaseModel):
     class Config:
         from_attributes = True
 
+class JobActivityResponse(BaseModel):
+    id: UUID4
+    job_id: UUID4
+    user_id: Optional[UUID4]
+    action_type: str
+    details: Optional[Any]
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+
 class JobResponse(JobBase):
     id: UUID4
     job_code: str
@@ -75,17 +86,7 @@ class JobResponse(JobBase):
     updated_at: Optional[datetime]
     
     department: Optional[DepartmentSummary] = None
+    activities: List[JobActivityResponse] = []
 
-    class Config:
-        from_attributes = True
-
-class JobActivityResponse(BaseModel):
-    id: UUID4
-    job_id: UUID4
-    user_id: Optional[UUID4]
-    action_type: str
-    details: Optional[Any]
-    timestamp: datetime
-    
     class Config:
         from_attributes = True
