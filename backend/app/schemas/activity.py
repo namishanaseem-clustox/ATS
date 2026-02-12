@@ -39,6 +39,7 @@ class ActivityUpdate(BaseModel):
     description: Optional[str] = None
     participants: Optional[List[str]] = None
     candidate_id: Optional[UUID] = None
+    job_id: Optional[UUID] = None
 
 from app.schemas.candidate import CandidateBasicResponse
 from app.schemas.job import JobResponse

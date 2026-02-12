@@ -29,7 +29,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
         if (note) {
             setFormData({
                 ...note,
-                candidate_id: note.candidate_id || ''
+                candidate_id: note.candidate_id || '',
+                job_id: note.job_id || ''
             });
         } else {
             // Reset form for new note
@@ -100,30 +101,6 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
         }
     };
 
-    const insertTemplate = () => {
-        setFormData(prev => ({
-            ...prev,
-            description: (prev.description ? prev.description + "\n\n" : "") + `### Interaction Note
-* **Topic**: 
-* **Key Points**: 
-* **Action Items**: 
-* **Follow-up needed**: `
-        }));
-    };
-
-    const insertInterviewTemplate = () => {
-        setFormData(prev => ({
-            ...prev,
-            description: (prev.description ? prev.description + "\n\n" : "") + `### Interview Evaluation
-* **Introduction**: 
-* **Tech stack**: 
-* **Strengths**: 
-* **Weaknesses**: 
-* **Salary discussion**: 
-* **Notice period**: 
-* **Reason to switch**: `
-        }));
-    };
 
     if (!isOpen) return null;
 
@@ -207,25 +184,7 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
 
                             {/* Note Content */}
                             <div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <label className="block text-sm font-medium text-gray-700">Content</label>
-                                    <div className="flex space-x-2">
-                                        <button
-                                            type="button"
-                                            onClick={insertInterviewTemplate}
-                                            className="text-xs text-green-600 hover:text-green-800 font-medium"
-                                        >
-                                            + Interview Template
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={insertTemplate}
-                                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                        >
-                                            + General Template
-                                        </button>
-                                    </div>
-                                </div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
                                 <textarea
                                     name="description"
                                     rows="8"
@@ -255,9 +214,9 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                             Cancel
                         </button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 };
 
