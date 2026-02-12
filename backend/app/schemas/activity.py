@@ -39,11 +39,17 @@ class ActivityUpdate(BaseModel):
     participants: Optional[List[str]] = None
     candidate_id: Optional[UUID] = None
 
+from app.schemas.candidate import CandidateBasicResponse
+from app.schemas.job import JobResponse
+
 class ActivityResponse(ActivityBase):
     id: UUID
     created_at: datetime
     updated_at: Optional[datetime] = None
     created_by: Optional[UUID] = None
+    
+    candidate: Optional[CandidateBasicResponse] = None
+    job: Optional[JobResponse] = None
 
     class Config:
         from_attributes = True

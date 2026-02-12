@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from uuid import UUID
 
@@ -23,11 +23,17 @@ def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
 
 @router.get("/job/{job_id}", response_model=List[ActivityResponse])
 def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db)):
-    return db.query(ScheduledActivity).filter(ScheduledActivity.job_id == job_id).all()
+    return db.query(ScheduledActivity).options(
+        joinedload(ScheduledActivity.candidate),
+        joinedload(ScheduledActivity.job)
+    ).filter(ScheduledActivity.job_id == job_id).all()
 
 @router.get("/candidate/{candidate_id}", response_model=List[ActivityResponse])
 def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
-    return db.query(ScheduledActivity).filter(ScheduledActivity.candidate_id == candidate_id).all()
+    return db.query(ScheduledActivity).options(
+        joinedload(ScheduledActivity.candidate),
+        joinedload(ScheduledActivity.job)
+    ).filter(ScheduledActivity.candidate_id == candidate_id).all()
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 def get_activity(activity_id: UUID, db: Session = Depends(get_db)):

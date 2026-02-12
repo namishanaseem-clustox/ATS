@@ -110,13 +110,30 @@ const ActivityList = ({ jobId, candidateId }) => {
                                         <div className="sm:flex">
                                             <p className="flex items-center text-sm text-gray-500">
                                                 <User className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                                                {/* Candidate name might need backend join or additional fetch if not eager loaded. 
-                                                    For now, using ID or if backend sends it. 
-                                                    The backend model has relationship, but Pydantic Schema 'ActivityBase' doesn't explicitly include nested Candidate object, only ID.
-                                                    We might need to update backend to include candidate name or fetch it.
-                                                    Let's assume for now we just show "Candidate" or wait for backend update if needed.
-                                                 */}
-                                                {activity.participants && activity.participants.length > 0 ? activity.participants.join(', ') : 'No participants'}
+
+                                                {/* Show Candidate Name if available and not in candidate context */}
+                                                {!candidateId && activity.candidate ? (
+                                                    <>
+                                                        <span className="font-medium text-gray-900 mr-2">
+                                                            {activity.candidate.first_name} {activity.candidate.last_name}
+                                                        </span>
+                                                        <span className="text-gray-300 mx-2">|</span>
+                                                    </>
+                                                ) : null}
+
+                                                {/* Show Job Title if available and not in job context */}
+                                                {!jobId && activity.job ? (
+                                                    <>
+                                                        <span className="font-medium text-gray-900 mr-2">
+                                                            {activity.job.title}
+                                                        </span>
+                                                        <span className="text-gray-300 mx-2">|</span>
+                                                    </>
+                                                ) : null}
+
+                                                <span>
+                                                    {activity.participants && activity.participants.length > 0 ? activity.participants.join(', ') : 'No participants'}
+                                                </span>
                                             </p>
                                             <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
                                                 <MapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
