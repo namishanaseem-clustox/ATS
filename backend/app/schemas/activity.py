@@ -9,6 +9,7 @@ class ActivityType(str, Enum):
     MEETING = "Meeting"
     INTERVIEW = "Interview"
     CALL = "Call"
+    NOTE = "Note"
 
 class ActivityStatus(str, Enum):
     PENDING = "Pending"
@@ -16,7 +17,7 @@ class ActivityStatus(str, Enum):
     CANCELLED = "Cancelled"
 
 class ActivityBase(BaseModel):
-    job_id: UUID
+    job_id: Optional[UUID] = None
     candidate_id: Optional[UUID] = None
     activity_type: ActivityType = ActivityType.TASK
     title: str

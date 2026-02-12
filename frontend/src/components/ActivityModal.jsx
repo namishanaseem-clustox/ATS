@@ -3,9 +3,9 @@ import { X, Calendar, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'l
 import { getJobCandidates, getCandidate } from '../api/candidates';
 import { createActivity, updateActivity } from '../api/activities';
 
-const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = null, onSave }) => {
+const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = null, onSave, initialType = 'Task' }) => {
     const [formData, setFormData] = useState({
-        activity_type: 'Task',
+        activity_type: initialType,
         title: '',
         status: 'Pending',
         scheduled_at: '',

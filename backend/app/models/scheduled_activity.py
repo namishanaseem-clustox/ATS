@@ -11,6 +11,7 @@ class ActivityType(str, enum.Enum):
     MEETING = "Meeting"
     INTERVIEW = "Interview"
     CALL = "Call"
+    NOTE = "Note"
 
 class ActivityStatus(str, enum.Enum):
     PENDING = "Pending"
@@ -21,7 +22,7 @@ class ScheduledActivity(Base):
     __tablename__ = "scheduled_activities"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=False)
+    job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=True)
     candidate_id = Column(UUID(as_uuid=True), ForeignKey("candidates.id"), nullable=True)
     
     activity_type = Column(String, nullable=False, default=ActivityType.TASK.value)

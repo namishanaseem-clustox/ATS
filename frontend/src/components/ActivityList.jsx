@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote } from 'lucide-react';
 import { getJobActivities, getCandidateActivities, deleteActivity } from '../api/activities';
 import ActivityModal from './ActivityModal';
 
@@ -24,7 +24,8 @@ const ActivityList = ({ jobId, candidateId }) => {
             }
             // Sort by scheduled_at desc
             data.sort((a, b) => new Date(b.scheduled_at) - new Date(a.scheduled_at));
-            setActivities(data);
+            // Filter out 'Note' type from standard activity list
+            setActivities(data.filter(item => item.activity_type !== 'Note'));
         } catch (error) {
             console.error("Failed to fetch activities", error);
         } finally {
@@ -58,6 +59,7 @@ const ActivityList = ({ jobId, candidateId }) => {
             case 'Meeting': return <Users className="h-5 w-5 text-blue-500" />;
             case 'Interview': return <Video className="h-5 w-5 text-purple-500" />;
             case 'Call': return <Phone className="h-5 w-5 text-green-500" />;
+            case 'Note': return <StickyNote className="h-5 w-5 text-yellow-500" />;
             default: return <FileText className="h-5 w-5 text-gray-500" />;
         }
     };

@@ -4,6 +4,7 @@ import { getCandidate } from '../api/candidates';
 import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, FileText } from 'lucide-react';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import ActivityList from '../components/ActivityList';
+import NoteList from '../components/NoteList';
 
 const CandidateDetail = () => {
     const { id } = useParams();
@@ -101,6 +102,15 @@ const CandidateDetail = () => {
                                         }`}
                                 >
                                     Resume
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('notes')}
+                                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === 'notes'
+                                        ? 'border-[#00C853] text-[#00C853]'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                >
+                                    Notes
                                 </button>
                                 <button
                                     onClick={() => setActiveTab('activities')}
@@ -205,6 +215,11 @@ const CandidateDetail = () => {
                                 </div>
                             )}
 
+                            {activeTab === 'notes' && (
+                                <div className="p-8">
+                                    <NoteList candidateId={id} />
+                                </div>
+                            )}
                             {activeTab === 'activities' && (
                                 <div className="p-8">
                                     <ActivityList candidateId={id} />

@@ -5,7 +5,8 @@ import { getJobCandidates } from '../api/candidates';
 import JobPipeline from '../components/JobPipeline';
 import CandidateCard from '../components/CandidateCard';
 import ActivityList from '../components/ActivityList';
-import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users } from 'lucide-react';
+import NoteList from '../components/NoteList';
+import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote } from 'lucide-react';
 
 const JobDetail = () => {
     const { id } = useParams();
@@ -177,6 +178,14 @@ const JobDetail = () => {
                         Activity
                     </button>
                     <button
+                        onClick={() => setActiveTab('notes')}
+                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'notes' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <StickyNote size={18} className="mr-3" />
+                        Notes
+                    </button>
+                    <button
                         onClick={() => setActiveTab('settings')}
                         className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'settings' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
                             }`}
@@ -270,6 +279,12 @@ const JobDetail = () => {
                             onUpdatePipeline={handlePipelineUpdate}
                             onMoveCandidate={handleMoveCandidate}
                         />
+                    </div>
+                )}
+
+                {activeTab === 'notes' && (
+                    <div className="p-8">
+                        <NoteList jobId={id} />
                     </div>
                 )}
 
