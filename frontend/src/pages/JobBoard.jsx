@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search } from 'lucide-react';
 
 import { getJobs } from '../api/jobs';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -10,13 +10,31 @@ const JobBoard = () => {
     const [loading, setLoading] = useState(true);
     const [searchParams, setSearchParams] = useSearchParams();
     const [departmentName, setDepartmentName] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
+
+    const handleSearch = () => {
+        setSearchQuery(inputValue);
+    };
 
     const departmentId = searchParams.get('dept');
     const statusFilter = searchParams.get('status');
 
+    // Filter jobs by status and search query
     const filteredJobs = jobs.filter(job => {
+        // Status filter
         if (statusFilter && job.status !== statusFilter) return false;
+
+        // Search filter
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            const title = (job.title || '').toLowerCase();
+            const department = (job.department?.name || '').toLowerCase();
+            const location = (job.location || '').toLowerCase();
+            return title.includes(query) || department.includes(query) || location.includes(query);
+        }
+
         return true;
     });
 
@@ -102,6 +120,27 @@ const JobBoard = () => {
                 >
                     <Plus size={20} className="mr-2" />
                     Create Job
+                </button>
+            </div>
+
+            {/* Search and Filter Bar */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        type="text"
+                        placeholder="Search jobs by title, department, or location..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00C853]"
+                    />
+                </div>
+                <button
+                    onClick={handleSearch}
+                    className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 bg-gray-50 active:bg-gray-200 transition-colors"
+                >
+                    <Search size={18} className="mr-2" /> Search
                 </button>
             </div>
 

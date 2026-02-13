@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 
 import DepartmentModal from '../../components/DepartmentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -21,11 +21,28 @@ const DepartmentsPage = () => {
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [inputValue, setInputValue] = useState('');
+
+    const handleSearch = () => {
+        setSearchQuery(inputValue);
+    };
 
     const { data: departments, isLoading, isError } = useQuery({
         queryKey: ['departments'],
         queryFn: getDepartments,
     });
+
+    // Filter departments based on search query
+    const filteredDepartments = (departments || []).filter(dept => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        const name = (dept.name || '').toLowerCase();
+        const location = (dept.location || '').toLowerCase();
+        const owner = (dept.owner || '').toLowerCase();
+        return name.includes(query) || location.includes(query) || owner.includes(query);
+    });
+
 
     const createMutation = useMutation({
         mutationFn: createDepartment,
@@ -91,7 +108,28 @@ const DepartmentsPage = () => {
                     </button>
                 </div>
 
-                {departments?.length === 0 ? (
+                {/* Search and Filter Bar */}
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search departments by name, location, or owner..."
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00C853]"
+                        />
+                    </div>
+                    <button
+                        onClick={handleSearch}
+                        className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 bg-gray-50 active:bg-gray-200 transition-colors"
+                    >
+                        <Search size={18} className="mr-2" /> Search
+                    </button>
+                </div>
+
+                {filteredDepartments.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
                         <div className="text-grey mb-4">No departments found.</div>
                         <button onClick={openCreateModal} className="text-primary hover:underline">Create your first department</button>
@@ -113,7 +151,7 @@ const DepartmentsPage = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {departments?.map((dept) => (
+                                    {filteredDepartments.map((dept) => (
                                         <tr key={dept.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">

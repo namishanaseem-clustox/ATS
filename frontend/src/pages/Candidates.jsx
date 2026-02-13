@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { getCandidates, deleteCandidate } from '../api/candidates';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,23 @@ const Candidates = () => {
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [activeModalTab, setActiveModalTab] = useState('upload'); // 'upload' or 'manual'
+    const [searchQuery, setSearchQuery] = useState('');
+    const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
+
+    const handleSearch = () => {
+        setSearchQuery(inputValue);
+    };
+
+    // Filter candidates based on search query
+    const filteredCandidates = candidates.filter(candidate => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        const fullName = `${candidate.first_name} ${candidate.last_name}`.toLowerCase();
+        const email = (candidate.email || '').toLowerCase();
+        const skills = (candidate.skills || []).map(s => s.toLowerCase()).join(' ');
+        return fullName.includes(query) || email.includes(query) || skills.includes(query);
+    });
 
     const fetchCandidates = async () => {
         try {
@@ -70,11 +86,17 @@ const Candidates = () => {
                     <input
                         type="text"
                         placeholder="Search candidates by name, email, or skills..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00C853]"
                     />
                 </div>
-                <button className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50">
-                    <Filter size={18} className="mr-2" /> Filter
+                <button
+                    onClick={handleSearch}
+                    className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 bg-gray-50 active:bg-gray-200 transition-colors"
+                >
+                    <Search size={18} className="mr-2" /> Search
                 </button>
             </div>
 
@@ -82,7 +104,7 @@ const Candidates = () => {
                 <div className="text-center py-12 text-gray-500">Loading candidates...</div>
             ) : (
                 <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                    {candidates.length > 0 ? (
+                    {filteredCandidates.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -99,7 +121,7 @@ const Candidates = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {candidates.map((candidate) => (
+                                    {filteredCandidates.map((candidate) => (
                                         <tr
                                             key={candidate.id}
                                             className="hover:bg-gray-50 transition-colors cursor-pointer"

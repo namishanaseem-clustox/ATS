@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 
 const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
-    if (!isOpen) return null;
 
     // Simple form state management
     const [formData, setFormData] = React.useState({
@@ -49,6 +48,8 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         };
         onSubmit(cleanedData);
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
