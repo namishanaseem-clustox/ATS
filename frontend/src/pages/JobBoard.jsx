@@ -6,10 +6,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDepartments } from '../api/departments';
 
 const JobBoard = () => {
+    const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchParams, setSearchParams] = useSearchParams();
-    const [departmentName, setDepartmentName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
@@ -53,23 +53,25 @@ const JobBoard = () => {
     }, [departmentId]);
 
     useEffect(() => {
-        const fetchDepartmentName = async () => {
+        const fetchDepartmentDetails = async () => {
             if (departmentId) {
                 try {
                     const departments = await getDepartments();
                     const dept = departments.find(d => d.id === departmentId);
-                    setDepartmentName(dept?.name || 'Unknown Department');
+                    setSelectedDepartment(dept || null);
                 } catch (error) {
                     console.error("Failed to fetch department", error);
                 }
+            } else {
+                setSelectedDepartment(null);
             }
         };
-        fetchDepartmentName();
+        fetchDepartmentDetails();
     }, [departmentId]);
 
     const clearFilter = () => {
         setSearchParams({});
-        setDepartmentName('');
+        setSelectedDepartment(null);
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading jobs...</div>;
@@ -78,39 +80,32 @@ const JobBoard = () => {
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
-                    {departmentId && departmentName && (
-                        <div className="flex items-center mt-2 text-sm">
-                            <span className="text-gray-600 mr-2">Filtered by:</span>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-green-50 text-[#00C853] font-medium mr-2">
-                                {departmentName}
+                    {selectedDepartment ? (
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-2xl font-bold text-gray-800">{selectedDepartment.name}</h1>
+                            </div>
+                            <p className="text-gray-500 mt-1">{selectedDepartment.description || 'No description available.'}</p>
+                        </div>
+                    ) : (
+                        <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
+                    )}
+
+                    {statusFilter && (
+                        <div className="mt-2">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
+                                Status: {statusFilter}
                                 <button
                                     onClick={() => {
                                         const newParams = new URLSearchParams(searchParams);
-                                        newParams.delete('dept');
+                                        newParams.delete('status');
                                         setSearchParams(newParams);
-                                        setDepartmentName('');
                                     }}
-                                    className="ml-2 hover:bg-green-100 rounded-full p-0.5"
+                                    className="ml-2 hover:bg-blue-100 rounded-full p-0.5"
                                 >
                                     <X size={14} />
                                 </button>
                             </span>
-                            {statusFilter && (
-                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
-                                    Status: {statusFilter}
-                                    <button
-                                        onClick={() => {
-                                            const newParams = new URLSearchParams(searchParams);
-                                            newParams.delete('status');
-                                            setSearchParams(newParams);
-                                        }}
-                                        className="ml-2 hover:bg-blue-100 rounded-full p-0.5"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </span>
-                            )}
                         </div>
                     )}
                 </div>
@@ -147,7 +142,7 @@ const JobBoard = () => {
             {filteredJobs.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                     <p className="text-gray-500 mb-4">
-                        {departmentId ? `No jobs found for ${departmentName}.` : 'No jobs found.'}
+                        {departmentId ? `No jobs found for ${selectedDepartment?.name || 'this department'}.` : 'No jobs found.'}
                     </p>
                     <button
                         onClick={() => navigate('/jobs/new')}
