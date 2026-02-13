@@ -1,9 +1,9 @@
 import React from 'react';
-import { User, Briefcase, MapPin, Trash2, Eye } from 'lucide-react';
+import { User, Briefcase, MapPin, Trash2, Eye, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ApplicationStatusBadge from './ApplicationStatusBadge';
 
-const CandidateCard = ({ candidate, onDelete }) => {
+const CandidateCard = ({ candidate, onDelete, onAIScreen }) => {
     const navigate = useNavigate();
     const {
         id, first_name, last_name, current_position, current_company,
@@ -28,8 +28,14 @@ const CandidateCard = ({ candidate, onDelete }) => {
                     </div>
                 </div>
                 {latestApp && (
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end gap-2">
                         <ApplicationStatusBadge status={latestApp.application_status} />
+                        {latestApp.ai_score && (
+                            <div className="flex items-center bg-purple-50 px-2 py-1 rounded" title="AI Match Score">
+                                <Brain size={12} className="text-purple-600 mr-1" />
+                                <span className="text-xs font-bold text-purple-700">{Math.round(latestApp.ai_score)}</span>
+                            </div>
+                        )}
                         {latestApp.job && <span className="text-xs text-gray-400 mt-1 max-w-[100px] truncate">{latestApp.job.title}</span>}
                     </div>
                 )}
@@ -46,20 +52,32 @@ const CandidateCard = ({ candidate, onDelete }) => {
                 </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2 border-t pt-4 border-gray-50">
-                <button
-                    onClick={() => navigate(`/candidates/${id}`)}
-                    className="flex items-center px-3 py-1.5 text-sm font-medium text-[#00C853] hover:bg-green-50 rounded-md transition-colors"
-                >
-                    <Eye size={16} className="mr-2" /> View
-                </button>
-                <button
-                    onClick={() => onDelete(id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                    title="Delete"
-                >
-                    <Trash2 size={16} />
-                </button>
+            <div className="mt-6 flex justify-between gap-2 border-t pt-4 border-gray-50">
+                {onAIScreen && latestApp && (
+                    <button
+                        onClick={() => onAIScreen(latestApp)}
+                        className="flex items-center px-3 py-1.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                        title="AI Screening Analysis"
+                    >
+                        <Brain size={16} className="mr-2" />
+                        {latestApp.ai_score ? 'View Analysis' : 'Run AI Screen'}
+                    </button>
+                )}
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => navigate(`/candidates/${id}`)}
+                        className="flex items-center px-3 py-1.5 text-sm font-medium text-[#00C853] hover:bg-green-50 rounded-md transition-colors"
+                    >
+                        <Eye size={16} className="mr-2" /> View
+                    </button>
+                    <button
+                        onClick={() => onDelete(id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -45,3 +45,8 @@ export const updateCandidateScore = async (jobId, candidateId, scoreData) => {
     const { data } = await client.put(`/jobs/${jobId}/candidates/${candidateId}/score`, scoreData);
     return data;
 };
+
+export const screenCandidate = async (jobId, candidateId) => {
+    const { data } = await client.post(`/jobs/${jobId}/candidates/${candidateId}/screen`);
+    return data;
+};

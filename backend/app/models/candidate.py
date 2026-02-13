@@ -33,10 +33,8 @@ class Candidate(Base):
     # Additional Info
     nationality = Column(String, nullable=True)
     notice_period = Column(Integer, nullable=True) # In days
-    '''
     current_salary = Column(String, nullable=True)
     expected_salary = Column(String, nullable=True)
-    '''
     
     # JSONB Fields for Parsing
     skills = Column(JSONB, default=list)
@@ -73,3 +71,7 @@ class JobApplication(Base):
     score_details = Column(JSONB, default=dict) # { "technical": 4, "communication": 5, ... }
     overall_score = Column(Float, nullable=True) # Calculated average or manual override
     recommendation = Column(String, nullable=True) # Strong Yes, Yes, Neutral, No, Strong No
+    
+    # AI Screening
+    ai_score = Column(Float, nullable=True) # AI match score (0-100)
+    ai_analysis = Column(JSONB, default=dict) # { "key_strengths": [], "missing_skills": [], "reasoning": "" }

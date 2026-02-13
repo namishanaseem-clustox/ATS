@@ -188,19 +188,21 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                                 </div>
 
                                                                                 {/* Score Display */}
-                                                                                {app.overall_score && (
-                                                                                    <div className="flex items-center mb-2 bg-yellow-50 px-2 py-1 rounded w-fit">
-                                                                                        <Star size={12} className="text-yellow-500 mr-1 fill-current" />
-                                                                                        <span className="text-xs font-bold text-gray-700">{app.overall_score}</span>
-                                                                                        {app.recommendation && (
-                                                                                            <span className={`text-[10px] ml-2 px-1 rounded ${app.recommendation.includes('Yes') ? 'bg-green-100 text-green-700' :
-                                                                                                app.recommendation.includes('No') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
-                                                                                                }`}>
-                                                                                                {app.recommendation}
-                                                                                            </span>
-                                                                                        )}
-                                                                                    </div>
-                                                                                )}
+                                                                                <div className="flex gap-2 mb-2">
+                                                                                    {app.overall_score && (
+                                                                                        <div className="flex items-center bg-yellow-50 px-2 py-1 rounded w-fit">
+                                                                                            <Star size={12} className="text-yellow-500 mr-1 fill-current" />
+                                                                                            <span className="text-xs font-bold text-gray-700">{app.overall_score}</span>
+                                                                                            {app.recommendation && (
+                                                                                                <span className={`text-[10px] ml-2 px-1 rounded ${app.recommendation.includes('Yes') ? 'bg-green-100 text-green-700' :
+                                                                                                    app.recommendation.includes('No') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'
+                                                                                                    }`}>
+                                                                                                    {app.recommendation}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
 
                                                                                 <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-50">
                                                                                     <span className="text-[10px] text-gray-400">

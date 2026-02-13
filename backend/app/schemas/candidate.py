@@ -119,6 +119,10 @@ class JobApplicationResponse(JobApplicationBase):
     overall_score: Optional[float] = None
     recommendation: Optional[str] = None
     
+    # AI Screening
+    ai_score: Optional[float] = None
+    ai_analysis: Optional[Dict[str, Any]] = None
+    
     # Include nested candidate data for frontend (without applications to prevent circular ref)
     candidate: Optional[CandidateBasicResponse] = None
     job: Optional[JobResponse] = None

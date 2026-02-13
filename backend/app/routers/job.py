@@ -104,3 +104,13 @@ def score_candidate(job_id: UUID, candidate_id: UUID, score_data: ApplicationSco
         raise HTTPException(status_code=404, detail="Application/Job not found")
     return application
 
+from app.services.screening_service import screening_service
+
+@router.post("/{job_id}/candidates/{candidate_id}/screen", response_model=JobApplicationResponse)
+def screen_candidate_ai(job_id: UUID, candidate_id: UUID, db: Session = Depends(get_db)):
+    """
+    Trigger AI screening for a candidate application.
+    Uses OpenAI to analyze candidate fit against job description.
+    """
+    application = screening_service.screen_candidate(db, str(job_id), str(candidate_id))
+    return application

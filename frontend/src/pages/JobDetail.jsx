@@ -7,6 +7,7 @@ import CandidateCard from '../components/CandidateCard';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
 import JobActivityLog from '../components/JobActivityLog';
+import AIScreeningModal from '../components/AIScreeningModal';
 import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote } from 'lucide-react';
 
 const JobDetail = () => {
@@ -16,6 +17,8 @@ const JobDetail = () => {
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [isAIScreeningModalOpen, setIsAIScreeningModalOpen] = useState(false);
+    const [aiScreeningCandidate, setAiScreeningCandidate] = useState(null);
 
     const defaultPipeline = [
         { name: "New Candidates", id: "new" },
@@ -55,6 +58,18 @@ const JobDetail = () => {
             fetchCandidates();
         }
     }, [activeTab, id]);
+
+    const handleAIScreenClick = (app) => {
+        setAiScreeningCandidate(app);
+        setIsAIScreeningModalOpen(true);
+    };
+
+    const handleAIScreeningComplete = (updatedApp) => {
+        // Update the candidates list with the new AI score
+        setCandidates(prev => prev.map(app =>
+            app.id === updatedApp.id ? updatedApp : app
+        ));
+    };
 
     const handlePipelineUpdate = async (newConfig) => {
         try {
@@ -269,16 +284,32 @@ const JobDetail = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                             {candidates.length > 0 ? (
-                                candidates.map(app => (
-                                    <CandidateCard
-                                        key={app.id} // JobApplication ID
-                                        candidate={{
-                                            ...app.candidate,
-                                            applications: [app] // Mock linking for card display
-                                        }}
-                                        onDelete={() => handleCandidateDelete(app.candidate.id)}
-                                    />
-                                ))
+                                // Sort candidates by AI score (highest first), then by name
+                                [...candidates]
+                                    .sort((a, b) => {
+                                        // If both have AI scores, sort by score (descending)
+                                        if (a.ai_score && b.ai_score) {
+                                            return b.ai_score - a.ai_score;
+                                        }
+                                        // If only one has a score, prioritize it
+                                        if (a.ai_score) return -1;
+                                        if (b.ai_score) return 1;
+                                        // Otherwise, sort alphabetically by name
+                                        const nameA = `${a.candidate.first_name} ${a.candidate.last_name}`;
+                                        const nameB = `${b.candidate.first_name} ${b.candidate.last_name}`;
+                                        return nameA.localeCompare(nameB);
+                                    })
+                                    .map(app => (
+                                        <CandidateCard
+                                            key={app.id} // JobApplication ID
+                                            candidate={{
+                                                ...app.candidate,
+                                                applications: [app] // Mock linking for card display
+                                            }}
+                                            onDelete={() => handleCandidateDelete(app.candidate.id)}
+                                            onAIScreen={() => handleAIScreenClick(app)}
+                                        />
+                                    ))
                             ) : (
                                 <div className="col-span-full py-12 text-center bg-white rounded-lg border border-gray-200">
                                     <p className="text-gray-500">No candidates applied to this job yet.</p>
@@ -381,6 +412,17 @@ const JobDetail = () => {
                     </div>
                 )}
             </div>
+
+            {/* AI Screening Modal */}
+            <AIScreeningModal
+                isOpen={isAIScreeningModalOpen}
+                onClose={() => setIsAIScreeningModalOpen(false)}
+                jobId={id}
+                candidateId={aiScreeningCandidate?.candidate?.id}
+                candidateName={aiScreeningCandidate ? `${aiScreeningCandidate.candidate.first_name} ${aiScreeningCandidate.candidate.last_name}` : ''}
+                initialData={aiScreeningCandidate?.ai_analysis}
+                onScreeningComplete={handleAIScreeningComplete}
+            />
         </div>
     );
 };
