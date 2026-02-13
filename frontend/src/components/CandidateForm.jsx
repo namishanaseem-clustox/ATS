@@ -15,6 +15,7 @@ const CandidateForm = ({ initialData, onSuccess, onCancel }) => {
         current_company: '',
         current_position: '',
         experience_years: 0,
+        notice_period: '',
         linkedin_url: '',
         skills: '',
         education: [],
@@ -32,6 +33,7 @@ const CandidateForm = ({ initialData, onSuccess, onCancel }) => {
                 current_company: initialData.current_company || '',
                 current_position: initialData.current_position || '',
                 experience_years: initialData.experience_years || 0,
+                notice_period: initialData.notice_period || '',
                 linkedin_url: initialData.social_links?.linkedin || '',
                 skills: initialData.skills ? initialData.skills.join(', ') : '',
                 education: initialData.education || [],
@@ -102,6 +104,7 @@ const CandidateForm = ({ initialData, onSuccess, onCancel }) => {
         const payload = {
             ...formData,
             experience_years: parseFloat(formData.experience_years),
+            notice_period: formData.notice_period ? parseInt(formData.notice_period) : null,
             social_links: formData.linkedin_url ? { linkedin: formData.linkedin_url } : {},
             job_id: selectedJobId,
             skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
@@ -181,6 +184,11 @@ const CandidateForm = ({ initialData, onSuccess, onCancel }) => {
             <div>
                 <label className="block text-sm font-medium text-gray-700">Experience (Years)</label>
                 <input type="number" name="experience_years" step="0.1" min="0" value={formData.experience_years} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-[#00C853] focus:border-[#00C853]" />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Notice Period (Days)</label>
+                <input type="number" name="notice_period" min="0" value={formData.notice_period} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-[#00C853] focus:border-[#00C853]" placeholder="e.g. 30" />
             </div>
 
             {/* Skills */}

@@ -33,8 +33,10 @@ class Candidate(Base):
     # Additional Info
     nationality = Column(String, nullable=True)
     notice_period = Column(Integer, nullable=True) # In days
+    '''
     current_salary = Column(String, nullable=True)
     expected_salary = Column(String, nullable=True)
+    '''
     
     # JSONB Fields for Parsing
     skills = Column(JSONB, default=list)
