@@ -38,6 +38,7 @@ function App() {
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/jobs/new" element={<JobWizard />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
+              <Route path="/jobs/:id/edit" element={<JobWizard />} />
               <Route path="/candidates" element={<Candidates />} />
               <Route path="/candidates/:id" element={<CandidateDetail />} />
             </Routes>
