@@ -110,7 +110,7 @@ const JobBoard = () => {
                     )}
                 </div>
                 <button
-                    onClick={() => navigate('/jobs/new')}
+                    onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
                     className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
                 >
                     <Plus size={20} className="mr-2" />
@@ -145,7 +145,7 @@ const JobBoard = () => {
                         {departmentId ? `No jobs found for ${selectedDepartment?.name || 'this department'}.` : 'No jobs found.'}
                     </p>
                     <button
-                        onClick={() => navigate('/jobs/new')}
+                        onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
                         className="text-[#00C853] font-medium hover:underline"
                     >
                         Create your first job

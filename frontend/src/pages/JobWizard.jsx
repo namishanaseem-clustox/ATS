@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import JobForm from '../components/JobForm';
 import { createJob } from '../api/jobs';
 import { getDepartments } from '../api/departments';
 
 const JobWizard = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const initialDepartmentId = searchParams.get('dept');
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -45,6 +47,8 @@ const JobWizard = () => {
                 departments={departments}
                 onSubmit={handleSubmit}
                 onCancel={handleCancel}
+                initialData={initialDepartmentId ? { department_id: initialDepartmentId } : null}
+                disableDepartmentSelect={!!initialDepartmentId}
             />
         </div>
     );

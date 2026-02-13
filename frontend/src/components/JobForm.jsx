@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Send } from 'lucide-react';
 
-const JobForm = ({ initialData, departments, onSubmit, onCancel }) => {
+const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartmentSelect }) => {
     const [formData, setFormData] = useState({
         title: '',
         department_id: '',
@@ -66,7 +66,8 @@ const JobForm = ({ initialData, departments, onSubmit, onCancel }) => {
                             name="department_id"
                             value={formData.department_id}
                             onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00C853] focus:ring-[#00C853] sm:text-sm p-2 border"
+                            disabled={disableDepartmentSelect}
+                            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00C853] focus:ring-[#00C853] sm:text-sm p-2 border ${disableDepartmentSelect ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             required
                         >
                             <option value="">Select Department</option>
