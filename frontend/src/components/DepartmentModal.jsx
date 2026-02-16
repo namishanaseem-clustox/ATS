@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import CustomSelect from './CustomSelect';
 
 const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
@@ -102,16 +103,17 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-dark mb-1">Status</label>
-                            <select
+                            <CustomSelect
+                                label="Status"
                                 name="status"
                                 value={formData.status}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all bg-white"
-                            >
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
+                                options={[
+                                    { value: 'Active', label: 'Active' },
+                                    { value: 'Inactive', label: 'Inactive' }
+                                ]}
+                                className="mb-0"
+                            />
                         </div>
                     </div>
 

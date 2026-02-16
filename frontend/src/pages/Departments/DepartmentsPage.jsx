@@ -7,10 +7,12 @@ import DepartmentModal from '../../components/DepartmentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import useDepartmentStore from '../../store/useDepartmentStore';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../../api/departments';
+import { useAuth } from '../../context/AuthContext';
 
 const DepartmentsPage = () => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const {
         isModalOpen,
         selectedDepartment,
@@ -88,6 +90,8 @@ const DepartmentsPage = () => {
         }
     };
 
+    const canManageDepartments = user?.role === 'owner' || user?.role === 'hr';
+
     if (isLoading) return <div className="flex justify-center items-center h-screen text-primary">Loading...</div>;
     if (isError) return <div className="flex justify-center items-center h-screen text-red-500">Error loading departments. Is backend running?</div>;
 
@@ -99,13 +103,15 @@ const DepartmentsPage = () => {
                         <h1 className="text-3xl font-bold text-dark mb-2">Departments</h1>
                         <p className="text-grey">Manage your organization's departments and teams.</p>
                     </div>
-                    <button
-                        onClick={openCreateModal}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md hover:shadow-lg active:scale-95"
-                    >
-                        <Plus className="w-5 h-5" />
-                        <span className="font-medium">Add Department</span>
-                    </button>
+                    {canManageDepartments && (
+                        <button
+                            onClick={openCreateModal}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg hover:bg-primary-hover transition-all shadow-md hover:shadow-lg active:scale-95"
+                        >
+                            <Plus className="w-5 h-5" />
+                            <span className="font-medium">Add Department</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Search and Filter Bar */}
@@ -132,7 +138,9 @@ const DepartmentsPage = () => {
                 {filteredDepartments.length === 0 ? (
                     <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
                         <div className="text-grey mb-4">No departments found.</div>
-                        <button onClick={openCreateModal} className="text-primary hover:underline">Create your first department</button>
+                        {canManageDepartments && (
+                            <button onClick={openCreateModal} className="text-primary hover:underline">Create your first department</button>
+                        )}
                     </div>
                 ) : (
                     <div className="bg-white shadow overflow-hidden sm:rounded-lg">
@@ -147,7 +155,9 @@ const DepartmentsPage = () => {
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Owner</th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Type</th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Created</th>
-                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                                        {canManageDepartments && (
+                                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                                        )}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -192,10 +202,12 @@ const DepartmentsPage = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {new Date(dept.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button onClick={() => openEditModal(dept)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                                                <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-900">Delete</button>
-                                            </td>
+                                            {canManageDepartments && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button onClick={() => openEditModal(dept)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                                                    <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

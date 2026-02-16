@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getJobs } from '../api/jobs';
+import CustomSelect from './CustomSelect';
 
 const JobSelector = ({ selectedJobId, onSelect, label = "Assign to Job (Optional)" }) => {
     const [jobs, setJobs] = useState([]);
@@ -24,21 +25,16 @@ const JobSelector = ({ selectedJobId, onSelect, label = "Assign to Job (Optional
 
     return (
         <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <div className="relative">
-                <select
-                    value={selectedJobId || ""}
-                    onChange={(e) => onSelect(e.target.value === "" ? null : e.target.value)}
-                    className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm rounded-md shadow-sm border"
-                >
-                    <option value="">None (Add to Talent Pool)</option>
-                    {jobs.map((job) => (
-                        <option key={job.id} value={job.id}>
-                            {job.title}
-                        </option>
-                    ))}
-                </select>
-            </div>
+            <CustomSelect
+                label={label}
+                value={selectedJobId}
+                onChange={(e) => onSelect(e.target.value === "" ? null : e.target.value)}
+                options={[
+                    { value: "", label: "None (Add to Talent Pool)" },
+                    ...jobs.map(job => ({ value: job.id, label: job.title }))
+                ]}
+                className="mb-0"
+            />
             {selectedJob && (
                 <p className="mt-1 text-xs text-gray-500">
                     Candidate will be added to the <strong>New</strong> stage of this job's pipeline.

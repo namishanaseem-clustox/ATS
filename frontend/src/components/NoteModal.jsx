@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, User, Briefcase, FileText } from 'lucide-react';
 import { getJobCandidates, getCandidate } from '../api/candidates';
 import { createActivity, updateActivity } from '../api/activities';
+import CustomSelect from './CustomSelect';
 
 const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, onSave }) => {
     const [formData, setFormData] = useState({
@@ -142,43 +143,41 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                             {/* Context Selection (Candidate or Job) */}
                             {jobId ? (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        <User className="h-4 w-4 mr-2" />
-                                        Related Candidate (Optional)
-                                    </label>
-                                    <select
+                                    <CustomSelect
+                                        label={
+                                            <span className="flex items-center">
+                                                <User className="h-4 w-4 mr-2" />
+                                                Related Candidate (Optional)
+                                            </span>
+                                        }
                                         name="candidate_id"
                                         value={formData.candidate_id}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="">-- None --</option>
-                                        {candidates.map(candidate => (
-                                            <option key={candidate.id} value={candidate.id}>
-                                                {candidate.first_name} {candidate.last_name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        options={[
+                                            { value: "", label: "-- None --" },
+                                            ...candidates.map(candidate => ({ value: candidate.id, label: `${candidate.first_name} ${candidate.last_name}` }))
+                                        ]}
+                                        className="mb-0"
+                                    />
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        <Briefcase className="h-4 w-4 mr-2" />
-                                        Related Job (Optional)
-                                    </label>
-                                    <select
+                                    <CustomSelect
+                                        label={
+                                            <span className="flex items-center">
+                                                <Briefcase className="h-4 w-4 mr-2" />
+                                                Related Job (Optional)
+                                            </span>
+                                        }
                                         name="job_id"
                                         value={formData.job_id}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="">-- None --</option>
-                                        {jobs.map(job => (
-                                            <option key={job.id} value={job.id}>
-                                                {job.title}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        options={[
+                                            { value: "", label: "-- None --" },
+                                            ...jobs.map(job => ({ value: job.id, label: job.title }))
+                                        ]}
+                                        className="mb-0"
+                                    />
                                 </div>
                             )}
 

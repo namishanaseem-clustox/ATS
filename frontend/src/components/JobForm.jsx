@@ -1,5 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Send } from 'lucide-react';
+import CustomSelect from './CustomSelect';
+
+const EMPLOYMENT_TYPES = [
+    { value: 'Full-time', label: 'Full-time' },
+    { value: 'Part-time', label: 'Part-time' },
+    { value: 'Contract', label: 'Contract' },
+    { value: 'Freelance', label: 'Freelance' },
+    { value: 'Internship', label: 'Internship' },
+];
 
 const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartmentSelect }) => {
     const [formData, setFormData] = useState({
@@ -61,20 +70,17 @@ const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartme
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Department</label>
-                        <select
+                        <CustomSelect
+                            label="Department"
                             name="department_id"
                             value={formData.department_id}
                             onChange={handleChange}
+                            options={departments.map(dept => ({ value: dept.id, label: dept.name }))}
                             disabled={disableDepartmentSelect}
-                            className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00C853] focus:ring-[#00C853] sm:text-sm p-2 border ${disableDepartmentSelect ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             required
-                        >
-                            <option value="">Select Department</option>
-                            {departments.map(dept => (
-                                <option key={dept.id} value={dept.id}>{dept.name}</option>
-                            ))}
-                        </select>
+                            placeholder="Select Department"
+                            className="mb-0"
+                        />
                     </div>
 
                     <div>
@@ -89,19 +95,14 @@ const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartme
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Employment Type</label>
-                        <select
+                        <CustomSelect
+                            label="Employment Type"
                             name="employment_type"
                             value={formData.employment_type}
                             onChange={handleChange}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00C853] focus:ring-[#00C853] sm:text-sm p-2 border"
-                        >
-                            <option value="Full-time">Full-time</option>
-                            <option value="Part-time">Part-time</option>
-                            <option value="Contract">Contract</option>
-                            <option value="Freelance">Freelance</option>
-                            <option value="Internship">Internship</option>
-                        </select>
+                            options={EMPLOYMENT_TYPES}
+                            className="mb-0"
+                        />
                     </div>
                 </div>
 

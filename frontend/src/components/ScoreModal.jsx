@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Star, Save } from 'lucide-react';
 import { Loader2 } from 'lucide-react';
+import CustomSelect from './CustomSelect';
+
+const RECOMMENDATION_OPTIONS = [
+    { value: 'Strong Yes', label: 'Strong Yes' },
+    { value: 'Yes', label: 'Yes' },
+    { value: 'Neutral', label: 'Neutral' },
+    { value: 'No', label: 'No' },
+    { value: 'Strong No', label: 'Strong No' }
+];
 
 const ScoreModal = ({ isOpen, onClose, candidateName, initialData, onSave }) => {
     const [scores, setScores] = useState({
@@ -96,18 +105,13 @@ const ScoreModal = ({ isOpen, onClose, candidateName, initialData, onSave }) => 
                             {renderStarRating('leadership_score', 'Leadership')}
 
                             <div className="mt-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Overall Recommendation</label>
-                                <select
+                                <CustomSelect
+                                    label="Overall Recommendation"
                                     value={scores.recommendation}
                                     onChange={(e) => setScores(prev => ({ ...prev, recommendation: e.target.value }))}
-                                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm rounded-md"
-                                >
-                                    <option value="Strong Yes">Strong Yes</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="Neutral">Neutral</option>
-                                    <option value="No">No</option>
-                                    <option value="Strong No">Strong No</option>
-                                </select>
+                                    options={RECOMMENDATION_OPTIONS}
+                                    className="mb-0"
+                                />
                             </div>
                         </div>
                     </div>

@@ -2,6 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Plus, User, Shield, Briefcase, Mail, Pencil } from 'lucide-react';
 import { getUsers, createUser, updateUser } from '../api/users';
 import RoleGuard from '../components/RoleGuard';
+import CustomSelect from '../components/CustomSelect';
+
+const ROLE_OPTIONS = [
+    { value: 'interviewer', label: 'Interviewer' },
+    { value: 'hiring_manager', label: 'Hiring Manager' },
+    { value: 'hr', label: 'HR' },
+    { value: 'owner', label: 'Owner' },
+];
+
+const STATUS_OPTIONS = [
+    { value: 'true', label: 'Active' },
+    { value: 'false', label: 'Inactive' },
+];
 
 const Team = () => {
     const [users, setUsers] = useState([]);
@@ -14,6 +27,7 @@ const Team = () => {
         email: '',
         password: '',
         role: 'interviewer',
+        is_active: 'true',
     });
     const [error, setError] = useState(null);
 
@@ -38,6 +52,7 @@ const Team = () => {
     };
 
     const openCreateModal = () => {
+        setError(null);
         setIsEditing(false);
         setCurrentUserId(null);
         setFormData({
@@ -45,11 +60,13 @@ const Team = () => {
             email: '',
             password: '',
             role: 'interviewer',
+            is_active: 'true',
         });
         setIsModalOpen(true);
     };
 
     const openEditModal = (user) => {
+        setError(null);
         setIsEditing(true);
         setCurrentUserId(user.id);
         setFormData({
@@ -57,6 +74,7 @@ const Team = () => {
             email: user.email,
             password: '', // Password empty on edit unless changing
             role: user.role,
+            is_active: user.is_active ? 'true' : 'false',
         });
         setIsModalOpen(true);
     };
@@ -70,8 +88,12 @@ const Team = () => {
                 const dataToSend = { ...formData };
                 if (!dataToSend.password) delete dataToSend.password;
 
+                // Convert is_active string to boolean
+                dataToSend.is_active = dataToSend.is_active === 'true';
+
                 await updateUser(currentUserId, dataToSend);
             } else {
+                // For creation, is_active is assumed true by backend
                 await createUser(formData);
             }
 
@@ -162,7 +184,7 @@ const Team = () => {
 
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
                             <form onSubmit={handleSubmit}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                                     <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{isEditing ? 'Edit Team Member' : 'Add New Team Member'}</h3>
@@ -212,20 +234,23 @@ const Team = () => {
                                             />
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">Role</label>
-                                            <select
-                                                name="role"
-                                                value={formData.role}
+                                        <CustomSelect
+                                            label="Role"
+                                            name="role"
+                                            options={ROLE_OPTIONS}
+                                            value={formData.role}
+                                            onChange={handleInputChange}
+                                        />
+
+                                        {isEditing && (
+                                            <CustomSelect
+                                                label="Status"
+                                                name="is_active"
+                                                options={STATUS_OPTIONS}
+                                                value={formData.is_active}
                                                 onChange={handleInputChange}
-                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
-                                            >
-                                                <option value="interviewer">Interviewer</option>
-                                                <option value="hiring_manager">Hiring Manager</option>
-                                                <option value="hr">HR</option>
-                                                <option value="owner">Owner</option>
-                                            </select>
-                                        </div>
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

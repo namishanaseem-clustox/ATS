@@ -2,6 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'lucide-react';
 import { getJobCandidates, getCandidate } from '../api/candidates';
 import { createActivity, updateActivity } from '../api/activities';
+import CustomSelect from './CustomSelect';
+
+const ACTIVITY_TYPES = [
+    { value: 'Task', label: 'Task' },
+    { value: 'Meeting', label: 'Meeting' },
+    { value: 'Interview', label: 'Interview' },
+    { value: 'Call', label: 'Call' },
+];
+
+const ACTIVITY_STATUSES = [
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Cancelled', label: 'Cancelled' },
+];
 
 const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = null, onSave, initialType = 'Task' }) => {
     const [formData, setFormData] = useState({
@@ -133,18 +147,14 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             {/* Title & Type */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="col-span-1">
-                                    <label className="block text-sm font-medium text-gray-700">Type</label>
-                                    <select
+                                    <CustomSelect
+                                        label="Type"
                                         name="activity_type"
                                         value={formData.activity_type}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="Task">Task</option>
-                                        <option value="Meeting">Meeting</option>
-                                        <option value="Interview">Interview</option>
-                                        <option value="Call">Call</option>
-                                    </select>
+                                        options={ACTIVITY_TYPES}
+                                        className="mb-0"
+                                    />
                                 </div>
                                 <div className="col-span-2">
                                     <label className="block text-sm font-medium text-gray-700">Title</label>
@@ -163,44 +173,42 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             {/* Context Selection (Candidate or Job) */}
                             {jobId ? (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        <User className="h-4 w-4 mr-2" />
-                                        Related Candidate
-                                    </label>
-                                    <select
+                                    <CustomSelect
+                                        label={
+                                            <span className="flex items-center">
+                                                <User className="h-4 w-4 mr-2" />
+                                                Related Candidate
+                                            </span>
+                                        }
                                         name="candidate_id"
                                         value={formData.candidate_id}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="">-- None --</option>
-                                        {candidates.map(candidate => (
-                                            <option key={candidate.id} value={candidate.id}>
-                                                {candidate.first_name} {candidate.last_name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        options={[
+                                            { value: "", label: "-- None --" },
+                                            ...candidates.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }))
+                                        ]}
+                                        className="mb-0"
+                                    />
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        <Briefcase className="h-4 w-4 mr-2" />
-                                        Related Job
-                                    </label>
-                                    <select
+                                    <CustomSelect
+                                        label={
+                                            <span className="flex items-center">
+                                                <Briefcase className="h-4 w-4 mr-2" />
+                                                Related Job
+                                            </span>
+                                        }
                                         name="job_id"
                                         value={formData.job_id}
                                         onChange={handleChange}
                                         required={!jobId}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="">-- Select Job --</option>
-                                        {jobs.map(job => (
-                                            <option key={job.id} value={job.id}>
-                                                {job.title}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        options={[
+                                            { value: "", label: "-- Select Job --" },
+                                            ...jobs.map(j => ({ value: j.id, label: j.title }))
+                                        ]}
+                                        className="mb-0"
+                                    />
                                 </div>
                             )}
 
@@ -269,17 +277,14 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             {/* Status (Edit only) */}
                             {activity && (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Status</label>
-                                    <select
+                                    <CustomSelect
+                                        label="Status"
                                         name="status"
                                         value={formData.status}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
-                                    >
-                                        <option value="Pending">Pending</option>
-                                        <option value="Completed">Completed</option>
-                                        <option value="Cancelled">Cancelled</option>
-                                    </select>
+                                        options={ACTIVITY_STATUSES}
+                                        className="mb-0"
+                                    />
                                 </div>
                             )}
 

@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
             await fetchUser();
             return true;
         } catch (error) {
-            console.error("Login failed", error);
+            // Error is handled by the calling component
             throw error;
         }
     };

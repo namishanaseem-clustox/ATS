@@ -24,7 +24,11 @@ const Login = () => {
             await login(email, password);
             navigate('/jobs');
         } catch (err) {
-            setError('Invalid email or password');
+            if (err.response && err.response.data && err.response.data.detail) {
+                setError(err.response.data.detail);
+            } else {
+                setError('Invalid email or password');
+            }
         }
     };
 
