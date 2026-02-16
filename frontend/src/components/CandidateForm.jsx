@@ -127,15 +127,13 @@ const CandidateForm = ({ initialData, onSuccess, onCancel }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            {!initialData && (
-                <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-6">
-                    <JobSelector
-                        selectedJobId={selectedJobId}
-                        onSelect={setSelectedJobId}
-                        label="Assign to Job (Optional)"
-                    />
-                </div>
-            )}
+            <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-6">
+                <JobSelector
+                    selectedJobId={selectedJobId}
+                    onSelect={setSelectedJobId}
+                    label={initialData ? "Assign to Job (Add Application)" : "Assign to Job (Optional)"}
+                />
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -59,11 +59,34 @@ class CandidateService:
             return None
             
         update_data = candidate.dict(exclude_unset=True)
+        
+        # Extract job_id if present
+        job_id = update_data.pop("job_id", None)
+        
         for key, value in update_data.items():
             setattr(db_candidate, key, value)
             
         db.add(db_candidate)
         db.commit()
+        
+        # specific to update: check if we need to link a job
+        if job_id:
+             # Check if application already exists
+            existing_app = db.query(JobApplication).filter(
+                JobApplication.candidate_id == db_candidate.id, 
+                JobApplication.job_id == job_id
+            ).first()
+            
+            if not existing_app:
+                 application = JobApplication(
+                    candidate_id=db_candidate.id,
+                    job_id=job_id,
+                    current_stage="new",
+                    application_status="New"
+                )
+                 db.add(application)
+                 db.commit()
+
         db.refresh(db_candidate)
         return db_candidate
 

@@ -62,6 +62,7 @@ class CandidateUpdate(BaseModel):
     education: Optional[List[EducationItem]] = None
     experience_history: Optional[List[ExperienceItem]] = None
     social_links: Optional[Dict[str, str]] = None
+    job_id: Optional[UUID] = None
 
 class CandidateResponse(CandidateBase):
     id: UUID

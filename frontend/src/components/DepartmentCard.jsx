@@ -48,7 +48,8 @@ const DepartmentCard = ({ department, onEdit, onDelete }) => {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = `/jobs?dept=${department.id}&status=Published`;
+                        // Navigate to detail page with scope
+                        window.location.href = `/departments/${department.id}?status=Published`;
                     }}
                     className="flex flex-col text-left hover:bg-green-50 p-2 rounded-md transition-colors group"
                 >
@@ -61,7 +62,8 @@ const DepartmentCard = ({ department, onEdit, onDelete }) => {
                 <button
                     onClick={(e) => {
                         e.stopPropagation();
-                        window.location.href = `/jobs?dept=${department.id}`;
+                        // Navigate to detail page
+                        window.location.href = `/departments/${department.id}`;
                     }}
                     className="flex flex-col text-left hover:bg-green-50 p-2 rounded-md transition-colors group"
                 >

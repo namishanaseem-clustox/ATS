@@ -161,7 +161,7 @@ const DepartmentsPage = () => {
                                                     <div className="ml-4">
                                                         <div
                                                             className="text-sm font-medium text-indigo-600 hover:text-indigo-900 cursor-pointer hover:underline"
-                                                            onClick={() => navigate(`/jobs?dept=${dept.id}`)}
+                                                            onClick={() => navigate(`/departments/${dept.id}`)}
                                                         >
                                                             {dept.name}
                                                         </div>

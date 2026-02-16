@@ -1,7 +1,8 @@
-import React from 'react';
+import React from 'react'; // Force HMR update
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import DepartmentsPage from './pages/Departments/DepartmentsPage';
+import DepartmentDetail from './pages/Departments/DepartmentDetail';
 import JobBoard from './pages/JobBoard';
 import JobWizard from './pages/JobWizard';
 import JobDetail from './pages/JobDetail';
@@ -35,6 +36,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Navigate to="/jobs" replace />} />
               <Route path="/departments" element={<DepartmentsPage />} />
+              <Route path="/departments/:id" element={<DepartmentDetail />} />
               <Route path="/jobs" element={<JobBoard />} />
               <Route path="/jobs/new" element={<JobWizard />} />
               <Route path="/jobs/:id" element={<JobDetail />} />

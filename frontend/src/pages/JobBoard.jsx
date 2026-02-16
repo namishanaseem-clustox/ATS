@@ -5,7 +5,7 @@ import { getJobs } from '../api/jobs';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getDepartments } from '../api/departments';
 
-const JobBoard = () => {
+const JobBoard = ({ embeddedDepartmentId }) => {
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -18,7 +18,8 @@ const JobBoard = () => {
         setSearchQuery(inputValue);
     };
 
-    const departmentId = searchParams.get('dept');
+    // Use embedded ID if provided, otherwise check URL params
+    const departmentId = embeddedDepartmentId || searchParams.get('dept');
     const statusFilter = searchParams.get('status');
 
     // Filter jobs by status and search query
@@ -77,46 +78,49 @@ const JobBoard = () => {
     if (loading) return <div className="p-8 text-center text-gray-500">Loading jobs...</div>;
 
     return (
-        <div className="p-8 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    {selectedDepartment ? (
-                        <div>
-                            <div className="flex items-center gap-3">
-                                <h1 className="text-2xl font-bold text-gray-800">{selectedDepartment.name}</h1>
+        <div className={embeddedDepartmentId ? "p-4" : "p-8 max-w-7xl mx-auto"}>
+            {/* Show header ONLY if NOT embedded */}
+            {!embeddedDepartmentId && (
+                <div className="flex justify-between items-center mb-6">
+                    <div>
+                        {selectedDepartment ? (
+                            <div>
+                                <div className="flex items-center gap-3">
+                                    <h1 className="text-2xl font-bold text-gray-800">{selectedDepartment.name}</h1>
+                                </div>
+                                <p className="text-gray-500 mt-1">{selectedDepartment.description || 'No description available.'}</p>
                             </div>
-                            <p className="text-gray-500 mt-1">{selectedDepartment.description || 'No description available.'}</p>
-                        </div>
-                    ) : (
-                        <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
-                    )}
+                        ) : (
+                            <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
+                        )}
 
-                    {statusFilter && (
-                        <div className="mt-2">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
-                                Status: {statusFilter}
-                                <button
-                                    onClick={() => {
-                                        const newParams = new URLSearchParams(searchParams);
-                                        newParams.delete('status');
-                                        setSearchParams(newParams);
-                                    }}
-                                    className="ml-2 hover:bg-blue-100 rounded-full p-0.5"
-                                >
-                                    <X size={14} />
-                                </button>
-                            </span>
-                        </div>
-                    )}
+                        {statusFilter && (
+                            <div className="mt-2">
+                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
+                                    Status: {statusFilter}
+                                    <button
+                                        onClick={() => {
+                                            const newParams = new URLSearchParams(searchParams);
+                                            newParams.delete('status');
+                                            setSearchParams(newParams);
+                                        }}
+                                        className="ml-2 hover:bg-blue-100 rounded-full p-0.5"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
+                        className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+                    >
+                        <Plus size={20} className="mr-2" />
+                        Create Job
+                    </button>
                 </div>
-                <button
-                    onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
-                    className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                >
-                    <Plus size={20} className="mr-2" />
-                    Create Job
-                </button>
-            </div>
+            )}
 
             {/* Search and Filter Bar */}
             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
