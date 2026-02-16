@@ -7,6 +7,8 @@ import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
 
 import CandidateModal from '../components/CandidateModal';
+import { useAuth } from '../context/AuthContext';
+import RoleGuard from '../components/RoleGuard';
 
 const CandidateDetail = () => {
     const { id } = useParams();
@@ -15,6 +17,7 @@ const CandidateDetail = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const { user } = useAuth();
 
     const fetchCandidate = async () => {
         try {
@@ -65,13 +68,15 @@ const CandidateDetail = () => {
                 <div className="lg:col-span-1 space-y-6">
                     {/* Profile Card */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 flex flex-col items-center relative group">
-                        <button
-                            onClick={() => setIsEditModalOpen(true)}
-                            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-[#00C853] hover:bg-green-50 rounded-full transition-colors"
-                            title="Edit Profile"
-                        >
-                            <FileText size={20} /> {/* Using FileText as generic edit icon or import Pencil */}
-                        </button>
+                        <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                            <button
+                                onClick={() => setIsEditModalOpen(true)}
+                                className="absolute top-4 right-4 p-2 text-gray-400 hover:text-[#00C853] hover:bg-green-50 rounded-full transition-colors"
+                                title="Edit Profile"
+                            >
+                                <FileText size={20} /> {/* Using FileText as generic edit icon or import Pencil */}
+                            </button>
+                        </RoleGuard>
 
                         <div className="h-24 w-24 rounded-full bg-[#dcfce7] flex items-center justify-center text-[#166534] font-bold text-3xl mb-4">
                             {candidate.first_name?.[0]}{candidate.last_name?.[0]}
@@ -117,13 +122,15 @@ const CandidateDetail = () => {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <ApplicationStatusBadge status={app.application_status} />
-                                            <button
-                                                onClick={() => handleUnlinkJob(app.job_id, app.job?.title)}
-                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                                title="Remove Application"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <RoleGuard allowedRoles={['hr', 'owner']}>
+                                                <button
+                                                    onClick={() => handleUnlinkJob(app.job_id, app.job?.title)}
+                                                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Remove Application"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </RoleGuard>
                                         </div>
                                     </div>
                                 ))}

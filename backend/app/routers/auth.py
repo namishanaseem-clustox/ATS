@@ -1,5 +1,6 @@
 from datetime import timedelta
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -24,7 +25,7 @@ class UserCreate(BaseModel):
     role: UserRole
 
 class UserResponse(BaseModel):
-    id: str
+    id: UUID
     email: EmailStr
     full_name: str
     role: UserRole
@@ -71,9 +72,27 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+
+@router.get("/users", response_model=List[UserResponse])
+def read_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to view users"
+        )
+    users = db.query(User).all()
+    return users
+
 @router.post("/users", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    # In production, this should be protected or only allow initial admin creation
+def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    # Only Owner and HR can create new users
+    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to create new users"
+        )
+
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -90,6 +109,44 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+    return new_user
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    role: Optional[UserRole] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+
+@router.put("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update users"
+        )
+    
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Optional checks could be added here (e.g., HR cannot edit Owner)
+
+    update_data = user_update.dict(exclude_unset=True)
+    
+    if "password" in update_data:
+        password = update_data.pop("password")
+        if password: # strict check to ensure not empty string if sent?
+             hashed_password = get_password_hash(password)
+             db_user.hashed_password = hashed_password
+
+    for key, value in update_data.items():
+        setattr(db_user, key, value)
+
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 
 @router.get("/users/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):

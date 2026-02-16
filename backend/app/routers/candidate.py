@@ -3,46 +3,100 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from uuid import UUID
 from app.database import get_db
-from app.schemas.candidate import CandidateCreate, CandidateResponse, CandidateUpdate
+from app.schemas.candidate import CandidateCreate, CandidateResponse, CandidateUpdate, CandidateBasicResponse
 from app.services.candidate_service import candidate_service
+from app.models.user import UserRole, User
+from app.dependencies import RoleChecker
+from app.routers.auth import get_current_active_user
 
 router = APIRouter(
     prefix="/candidates",
     tags=["candidates"],
-    responses={404: {"description": "Not found"}},
 )
+@router.get("/")
+def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    # Query without defer options, trusting manual serialization to pick fields
+    from app.models.candidate import Candidate
+    candidates = db.query(Candidate).offset(skip).limit(limit).all()
+    
+    # Manually construction response to bypass Pydantic serialization hang
+    results = []
+    for c in candidates:
+        try:
+            # Basic fields
+            c_dict = {
+                "id": str(c.id),
+                "first_name": c.first_name,
+                "last_name": c.last_name,
+                "email": c.email,
+                "phone": c.phone,
+                "location": c.location,
+                "current_company": c.current_company,
+                "current_position": c.current_position,
+                "experience_years": c.experience_years,
+                "nationality": c.nationality,
+                "notice_period": c.notice_period,
+                "skills": c.skills or [],
+                "education": c.education or [],
+                "experience_history": c.experience_history or [],
+                "social_links": c.social_links or {},
+                "created_at": c.created_at.isoformat() if c.created_at else None,
+                "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+                "resume_file_path": c.resume_file_path,
+                "parsed_at": c.parsed_at.isoformat() if c.parsed_at else None,
+            }
+            
+            # Redact salary for Interviewers
+            if current_user.role == UserRole.INTERVIEWER:
+                c_dict["current_salary"] = None
+                c_dict["expected_salary"] = None
+            else:
+                c_dict["current_salary"] = c.current_salary
+                c_dict["expected_salary"] = c.expected_salary
 
-@router.get("/", response_model=List[CandidateResponse])
-def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    candidates = candidate_service.get_candidates(db, skip=skip, limit=limit)
-    return candidates
+            results.append(c_dict)
+        except Exception as e:
+            # Skip invalid records but don't crash the whole list
+            continue
+            
+    return results
 
-@router.post("/", response_model=CandidateResponse)
+@router.post("/", response_model=CandidateResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
 def create_candidate(candidate: CandidateCreate, db: Session = Depends(get_db)):
     return candidate_service.create_candidate(db=db, candidate=candidate)
 
 @router.get("/{candidate_id}", response_model=CandidateResponse)
-def read_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
+def read_candidate(candidate_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_candidate = candidate_service.get_candidate(db, candidate_id=candidate_id)
     if db_candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
+    
+    # Redact salary for Interviewers
+    if current_user.role == UserRole.INTERVIEWER:
+        # We need to be careful not to mutate the DB object directly if it's attached to session
+        # But for response serialization it might be okay. 
+        # Safer to just set the attributes on the object before return, 
+        # as long as we don't commit.
+        db_candidate.current_salary = None
+        db_candidate.expected_salary = None
+
     return db_candidate
 
-@router.put("/{candidate_id}", response_model=CandidateResponse)
+@router.put("/{candidate_id}", response_model=CandidateResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
 def update_candidate(candidate_id: UUID, candidate: CandidateUpdate, db: Session = Depends(get_db)):
     db_candidate = candidate_service.update_candidate(db, candidate_id, candidate)
     if not db_candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return db_candidate
 
-@router.delete("/{candidate_id}", response_model=CandidateResponse)
+@router.delete("/{candidate_id}", response_model=CandidateResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER]))])
 def delete_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
     db_candidate = candidate_service.delete_candidate(db, candidate_id)
     if not db_candidate:
         raise HTTPException(status_code=404, detail="Candidate not found")
     return db_candidate
 
-@router.delete("/{candidate_id}/jobs/{job_id}", status_code=204)
+@router.delete("/{candidate_id}/jobs/{job_id}", status_code=204, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER]))])
 def remove_job_application(candidate_id: UUID, job_id: UUID, db: Session = Depends(get_db)):
     success = candidate_service.remove_job_application(db, candidate_id, job_id)
     if not success:
@@ -55,7 +109,8 @@ from app.services.parser_service import parser_service
 async def upload_resume(
     file: UploadFile = File(...), 
     job_id: Optional[UUID] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _: User = Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))
 ):
     # 1. Read file content
     content = await file.read()

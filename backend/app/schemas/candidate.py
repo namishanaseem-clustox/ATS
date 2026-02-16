@@ -89,6 +89,9 @@ class CandidateBasicResponse(CandidateBase):
         from_attributes = True
 
 
+
+
+
 # --- Job Application Schemas ---
 # Defined after CandidateResponse to allow forward reference
 

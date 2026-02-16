@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Search } from 'lucide-react';
+import { Plus, X, Search, Trash2, Archive } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import RoleGuard from '../components/RoleGuard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getJobs, updateJob, permanentlyDeleteJob } from '../api/jobs';
@@ -13,6 +15,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
+    const { user } = useAuth();
 
     // Permanent Delete State
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -133,13 +136,15 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                             </div>
                         )}
                     </div>
-                    <button
-                        onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
-                        className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                    >
-                        <Plus size={20} className="mr-2" />
-                        Create Job
-                    </button>
+                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                        <button
+                            onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
+                            className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+                        >
+                            <Plus size={20} className="mr-2" />
+                            Create Job
+                        </button>
+                    </RoleGuard>
                 </div>
             )}
 
@@ -260,35 +265,39 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                         </td>
                                         {statusFilter === 'Archived' && (
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={async (e) => {
-                                                        e.stopPropagation();
-                                                        if (confirm('Are you sure you want to unarchive this job?')) {
-                                                            try {
-                                                                await updateJob(job.id, { status: 'Draft' });
-                                                                // Refresh list
-                                                                const data = await getJobs(departmentId, statusFilter); // Pass correct filter
-                                                                setJobs(data);
-                                                            } catch (error) {
-                                                                console.error("Failed to unarchive", error);
-                                                                alert("Failed to unarchive job");
+                                                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            if (confirm('Are you sure you want to unarchive this job?')) {
+                                                                try {
+                                                                    await updateJob(job.id, { status: 'Draft' });
+                                                                    // Refresh list
+                                                                    const data = await getJobs(departmentId, statusFilter); // Pass correct filter
+                                                                    setJobs(data);
+                                                                } catch (error) {
+                                                                    console.error("Failed to unarchive", error);
+                                                                    alert("Failed to unarchive job");
+                                                                }
                                                             }
-                                                        }
-                                                    }}
-                                                    className="text-[#00C853] hover:text-green-900 font-medium"
-                                                >
-                                                    Unarchive
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setJobToDelete(job);
-                                                        setIsDeleteModalOpen(true);
-                                                    }}
-                                                    className="text-red-500 hover:text-red-700 font-medium ml-4"
-                                                >
-                                                    Delete
-                                                </button>
+                                                        }}
+                                                        className="text-[#00C853] hover:text-green-900 font-medium"
+                                                    >
+                                                        Unarchive
+                                                    </button>
+                                                </RoleGuard>
+                                                {['hr', 'owner'].includes(user?.role) && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setJobToDelete(job);
+                                                            setIsDeleteModalOpen(true);
+                                                        }}
+                                                        className="text-red-500 hover:text-red-700 font-medium ml-4"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </td>
                                         )}
                                     </tr>

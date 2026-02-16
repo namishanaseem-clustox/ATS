@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from app.models.candidate import Candidate, JobApplication
 from app.schemas.candidate import CandidateCreate, CandidateUpdate
 from uuid import UUID
@@ -15,14 +15,12 @@ if not os.path.exists(UPLOAD_DIR):
 class CandidateService:
     def get_candidate(self, db: Session, candidate_id: UUID):
         return db.query(Candidate).options(
-            joinedload(Candidate.applications).joinedload(JobApplication.job)
+            selectinload(Candidate.applications).selectinload(JobApplication.job)
         ).filter(Candidate.id == candidate_id).first()
 
     def get_candidates(self, db: Session, skip: int = 0, limit: int = 100):
-        # We might want to join applications to show "Applied to X" in the list
-        return db.query(Candidate).options(
-            joinedload(Candidate.applications).joinedload(JobApplication.job)
-        ).offset(skip).limit(limit).all()
+        # Simplified query without loading applications to avoid performance issues
+        return db.query(Candidate).offset(skip).limit(limit).all()
 
     def create_candidate(self, db: Session, candidate: CandidateCreate):
         # Extract job_id if present

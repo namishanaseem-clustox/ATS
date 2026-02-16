@@ -9,10 +9,13 @@ import NoteList from '../components/NoteList';
 import JobActivityLog from '../components/JobActivityLog';
 import AIScreeningModal from '../components/AIScreeningModal';
 import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import RoleGuard from '../components/RoleGuard';
 
 const JobDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [job, setJob] = useState(null);
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -176,16 +179,18 @@ const JobDetail = () => {
                             <p className="text-sm text-gray-500 mt-1">{job.job_code}</p>
                         </div>
                         {job.status === 'Draft' && (
-                            <button
-                                onClick={() => navigate(`/jobs/${id}/edit`)}
-                                className="ml-2 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                                title="Edit Job"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
+                            <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                <button
+                                    onClick={() => navigate(`/jobs/${id}/edit`)}
+                                    className="ml-2 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                                    title="Edit Job"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                            </RoleGuard>
                         )}
                     </div>
                     <span className={`mt-2 inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800`}>
@@ -323,7 +328,7 @@ const JobDetail = () => {
                                                 applications: [app] // Mock linking for card display
                                             }}
                                             onDelete={() => handleCandidateDelete(app.candidate.id)}
-                                            onAIScreen={() => handleAIScreenClick(app)}
+                                            onAIScreen={['hr', 'owner', 'hiring_manager'].includes(user?.role) ? () => handleAIScreenClick(app) : undefined}
                                         />
                                     ))
                             ) : (
@@ -384,16 +389,18 @@ const JobDetail = () => {
                                                 : 'Change job status back to Draft.'}
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={handleStatusToggle}
-                                        className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${job.status === 'Draft'
-                                            ? 'bg-[#00C853] hover:bg-green-700'
-                                            : 'bg-gray-600 hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        <Send size={16} className="mr-2" />
-                                        {job.status === 'Draft' ? 'Publish' : 'Unpublish'}
-                                    </button>
+                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                        <button
+                                            onClick={handleStatusToggle}
+                                            className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${job.status === 'Draft'
+                                                ? 'bg-[#00C853] hover:bg-green-700'
+                                                : 'bg-gray-600 hover:bg-gray-700'
+                                                }`}
+                                        >
+                                            <Send size={16} className="mr-2" />
+                                            {job.status === 'Draft' ? 'Publish' : 'Unpublish'}
+                                        </button>
+                                    </RoleGuard>
                                 </div>
 
                                 <div className="flex items-center justify-between p-4 border rounded-lg border-gray-200">
@@ -401,13 +408,15 @@ const JobDetail = () => {
                                         <h4 className="font-medium text-gray-900">Clone Job</h4>
                                         <p className="text-sm text-gray-500">Create a copy of this job posting in Draft status.</p>
                                     </div>
-                                    <button
-                                        onClick={handleClone}
-                                        className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                    >
-                                        <Copy size={16} className="mr-2" />
-                                        Clone
-                                    </button>
+                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                        <button
+                                            onClick={handleClone}
+                                            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                                        >
+                                            <Copy size={16} className="mr-2" />
+                                            Clone
+                                        </button>
+                                    </RoleGuard>
                                 </div>
 
                                 <div className="flex items-center justify-between p-4 border rounded-lg border-red-200 bg-red-50">
@@ -415,13 +424,15 @@ const JobDetail = () => {
                                         <h4 className="font-medium text-red-900">Archive Job</h4>
                                         <p className="text-sm text-red-500">Hide this job from the board. This action is reversible.</p>
                                     </div>
-                                    <button
-                                        onClick={handleDelete}
-                                        className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                                    >
-                                        <Archive size={16} className="mr-2" />
-                                        Archive
-                                    </button>
+                                    <RoleGuard allowedRoles={['hr', 'owner']}>
+                                        <button
+                                            onClick={handleDelete}
+                                            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+                                        >
+                                            <Archive size={16} className="mr-2" />
+                                            Archive
+                                        </button>
+                                    </RoleGuard>
                                 </div>
                             </div>
                         </div>
