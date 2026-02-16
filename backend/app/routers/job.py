@@ -6,8 +6,9 @@ from uuid import UUID
 from app.database import get_db
 from app.schemas.job import JobCreate, JobUpdate, JobResponse, JobActivityResponse
 from app.services.job_service import job_service
-from app.models.user import UserRole
+from app.models.user import UserRole, User
 from app.dependencies import RoleChecker
+from app.routers.auth import get_current_active_user
 
 router = APIRouter(
     prefix="/jobs",
@@ -20,10 +21,31 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
     return job_service.create_job(db=db, job=job)
 
 @router.get("/", response_model=List[JobResponse])
-def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, status: str = None, db: Session = Depends(get_db)):
+def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, status: str = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     if department_id:
         return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit, status=status)
-    return job_service.get_jobs(db, skip=skip, limit=limit, status=status)
+    # If Hiring Manager, restrict to their department's jobs
+    if current_user.role == UserRole.HIRING_MANAGER:
+        # We need to filter based on the department they own
+        # This requires joining with Department
+        # Since service doesn't support complex filtering yet, we might need to update service or do it here if possible
+        # Better to add a param to service or handle it there.
+        # Let's add 'owner_id' param to get_jobs and handle logic in service?
+        # Or just pass current_user to service and let it handle permissions?
+        # Let's pass owner_id to get_jobs if we want to filter by department owner.
+        # Check if user has a department assigned as owner
+        # We can also just fetch their department ID first? 
+        # But wait, User model has department_id (assignment) but Department has owner_id.
+        # The requirement says "Assign Hiring Manager to Department".
+        # So we should filter jobs where Job.department.owner_id == current_user.id
+        # Let's update service to support this or do a custom query here?
+        # Service is better.
+        pass
+
+    # Actually, let's update service to accept a filter or just modify the query here if we expose query builder.
+    # Service 'get_jobs' returns list.
+    # Let's modify service.get_jobs to accept 'filter_by_owner_id'.
+    return job_service.get_jobs(db, skip=skip, limit=limit, status=status, filter_by_owner_id=current_user.id if current_user.role == UserRole.HIRING_MANAGER else None)
 
 @router.get("/department/{department_id}", response_model=List[JobResponse])
 def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100, status: str = None, db: Session = Depends(get_db)):

@@ -17,7 +17,14 @@ router = APIRouter(
 def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     # Query without defer options, trusting manual serialization to pick fields
     from app.models.candidate import Candidate
-    candidates = db.query(Candidate).offset(skip).limit(limit).all()
+    
+    filter_by_owner_id = None
+    if current_user.role == UserRole.HIRING_MANAGER:
+        filter_by_owner_id = current_user.id
+
+    # Pass filter to service (which we need to update to support it)
+    # candidates = db.query(Candidate).offset(skip).limit(limit).all()
+    candidates = candidate_service.get_candidates(db, skip=skip, limit=limit, filter_by_owner_id=filter_by_owner_id)
     
     # Manually construction response to bypass Pydantic serialization hang
     results = []

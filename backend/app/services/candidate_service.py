@@ -18,9 +18,21 @@ class CandidateService:
             selectinload(Candidate.applications).selectinload(JobApplication.job)
         ).filter(Candidate.id == candidate_id).first()
 
-    def get_candidates(self, db: Session, skip: int = 0, limit: int = 100):
+    def get_candidates(self, db: Session, skip: int = 0, limit: int = 100, filter_by_owner_id: UUID = None):
+        query = db.query(Candidate)
+        
+        if filter_by_owner_id:
+             # Join Candidate -> JobApplication -> Job -> Department
+             # We need to ensure we don't get duplicates if a candidate applied to multiple jobs in same department
+             from app.models.department import Department
+             from app.models.job import Job
+             
+             query = query.join(JobApplication).join(Job).join(Department).filter(
+                 Department.owner_id == filter_by_owner_id
+             ).distinct()
+             
         # Simplified query without loading applications to avoid performance issues
-        return db.query(Candidate).offset(skip).limit(limit).all()
+        return query.offset(skip).limit(limit).all()
 
     def create_candidate(self, db: Session, candidate: CandidateCreate):
         # Extract job_id if present

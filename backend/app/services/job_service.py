@@ -34,28 +34,44 @@ class JobService:
             query = query.filter(Job.is_deleted == False)
         return query.first()
 
-    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100, status: str = None):
+    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100, status: str = None, filter_by_owner_id: UUID = None):
         if status == JobStatus.ARCHIVED.value:
             query = db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == True)
-            jobs = query.offset(skip).limit(limit).all()
-            
-            # Auto-repair: Ensure status is ARCHIVED in DB for deleted jobs
-            dirty = False
-            for job in jobs:
-                if job.status != JobStatus.ARCHIVED.value:
-                    job.status = JobStatus.ARCHIVED.value
-                    db.add(job)
-                    dirty = True
-            
-            if dirty:
-                db.commit()
-                # No refresh needed, objects are already updated in session
-                
-            return jobs
         else:
             query = db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == False)
-            if status:
-                query = query.filter(Job.status == status)
+
+        if status and status != JobStatus.ARCHIVED.value:
+            query = query.filter(Job.status == status)
+
+        if filter_by_owner_id:
+            # Import Department to avoid circular import if needed, or rely on relationship
+            from app.models.department import Department
+            query = query.join(Department).filter(Department.owner_id == filter_by_owner_id)
+
+        # Handle auto-repair for archived jobs if needed (simplified from original for brevity, but keeping logic)
+        # Original logic had separate blocks for ARCHIVED vs normal. 
+        # I combined them but query building is slightly different.
+        # Let's preserve original structure but inject filter.
+
+        if status == JobStatus.ARCHIVED.value:
+             # Re-apply filter_by_owner_id to the archived query
+             if filter_by_owner_id:
+                from app.models.department import Department
+                query = query.join(Department).filter(Department.owner_id == filter_by_owner_id)
+
+             jobs = query.offset(skip).limit(limit).all()
+             
+             # Auto-repair logic
+             dirty = False
+             for job in jobs:
+                 if job.status != JobStatus.ARCHIVED.value:
+                     job.status = JobStatus.ARCHIVED.value
+                     db.add(job)
+                     dirty = True
+             if dirty:
+                 db.commit()
+             return jobs
+        else:
             return query.offset(skip).limit(limit).all()
         
     def get_jobs_by_department(self, db: Session, department_id: UUID, skip: int = 0, limit: int = 100, status: str = None):
