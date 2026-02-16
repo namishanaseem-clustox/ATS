@@ -42,6 +42,13 @@ def delete_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Candidate not found")
     return db_candidate
 
+@router.delete("/{candidate_id}/jobs/{job_id}", status_code=204)
+def remove_job_application(candidate_id: UUID, job_id: UUID, db: Session = Depends(get_db)):
+    success = candidate_service.remove_job_application(db, candidate_id, job_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Job application not found")
+    return
+
 from app.services.parser_service import parser_service
 
 @router.post("/upload")

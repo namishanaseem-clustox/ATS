@@ -152,6 +152,22 @@ const JobDetail = () => {
             {/* Sidebar / Tabs */}
             <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
                 <div className="p-4 border-b border-gray-100">
+                    {/* Archived Banner */}
+                    {job.status === 'Archived' && (
+                        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <Archive className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-yellow-700">
+                                        This job is currently <strong>archived</strong>. It is hidden from the main job board.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex justify-between items-start">
                         <div className="overflow-hidden">
                             <h2 className="text-xl font-bold text-gray-800 truncate" title={job.title}>

@@ -1,7 +1,11 @@
 import client from './client';
 
-export const getJobs = async (departmentId = null) => {
-    const params = departmentId ? { department_id: departmentId } : {};
+export const getJobs = async (departmentId = null, status = null) => {
+    const params = {};
+    if (departmentId) params.department_id = departmentId;
+    if (status) params.status = status;
+
+    // Support passing an object as first arg for flexibility if needed in future, but sticking to args for now to match current usage
     const { data } = await client.get('/jobs', { params });
     return data;
 };
@@ -33,6 +37,12 @@ export const updatePipeline = async (id, config) => {
 
 export const deleteJob = async (id) => {
     const { data } = await client.delete(`/jobs/${id}`);
+    return data;
+};
+
+export const permanentlyDeleteJob = async (id) => {
+    // This is a hard delete
+    const { data } = await client.delete(`/jobs/${id}/permanent`);
     return data;
 };
 

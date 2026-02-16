@@ -18,19 +18,20 @@ def create_job(job: JobCreate, db: Session = Depends(get_db)):
     return job_service.create_job(db=db, job=job)
 
 @router.get("/", response_model=List[JobResponse])
-def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, db: Session = Depends(get_db)):
+def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, status: str = None, db: Session = Depends(get_db)):
     if department_id:
-        return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit)
-    return job_service.get_jobs(db, skip=skip, limit=limit)
+        return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit, status=status)
+    return job_service.get_jobs(db, skip=skip, limit=limit, status=status)
 
 @router.get("/department/{department_id}", response_model=List[JobResponse])
-def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit)
+def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100, status: str = None, db: Session = Depends(get_db)):
+    return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit, status=status)
 
 @router.get("/{job_id}", response_model=JobResponse)
 def read_job(job_id: UUID, db: Session = Depends(get_db)):
-    db_job = job_service.get_job(db, job_id=job_id)
-    if db_job is None:
+    # Allow fetching archived jobs by ID
+    db_job = job_service.get_job(db, job_id=job_id, include_deleted=True)
+    if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
     return db_job
 
@@ -47,6 +48,17 @@ def delete_job(job_id: UUID, db: Session = Depends(get_db)):
     if db_job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     return db_job
+
+@router.delete("/{job_id}/permanent", status_code=status.HTTP_204_NO_CONTENT)
+def permanently_delete_job(job_id: UUID, db: Session = Depends(get_db)):
+    try:
+        result = job_service.permanently_delete_job(db, job_id=job_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="Job not found")
+        # Return nothing on success (204)
+        return
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/{job_id}/clone", response_model=JobResponse)
 def clone_job(job_id: UUID, db: Session = Depends(get_db)):

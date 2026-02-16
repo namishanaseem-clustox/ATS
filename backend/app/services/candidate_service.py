@@ -239,4 +239,19 @@ class CandidateService:
         db.refresh(application)
         return application
 
+    def remove_job_application(self, db: Session, candidate_id: UUID, job_id: UUID):
+        # Find the application
+        application = db.query(JobApplication).filter(
+            JobApplication.candidate_id == candidate_id,
+            JobApplication.job_id == job_id
+        ).first()
+
+        if not application:
+            return False
+
+        # Delete the application (unlink)
+        db.delete(application)
+        db.commit()
+        return True
+
 candidate_service = CandidateService()

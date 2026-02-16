@@ -38,3 +38,8 @@ export const getJobCandidates = async (jobId) => {
     const { data } = await client.get(`/jobs/${jobId}/candidates`);
     return data;
 };
+
+export const unlinkJobApplication = async (candidateId, jobId) => {
+    const { data } = await client.delete(`/candidates/${candidateId}/jobs/${jobId}`);
+    return data;
+};

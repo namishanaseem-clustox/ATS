@@ -172,13 +172,13 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                                     </h4>
 
                                                                                     {/* Start Kebab Menu */}
-                                                                                    <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                                    <div className="absolute top-3 right-2">
                                                                                         <button
                                                                                             onClick={(e) => handleScoreClick(e, app)}
-                                                                                            className="p-1 hover:bg-gray-100 rounded text-gray-400 hover:text-gray-600"
-                                                                                            title="Add Score"
+                                                                                            className="px-2 py-1 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 rounded text-xs font-medium flex items-center shadow-sm transition-colors"
+                                                                                            title="Rate Candidate"
                                                                                         >
-                                                                                            <MoreHorizontal size={16} />
+                                                                                            <Star size={12} className="mr-1 text-yellow-500" /> Rate
                                                                                         </button>
                                                                                     </div>
                                                                                 </div>

@@ -28,14 +28,58 @@ class JobService:
         db.add(activity)
         db.commit()
 
-    def get_job(self, db: Session, job_id: UUID):
-        return db.query(Job).options(joinedload(Job.department)).filter(Job.id == job_id, Job.is_deleted == False).first()
+    def get_job(self, db: Session, job_id: UUID, include_deleted: bool = False):
+        query = db.query(Job).options(joinedload(Job.department)).filter(Job.id == job_id)
+        if not include_deleted:
+            query = query.filter(Job.is_deleted == False)
+        return query.first()
 
-    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100):
-        return db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == False).offset(skip).limit(limit).all()
+    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100, status: str = None):
+        if status == JobStatus.ARCHIVED.value:
+            query = db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == True)
+            jobs = query.offset(skip).limit(limit).all()
+            
+            # Auto-repair: Ensure status is ARCHIVED in DB for deleted jobs
+            dirty = False
+            for job in jobs:
+                if job.status != JobStatus.ARCHIVED.value:
+                    job.status = JobStatus.ARCHIVED.value
+                    db.add(job)
+                    dirty = True
+            
+            if dirty:
+                db.commit()
+                # No refresh needed, objects are already updated in session
+                
+            return jobs
+        else:
+            query = db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == False)
+            if status:
+                query = query.filter(Job.status == status)
+            return query.offset(skip).limit(limit).all()
         
-    def get_jobs_by_department(self, db: Session, department_id: UUID, skip: int = 0, limit: int = 100):
-        return db.query(Job).options(joinedload(Job.department)).filter(Job.department_id == department_id, Job.is_deleted == False).offset(skip).limit(limit).all()
+    def get_jobs_by_department(self, db: Session, department_id: UUID, skip: int = 0, limit: int = 100, status: str = None):
+        if status == JobStatus.ARCHIVED.value:
+             query = db.query(Job).options(joinedload(Job.department)).filter(Job.department_id == department_id, Job.is_deleted == True)
+             jobs = query.offset(skip).limit(limit).all()
+             
+             # Auto-repair for department-specific fetch too
+             dirty = False
+             for job in jobs:
+                 if job.status != JobStatus.ARCHIVED.value:
+                     job.status = JobStatus.ARCHIVED.value
+                     db.add(job)
+                     dirty = True
+                     
+             if dirty:
+                 db.commit()
+                 
+             return jobs
+        else:
+            query = db.query(Job).options(joinedload(Job.department)).filter(Job.department_id == department_id, Job.is_deleted == False)
+            if status:
+                query = query.filter(Job.status == status)
+            return query.offset(skip).limit(limit).all()
 
     def create_job(self, db: Session, job: JobCreate, user_id: UUID = None):
         job_code = self._generate_job_code(db, job.title)
@@ -48,7 +92,8 @@ class JobService:
         return db_job
 
     def update_job(self, db: Session, job_id: UUID, job_update: JobUpdate, user_id: UUID = None):
-        db_job = self.get_job(db, job_id)
+        # Allow updating deleted jobs (e.g. to unarchive)
+        db_job = self.get_job(db, job_id, include_deleted=True)
         if not db_job:
             return None
         
@@ -59,6 +104,12 @@ class JobService:
             if old_value != value:
                 changes[key] = {"old": str(old_value), "new": str(value)}
                 setattr(db_job, key, value)
+                
+            # Auto-handle is_deleted if status is changing from/to Archived
+            if key == "status":
+                if value != JobStatus.ARCHIVED.value and db_job.is_deleted:
+                     db_job.is_deleted = False
+                     changes["is_deleted"] = {"old": "True", "new": "False"}
             
         if changes:
             db.add(db_job)
@@ -124,10 +175,46 @@ class JobService:
             return None
             
         db_job.is_deleted = True
+        db_job.status = JobStatus.ARCHIVED.value
         db.add(db_job)
         db.commit()
         
         self.log_activity(db, job_id, "ARCHIVED", None, user_id)
         return db_job
+
+    def permanently_delete_job(self, db: Session, job_id: UUID, user_id: UUID = None):
+        # Only allow permanent deletion of already-archived jobs
+        # Use include_deleted=True to find it
+        db_job = self.get_job(db, job_id, include_deleted=True)
+        if not db_job:
+            return None
+        
+        # Safety check: must be archived first
+        if not db_job.is_deleted:
+            raise ValueError("Job must be archived before permanent deletion")
+            
+        # Check for candidates - Prevention logic
+        # We need to import Candidate/JobApplication logic or query directly.
+        # To avoid circular imports, we'll do a direct query on the relationship if loaded, or query DB.
+        # db_job.candidates might not be loaded. 
+        # Let's check through the relationship or a count query.
+        from app.models.candidate import JobApplication
+        candidate_count = db.query(JobApplication).filter(JobApplication.job_id == job_id).count()
+        
+        if candidate_count > 0:
+            raise ValueError(f"Cannot delete job with {candidate_count} active candidates. Please remove candidates first.")
+        
+        # Log before deletion (this log will be deleted? No, JobActivity is separate but CASCADE might delete it if linked to Job)
+        # If JobActivity has cascade delete on job_id, the logs will be gone.
+        # But we probably want to keep system logs? 
+        # Usually permanent delete means everything gone. 
+        # If we want to keep logs, we need to set job_id to NULL or have a separate audit log.
+        # For now, we accept valuable data loss as "Permanent Delete".
+        
+        # Hard delete
+        db.delete(db_job)
+        db.commit()
+        
+        return True
 
 job_service = JobService()

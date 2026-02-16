@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCandidate } from '../api/candidates';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, FileText } from 'lucide-react';
+import { getCandidate, unlinkJobApplication } from '../api/candidates';
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, FileText, Trash2 } from 'lucide-react';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
@@ -30,6 +30,21 @@ const CandidateDetail = () => {
     useEffect(() => {
         fetchCandidate();
     }, [id]);
+
+    const handleUnlinkJob = async (jobId, jobTitle) => {
+        if (!window.confirm(`Are you sure you want to remove the application for "${jobTitle}"? This will unlink the candidate from this job.`)) {
+            return;
+        }
+
+        try {
+            await unlinkJobApplication(id, jobId);
+            // Refresh candidate data
+            fetchCandidate();
+        } catch (error) {
+            console.error("Failed to unlink job", error);
+            alert("Failed to remove application. Please try again.");
+        }
+    };
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading candidate profile...</div>;
     if (!candidate) return <div className="p-8 text-center text-red-500">Candidate not found</div>;
@@ -95,12 +110,21 @@ const CandidateDetail = () => {
                         {candidate.applications && candidate.applications.length > 0 ? (
                             <div className="space-y-4">
                                 {candidate.applications.map(app => (
-                                    <div key={app.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                    <div key={app.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-100 group">
                                         <div>
                                             <p className="font-medium text-sm text-gray-900">{app.job ? app.job.title : "Unknown Job"}</p>
                                             <p className="text-xs text-gray-500 mt-0.5">Applied: {new Date(app.applied_at).toLocaleDateString()}</p>
                                         </div>
-                                        <ApplicationStatusBadge status={app.application_status} />
+                                        <div className="flex items-center gap-2">
+                                            <ApplicationStatusBadge status={app.application_status} />
+                                            <button
+                                                onClick={() => handleUnlinkJob(app.job_id, app.job?.title)}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                                title="Remove Application"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
