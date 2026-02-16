@@ -1,17 +1,37 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import { getUsers } from '../api/users';
+import { useQuery } from '@tanstack/react-query';
 
 const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
     // Simple form state management
-    const [formData, setFormData] = React.useState({
+    const [formData, setFormData] = useState({
         name: '',
         description: '',
         location: '',
         status: 'Active',
-        owner_id: '' // handling UUID might be tricky without validation, generic text for now
+        owner_id: ''
     });
+
+    const { data: users } = useQuery({
+        queryKey: ['users'],
+        queryFn: getUsers,
+        enabled: isOpen, // Only fetch when modal is open
+    });
+
+    // Filter users to show only potential hiring managers (Owner, HR, Hiring Manager)
+    // Or just show all? Requirement says "assign a hiring manager", implying role specific.
+    // Let's filter for relevant roles to keep list clean, or just all active users.
+    // Let's assume any user can be an owner for now, or filter by 'hiring_manager' role if strict.
+    // Plan said "Fetch list of users". Let's map all users for now.
+    const userOptions = (users || []).map(u => ({
+        value: u.id,
+        label: `${u.full_name} (${u.email})`
+    }));
+    // Add "Unassigned" option
+    userOptions.unshift({ value: '', label: 'Unassigned' });
 
     useEffect(() => {
         if (initialData) {
@@ -87,6 +107,17 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             rows="3"
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none"
                             placeholder="Brief description of the department..."
+                        />
+                    </div>
+
+                    <div>
+                        <CustomSelect
+                            label="Department Owner (Hiring Manager)"
+                            name="owner_id"
+                            value={formData.owner_id}
+                            onChange={handleChange}
+                            options={userOptions}
+                            placeholder="Select a manager..."
                         />
                     </div>
 

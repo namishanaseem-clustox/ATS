@@ -8,6 +8,7 @@ from app.schemas.department import DepartmentCreate, DepartmentUpdate, Departmen
 from app.services.department import department_service
 from app.routers.auth import get_current_active_user
 from app.models.user import User, UserRole
+from app.models.department import Department
 
 router = APIRouter(
     prefix="/departments",
@@ -26,8 +27,12 @@ def create_department(department: DepartmentCreate, db: Session = Depends(get_db
 
 @router.get("/", response_model=List[DepartmentResponse])
 def read_departments(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    # All active users can read departments
-    departments = department_service.get_departments(db, skip=skip, limit=limit)
+    # All active users can read departments, but Hiring Managers only see their own
+    query = department_service.get_departments_query(db)
+    if current_user.role == UserRole.HIRING_MANAGER:
+        query = query.filter(Department.owner_id == current_user.id)
+    
+    departments = query.offset(skip).limit(limit).all()
     return departments
 
 @router.get("/{department_id}", response_model=DepartmentResponse)

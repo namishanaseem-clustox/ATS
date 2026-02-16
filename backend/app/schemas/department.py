@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from uuid import UUID
 from datetime import datetime
 from typing import Optional, List
+from app.schemas.user import UserResponse
 
 # Shared properties
 class DepartmentBase(BaseModel):
@@ -34,6 +35,10 @@ class Department(DepartmentInDBBase):
     active_jobs_count: int = 0
     total_jobs_count: int = 0
     total_members_count: int = 0
+    
+    # We need to forward reference or use a simplified User schema to avoid circular imports if possible
+    # For now, let's just return the owner dictionary or object if Pydantic handles it
+    owner: Optional[UserResponse] = None
 
 class DepartmentResponse(Department):
     pass

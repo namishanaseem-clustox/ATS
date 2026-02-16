@@ -24,8 +24,11 @@ class DepartmentService:
             dept.total_members_count = 0 
         return dept
 
+    def get_departments_query(self, db: Session):
+        return db.query(Department).filter(Department.is_deleted == False)
+
     def get_departments(self, db: Session, skip: int = 0, limit: int = 100):
-        departments = db.query(Department).filter(Department.is_deleted == False).offset(skip).limit(limit).all()
+        departments = self.get_departments_query(db).offset(skip).limit(limit).all()
         for dept in departments:
              dept.active_jobs_count = db.query(Job).filter(
                 Job.department_id == dept.id,
@@ -37,6 +40,7 @@ class DepartmentService:
                 Job.is_deleted == False
             ).count()
              dept.total_members_count = 0
+             # Owner is automatically populated by relationship
         return departments
 
     def create_department(self, db: Session, department: DepartmentCreate):

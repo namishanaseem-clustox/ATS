@@ -14,25 +14,7 @@ router = APIRouter()
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-    full_name: str
-    role: UserRole
-
-class UserResponse(BaseModel):
-    id: UUID
-    email: EmailStr
-    full_name: str
-    role: UserRole
-    is_active: bool
-
-    class Config:
-        orm_mode = True
+from app.schemas.user import UserCreate, UserResponse, Token, UserUpdate
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -117,12 +99,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
 
     return new_user
 
-class UserUpdate(BaseModel):
-    full_name: Optional[str] = None
-    role: Optional[UserRole] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    is_active: Optional[bool] = None
+
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):

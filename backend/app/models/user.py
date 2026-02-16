@@ -26,5 +26,5 @@ class User(Base):
     department_id = Column(UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True)
     
     # Relationships
-    department = relationship("Department", back_populates="managed_by_users")
+    department = relationship("Department", back_populates="managed_by_users", foreign_keys=[department_id])
     # managed_jobs = relationship("Job", back_populates="hiring_manager") # To be added to Job model

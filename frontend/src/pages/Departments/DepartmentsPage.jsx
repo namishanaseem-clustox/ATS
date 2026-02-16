@@ -191,9 +191,19 @@ const DepartmentsPage = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    {/* Placeholder Avatar */}
-                                                    <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 mr-2">OA</div>
-                                                    <div className="text-sm text-gray-500">Unassigned</div>
+                                                    {dept.owner ? (
+                                                        <>
+                                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs text-indigo-700 mr-2 font-bold">
+                                                                {dept.owner.full_name.substring(0, 2).toUpperCase()}
+                                                            </div>
+                                                            <div className="text-sm text-gray-900">{dept.owner.full_name}</div>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 mr-2">OA</div>
+                                                            <div className="text-sm text-gray-500">Unassigned</div>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
