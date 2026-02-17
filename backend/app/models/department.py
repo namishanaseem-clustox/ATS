@@ -20,4 +20,4 @@ class Department(Base):
 
     # Relationships
     managed_by_users = relationship("User", back_populates="department", foreign_keys="User.department_id")
-    owner = relationship("User", foreign_keys=[owner_id])
+    owner = relationship("User", back_populates="managed_departments", foreign_keys=[owner_id])

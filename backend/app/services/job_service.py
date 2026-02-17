@@ -34,7 +34,7 @@ class JobService:
             query = query.filter(Job.is_deleted == False)
         return query.first()
 
-    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100, status: str = None, filter_by_owner_id: UUID = None):
+    def get_jobs(self, db: Session, skip: int = 0, limit: int = 100, status: str = None, filter_by_owner_id: UUID = None, filter_by_department_id: UUID = None):
         if status == JobStatus.ARCHIVED.value:
             query = db.query(Job).options(joinedload(Job.department)).filter(Job.is_deleted == True)
         else:
@@ -47,6 +47,10 @@ class JobService:
             # Import Department to avoid circular import if needed, or rely on relationship
             from app.models.department import Department
             query = query.join(Department).filter(Department.owner_id == filter_by_owner_id)
+            
+        if filter_by_department_id:
+             # Filter by department directly on Job table
+             query = query.filter(Job.department_id == filter_by_department_id)
 
         # Handle auto-repair for archived jobs if needed (simplified from original for brevity, but keeping logic)
         # Original logic had separate blocks for ARCHIVED vs normal. 
@@ -54,11 +58,15 @@ class JobService:
         # Let's preserve original structure but inject filter.
 
         if status == JobStatus.ARCHIVED.value:
-             # Re-apply filter_by_owner_id to the archived query
-             if filter_by_owner_id:
-                from app.models.department import Department
-                query = query.join(Department).filter(Department.owner_id == filter_by_owner_id)
-
+             # Re-apply filters to the archived query if they were applied above?
+             # Actually, my query construction above handled 'status' and 'is_deleted'. 
+             # But 'if status == ARCHIVED' block below re-does fetch?
+             # Ah, the original code had a return inside the 'if status == ARCHIVED' block.
+             # So I need to apply my filters inside that block too or restructure.
+             
+             # Let's restructure to apply filters to 'query' then execute.
+             # The original code's 'auto-repair' logic needs 'jobs' list.
+             
              jobs = query.offset(skip).limit(limit).all()
              
              # Auto-repair logic

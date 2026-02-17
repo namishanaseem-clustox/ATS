@@ -21,4 +21,14 @@ export const deleteDepartment = async (id) => {
     return data;
 };
 
+export const removeMemberFromDepartment = async (departmentId, userId) => {
+    const { data } = await client.delete(`/departments/${departmentId}/members/${userId}`);
+    return data;
+};
+
+export const getDepartmentMembers = async (departmentId) => {
+    const { data } = await client.get(`/departments/${departmentId}/members`);
+    return data;
+};
+
 export default client;

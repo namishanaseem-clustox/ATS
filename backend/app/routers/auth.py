@@ -61,6 +61,10 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 
 
+from app.models.department import Department
+
+from sqlalchemy.orm import joinedload
+
 @router.get("/users", response_model=List[UserResponse])
 def read_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     if current_user.role not in [UserRole.OWNER, UserRole.HR]:
@@ -68,7 +72,18 @@ def read_users(db: Session = Depends(get_db), current_user: User = Depends(get_c
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view users"
         )
-    users = db.query(User).all()
+    # Eager load managed_departments to avoid N+1 and manual mapping
+    # Filter out deleted users
+    users = db.query(User).options(joinedload(User.managed_departments)).filter(User.is_deleted.isnot(True)).all()
+    
+    for user in users:
+        # Fallback for UI 'department_id' (legacy single view)
+        # If user is a manager and has no home department, use the first managed one
+        if user.role == UserRole.HIRING_MANAGER and not user.department_id:
+             if user.managed_departments:
+                 # user.managed_departments is now a list of Department objects
+                 user.department_id = user.managed_departments[0].id
+                
     return users
 
 @router.post("/users", response_model=UserResponse)
@@ -90,7 +105,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
         hashed_password=hashed_password,
         full_name=user.full_name,
         role=user.role,
-        is_active=True
+        is_active=True,
+        department_id=user.department_id
     )
     db.add(new_user)
     db.commit()
@@ -133,3 +149,37 @@ def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(ge
 @router.get("/users/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user(user_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete users"
+        )
+    
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # Prevent deleting yourself
+    if db_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+    # Prevent deleting the main Owner (if explicit check needed, but role check covers general persmissions)
+    # If the target is an Owner, maybe restrict only other Owners can delete?
+    if db_user.role == UserRole.OWNER and current_user.role != UserRole.OWNER:
+         raise HTTPException(status_code=403, detail="Only Owners can delete other Owners")
+
+    # Soft verify or Hard delete? Plan said Soft Delete.
+    # Setting is_active = False effectively "deletes" them from access.
+    # Also remove from department to clean up?
+    # Soft delete the user
+    db_user.is_deleted = True
+    db_user.is_active = False # Also deactivate to be safe
+    db_user.department_id = None
+    
+    db.add(db_user)
+    db.commit()
+    
+    return None

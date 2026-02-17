@@ -3,7 +3,6 @@ import uuid
 from sqlalchemy import Column, String, Boolean, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import relationship
 from app.database import Base
 
 class UserRole(str, enum.Enum):
@@ -20,6 +19,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    is_deleted = Column(Boolean, default=False)
     role = Column(Enum(UserRole), default=UserRole.INTERVIEWER, nullable=False)
     
     # Link to a specific department (for Hiring Managers/Owners)
@@ -27,4 +27,8 @@ class User(Base):
     
     # Relationships
     department = relationship("Department", back_populates="managed_by_users", foreign_keys=[department_id])
+    
+    # Departments owned by this user
+    managed_departments = relationship("Department", back_populates="owner", foreign_keys="Department.owner_id", viewonly=True)
+    
     # managed_jobs = relationship("Job", back_populates="hiring_manager") # To be added to Job model

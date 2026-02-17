@@ -19,12 +19,20 @@ def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
     from app.models.candidate import Candidate
     
     filter_by_owner_id = None
+    filter_by_department_id = None
+    
     if current_user.role == UserRole.HIRING_MANAGER:
         filter_by_owner_id = current_user.id
+        
+    elif current_user.role == UserRole.INTERVIEWER:
+        if current_user.department_id:
+            filter_by_department_id = current_user.department_id
+        else:
+            return []
 
     # Pass filter to service (which we need to update to support it)
     # candidates = db.query(Candidate).offset(skip).limit(limit).all()
-    candidates = candidate_service.get_candidates(db, skip=skip, limit=limit, filter_by_owner_id=filter_by_owner_id)
+    candidates = candidate_service.get_candidates(db, skip=skip, limit=limit, filter_by_owner_id=filter_by_owner_id, filter_by_department_id=filter_by_department_id)
     
     # Manually construction response to bypass Pydantic serialization hang
     results = []

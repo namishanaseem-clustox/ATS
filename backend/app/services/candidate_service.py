@@ -18,19 +18,36 @@ class CandidateService:
             selectinload(Candidate.applications).selectinload(JobApplication.job)
         ).filter(Candidate.id == candidate_id).first()
 
-    def get_candidates(self, db: Session, skip: int = 0, limit: int = 100, filter_by_owner_id: UUID = None):
+    def get_candidates(self, db: Session, skip: int = 0, limit: int = 100, filter_by_owner_id: UUID = None, filter_by_department_id: UUID = None):
         query = db.query(Candidate)
         
-        if filter_by_owner_id:
-             # Join Candidate -> JobApplication -> Job -> Department
-             # We need to ensure we don't get duplicates if a candidate applied to multiple jobs in same department
+        joined_job_app = False
+        joined_job = False
+        joined_dept = False
+
+        if filter_by_owner_id or filter_by_department_id:
              from app.models.department import Department
              from app.models.job import Job
              
-             query = query.join(JobApplication).join(Job).join(Department).filter(
-                 Department.owner_id == filter_by_owner_id
-             ).distinct()
+             # Link to Jobs via Applications
+             query = query.join(JobApplication)
+             joined_job_app = True
              
+             query = query.join(Job)
+             joined_job = True
+             
+             if filter_by_owner_id:
+                 query = query.join(Department).filter(
+                     Department.owner_id == filter_by_owner_id
+                 )
+                 joined_dept = True
+                 
+             if filter_by_department_id:
+                 # If we filtered by owner, we have the department table, but filtering on Job.department_id is simpler/direct
+                 query = query.filter(Job.department_id == filter_by_department_id)
+             
+             query = query.distinct()
+
         # Simplified query without loading applications to avoid performance issues
         return query.offset(skip).limit(limit).all()
 

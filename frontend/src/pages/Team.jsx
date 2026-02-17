@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Shield, Briefcase, Mail, Pencil } from 'lucide-react';
-import { getUsers, createUser, updateUser } from '../api/users';
+import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2 } from 'lucide-react';
+import { getUsers, createUser, updateUser, deleteUser } from '../api/users';
+import { getDepartments } from '../api/departments';
 import RoleGuard from '../components/RoleGuard';
 import CustomSelect from '../components/CustomSelect';
 
@@ -18,6 +19,7 @@ const STATUS_OPTIONS = [
 
 const Team = () => {
     const [users, setUsers] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -28,12 +30,28 @@ const Team = () => {
         password: '',
         role: 'interviewer',
         is_active: 'true',
+        department_id: '',
     });
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchUsers();
+        fetchData();
     }, []);
+
+    const fetchData = async () => {
+        try {
+            const [usersData, departmentsData] = await Promise.all([
+                getUsers(),
+                getDepartments()
+            ]);
+            setUsers(usersData);
+            setDepartments(departmentsData);
+        } catch (err) {
+            console.error("Failed to fetch data", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchUsers = async () => {
         try {
@@ -41,8 +59,6 @@ const Team = () => {
             setUsers(data);
         } catch (err) {
             console.error("Failed to fetch users", err);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -61,6 +77,7 @@ const Team = () => {
             password: '',
             role: 'interviewer',
             is_active: 'true',
+            department_id: '',
         });
         setIsModalOpen(true);
     };
@@ -75,6 +92,7 @@ const Team = () => {
             password: '', // Password empty on edit unless changing
             role: user.role,
             is_active: user.is_active ? 'true' : 'false',
+            department_id: user.department_id || '',
         });
         setIsModalOpen(true);
     };
@@ -91,10 +109,17 @@ const Team = () => {
                 // Convert is_active string to boolean
                 dataToSend.is_active = dataToSend.is_active === 'true';
 
+                // Handle empty department_id
+                if (dataToSend.department_id === '') dataToSend.department_id = null;
+
                 await updateUser(currentUserId, dataToSend);
             } else {
+                const dataToSend = { ...formData };
+                // Handle empty department_id
+                if (dataToSend.department_id === '') dataToSend.department_id = null;
+
                 // For creation, is_active is assumed true by backend
-                await createUser(formData);
+                await createUser(dataToSend);
             }
 
             setIsModalOpen(false);
@@ -105,7 +130,29 @@ const Team = () => {
         }
     };
 
+    const handleDelete = async (user) => {
+        if (window.confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
+            try {
+                await deleteUser(user.id);
+                fetchUsers();
+            } catch (err) {
+                console.error("Failed to delete user", err);
+                alert(err.response?.data?.detail || "Failed to delete user");
+            }
+        }
+    };
+
+    const getDepartmentName = (deptId) => {
+        const dept = departments.find(d => d.id === deptId);
+        return dept ? dept.name : '-';
+    };
+
     if (loading) return <div className="p-8 text-center text-gray-500">Loading team...</div>;
+
+    const departmentOptions = [
+        { value: '', label: 'No Department' },
+        ...departments.map(dept => ({ value: dept.id, label: dept.name }))
+    ];
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
@@ -131,6 +178,7 @@ const Team = () => {
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Edit</span></th>
                         </tr>
@@ -157,14 +205,40 @@ const Team = () => {
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="flex flex-col text-xs">
+                                        {user.managed_departments && user.managed_departments.length > 0 && (
+                                            <div className="flex items-center text-gray-700 font-medium" title="Manages">
+                                                <Shield size={12} className="mr-1" />
+                                                {user.managed_departments.map(d => d.name).join(", ")}
+                                            </div>
+                                        )}
+                                        {user.department_id && (!user.managed_departments || !user.managed_departments.some(d => d.id === user.department_id)) && (
+                                            <div className="flex items-center text-gray-500 mt-0.5" title="Member of">
+                                                <User size={12} className="mr-1" />
+                                                {getDepartmentName(user.department_id)}
+                                            </div>
+                                        )}
+                                        {(!user.managed_departments || user.managed_departments.length === 0) && !user.department_id && (
+                                            <span className="text-gray-400">-</span>
+                                        )}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                         {user.is_active ? 'Active' : 'Inactive'}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <RoleGuard allowedRoles={['owner', 'hr']}>
-                                        <button onClick={() => openEditModal(user)} className="text-indigo-600 hover:text-indigo-900">
+                                        <button onClick={() => openEditModal(user)} className="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
                                             <Pencil size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(user)}
+                                            className="text-red-600 hover:text-red-900"
+                                            title="Delete User"
+                                        >
+                                            <Trash2 size={18} />
                                         </button>
                                     </RoleGuard>
                                 </td>
@@ -239,6 +313,14 @@ const Team = () => {
                                             name="role"
                                             options={ROLE_OPTIONS}
                                             value={formData.role}
+                                            onChange={handleInputChange}
+                                        />
+
+                                        <CustomSelect
+                                            label="Department"
+                                            name="department_id"
+                                            options={departmentOptions}
+                                            value={formData.department_id}
                                             onChange={handleInputChange}
                                         />
 

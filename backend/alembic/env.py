@@ -21,6 +21,9 @@ if config.config_file_name is not None:
 from app.database import Base
 from app.models.department import Department
 from app.models.job import Job, JobActivity
+from app.models.user import User
+from app.models.candidate import Candidate, JobApplication
+from app.models.scheduled_activity import ScheduledActivity
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
