@@ -28,7 +28,7 @@ class ActivityBase(BaseModel):
     participants: List[str] = [] # List of names/emails
 
 class ActivityCreate(ActivityBase):
-    pass
+    assignee_ids: List[UUID] = []
 
 class ActivityUpdate(BaseModel):
     title: Optional[str] = None
@@ -40,9 +40,11 @@ class ActivityUpdate(BaseModel):
     participants: Optional[List[str]] = None
     candidate_id: Optional[UUID] = None
     job_id: Optional[UUID] = None
+    assignee_ids: Optional[List[UUID]] = None
 
 from app.schemas.candidate import CandidateBasicResponse
 from app.schemas.job import JobResponse
+from app.schemas.user import UserResponse
 
 class ActivityResponse(ActivityBase):
     id: UUID
@@ -52,6 +54,7 @@ class ActivityResponse(ActivityBase):
     
     candidate: Optional[CandidateBasicResponse] = None
     job: Optional[JobResponse] = None
+    assignees: List[UserResponse] = []
 
     class Config:
         from_attributes = True

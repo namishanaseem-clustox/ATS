@@ -44,3 +44,13 @@ class ScheduledActivity(Base):
     # Relationships
     job = relationship("Job", back_populates="scheduled_activities")
     candidate = relationship("Candidate", back_populates="scheduled_activities")
+    assignees = relationship("User", secondary="activity_assignees", backref="assigned_activities")
+
+# Association Table for Many-to-Many
+from sqlalchemy import Table, ForeignKey
+activity_assignees = Table(
+    "activity_assignees",
+    Base.metadata,
+    Column("activity_id", UUID(as_uuid=True), ForeignKey("scheduled_activities.id"), primary_key=True),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True),
+)

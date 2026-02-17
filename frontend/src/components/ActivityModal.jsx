@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'lucide-react';
 import { getJobCandidates, getCandidate } from '../api/candidates';
 import { createActivity, updateActivity } from '../api/activities';
+import { getUsers } from '../api/users';
 import CustomSelect from './CustomSelect';
+import MultiSelect from './MultiSelect';
 
 const ACTIVITY_TYPES = [
     { value: 'Task', label: 'Task' },
     { value: 'Meeting', label: 'Meeting' },
     { value: 'Interview', label: 'Interview' },
     { value: 'Call', label: 'Call' },
+    { value: 'Note', label: 'Note' },
 ];
 
 const ACTIVITY_STATUSES = [
@@ -25,17 +28,20 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         scheduled_at: '',
         location: '',
         description: '',
-        participants: '', // Comma separated for now
+        participants: '',
         candidate_id: candidateId || '',
-        job_id: jobId || ''
+        job_id: jobId || '',
+        assignee_ids: []
     });
 
     const [candidates, setCandidates] = useState([]);
     const [jobs, setJobs] = useState([]);
+    const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
+            fetchUsers();
             if (jobId) {
                 fetchCandidates();
             } else if (candidateId) {
@@ -46,14 +52,15 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         if (activity) {
             setFormData({
                 ...activity,
-                scheduled_at: activity.scheduled_at ? activity.scheduled_at.slice(0, 16) : '', // format for datetime-local
+                scheduled_at: activity.scheduled_at ? activity.scheduled_at.slice(0, 16) : '',
                 participants: Array.isArray(activity.participants) ? activity.participants.join(', ') : '',
-                candidate_id: activity.candidate_id || ''
+                candidate_id: activity.candidate_id || '',
+                job_id: activity.job_id || '',
+                assignee_ids: activity.assignees ? activity.assignees.map(u => u.id) : []
             });
         } else {
-            // Reset form for new activity
             setFormData({
-                activity_type: 'Task',
+                activity_type: initialType,
                 title: '',
                 status: 'Pending',
                 scheduled_at: '',
@@ -61,15 +68,24 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 description: '',
                 participants: '',
                 candidate_id: candidateId || '',
-                job_id: jobId
+                job_id: jobId || '',
+                assignee_ids: []
             });
         }
-    }, [isOpen, activity, jobId, candidateId]);
+    }, [isOpen, activity, jobId, candidateId, initialType]);
+
+    const fetchUsers = async () => {
+        try {
+            const data = await getUsers();
+            setUsers(data);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        }
+    };
 
     const fetchCandidates = async () => {
         try {
             const data = await getJobCandidates(jobId);
-            // data is list of JobApplication, need candidate details
             setCandidates(data.map(app => app.candidate));
         } catch (error) {
             console.error("Failed to fetch candidates", error);
@@ -99,9 +115,12 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         try {
             const payload = {
                 ...formData,
-                participants: formData.participants.split(',').map(p => p.trim()).filter(p => p),
+                participants: typeof formData.participants === 'string'
+                    ? formData.participants.split(',').map(p => p.trim()).filter(p => p)
+                    : formData.participants,
                 scheduled_at: formData.scheduled_at ? new Date(formData.scheduled_at).toISOString() : null,
-                candidate_id: formData.candidate_id || null // Ensure null if empty string
+                candidate_id: formData.candidate_id || null,
+                job_id: formData.job_id || null
             };
 
             let savedActivity;
@@ -243,11 +262,11 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                 />
                             </div>
 
-                            {/* Participants */}
+                            {/* Participants (External) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                                     <Users className="h-4 w-4 mr-2" />
-                                    Participants (Internal)
+                                    Participants (External/Text)
                                 </label>
                                 <input
                                     type="text"
@@ -255,7 +274,25 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     value={formData.participants}
                                     onChange={handleChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    placeholder="Jane Doe, John Smith (comma separated)"
+                                    placeholder="Jane Doe (Client), etc."
+                                />
+                            </div>
+
+                            {/* Assignees (Internal Users) */}
+                            <div>
+                                <MultiSelect
+                                    label={
+                                        <span className="flex items-center">
+                                            <User className="h-4 w-4 mr-2" />
+                                            Assign Interviewers
+                                        </span>
+                                    }
+                                    name="assignee_ids"
+                                    value={formData.assignee_ids}
+                                    onChange={handleChange}
+                                    options={users.map(u => ({ value: u.id, label: u.full_name || u.email }))}
+                                    placeholder="Select Interviewers..."
+                                    className="mb-0"
                                 />
                             </div>
 
