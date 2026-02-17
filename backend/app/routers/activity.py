@@ -14,8 +14,15 @@ router = APIRouter(
 )
 
 from app.models.user import User
+from app.routers.auth import get_current_active_user
 
-@router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
+@router.get("/my-interviews", response_model=List[ActivityResponse])
+def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    return db.query(ScheduledActivity).options(
+        joinedload(ScheduledActivity.candidate),
+        joinedload(ScheduledActivity.job),
+        joinedload(ScheduledActivity.assignees)
+    ).join(ScheduledActivity.assignees).filter(User.id == current_user.id).all()
 def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
     activity_data = activity.dict(exclude={"assignee_ids"})
     db_activity = ScheduledActivity(**activity_data)

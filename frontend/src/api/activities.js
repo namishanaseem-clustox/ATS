@@ -29,3 +29,9 @@ export const deleteActivity = async (id) => {
     const { data } = await client.delete(`/activities/${id}`);
     return data;
 };
+
+export const getMyInterviews = async () => {
+    const { data } = await client.get('/activities/my-interviews');
+    return data;
+};
+

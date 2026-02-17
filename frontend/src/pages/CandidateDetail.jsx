@@ -5,6 +5,7 @@ import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, Fi
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
+import CandidateScorecards from '../components/CandidateScorecards';
 
 import CandidateModal from '../components/CandidateModal';
 import { useAuth } from '../context/AuthContext';

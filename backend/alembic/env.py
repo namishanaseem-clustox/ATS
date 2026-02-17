@@ -24,6 +24,7 @@ from app.models.job import Job, JobActivity
 from app.models.user import User
 from app.models.candidate import Candidate, JobApplication
 from app.models.scheduled_activity import ScheduledActivity
+from app.models.feedback import Feedback # Added for migrations
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
