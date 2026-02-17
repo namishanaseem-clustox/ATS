@@ -1,0 +1,41 @@
+--- DEPARTMENTS ---
+ID: ba446129-0fc6-46cd-a26f-5f4fba985967 | Name: test dept | Status: Active | OwnerID: None (None)
+ID: ac057659-5b72-47f0-bb5f-66124a431d92 | Name: Engineering | Status: Active | OwnerID: None (None)
+ID: 67dfc244-0ba5-416a-acb3-446822fc2a0d | Name: test1 | Status: Active | OwnerID: None (None)
+ID: fa379766-e037-4b2c-9074-2c7c745e49e6 | Name: Engineering | Status: Active | OwnerID: None (None)
+ID: 7a898762-cc31-4d76-80ec-306834c73d8f | Name: Design | Status: Active | OwnerID: None (None)
+ID: e8aac696-c94b-453d-9bb6-0913843ca220 | Name: Test Department | Status: Active | OwnerID: None (None)
+ID: 08a72285-7d2c-4e38-a51d-0c67c37b69a4 | Name: Test Dept 178b72d1-6311-4049-9206-155797a1ea48 | Status: Active | OwnerID: None (None)
+ID: 3c5747b0-6207-4d36-9e25-67f2174b3785 | Name: Debug Dept 93983521-9240-4331-83c1-12ca00bbf9b0 | Status: Active | OwnerID: None (None)
+ID: 5e811867-1800-45f0-9e5e-5dc117f24e21 | Name: Test Dept 8859182c-e3da-4968-bd6f-1c01b4cdf5c6 | Status: Active | OwnerID: None (None)
+ID: 9f36172a-e00c-4c20-9c21-b6c278a24afb | Name: Dev Team | Status: Active | OwnerID: 08fa3d49-1f26-4cfb-82f6-dbca649f8f90 (Hiring manager2)
+ID: 7767d633-a5d5-455c-a6e4-e9b52d6b740c | Name: Engineering | Status: Active | OwnerID: b979fe49-c77d-438e-a6f7-912c0bca474e (Hiring manager3)
+ID: 8749cb80-ffb0-4b76-8bab-41dfbe3c30c5 | Name: Engineering | Status: Active | OwnerID: aef052b1-b94c-41aa-b338-a71105c4b209 (Hiring Manager)
+ID: 97b62611-f4b9-4bac-85c8-5a481b5f2bb4 | Name: Product | Status: Active | OwnerID: b979fe49-c77d-438e-a6f7-912c0bca474e (Hiring manager3)
+ID: 3b3a24df-af27-4160-b011-42d0d38f2d43 | Name: Debug Dept 26178150 | Status: Active | OwnerID: 052e5e34-8989-47ed-9ecc-674d835a6392 (Debug Owner)
+ID: 7eed88b8-fbee-4a1c-801c-bef0c9090bc0 | Name: Debug Dept b4247554 | Status: Active | OwnerID: 573bfca8-1d28-4004-8256-5f6c281a3c5d (Debug Owner)
+ID: 0a5de339-827b-48e7-bf9a-2cd49fd76a40 | Name: Debug Dept 8c14e13f | Status: Active | OwnerID: a60f9a78-6f38-40f3-9cb7-9ec978a7400d (Debug Owner)
+ID: 0220660e-f0b8-4f44-97de-e0e8ba76ac4d | Name: Debug Dept 41c17387 | Status: Active | OwnerID: 5accdbb0-07f4-45fa-a5b9-c2658474cf7e (Debug Owner)
+ID: 1f65f1f8-da27-40ec-ba65-2cfe7298e7aa | Name: Debug Dept 9a99069f | Status: Active | OwnerID: 6b672c34-f64f-42eb-927e-57a8a0cdfea5 (Debug Owner)
+
+--- USERS ---
+ID: aef052b1-b94c-41aa-b338-a71105c4b209 | Name: Hiring Manager | Role: hiring_manager | DeptID: None (None) | Managed: ['Engineering']
+ID: 5281e60d-a3e8-4e02-8a8e-855762501a22 | Name: Cluster Owner | Role: owner | DeptID: None (None) | Managed: []
+ID: 052e5e34-8989-47ed-9ecc-674d835a6392 | Name: Debug Owner | Role: hiring_manager | DeptID: None (None) | Managed: ['Debug Dept 26178150']
+ID: 08fa3d49-1f26-4cfb-82f6-dbca649f8f90 | Name: Hiring manager2 | Role: hiring_manager | DeptID: None (None) | Managed: ['Dev Team']
+ID: 573bfca8-1d28-4004-8256-5f6c281a3c5d | Name: Debug Owner | Role: hiring_manager | DeptID: None (None) | Managed: ['Debug Dept b4247554']
+ID: a60f9a78-6f38-40f3-9cb7-9ec978a7400d | Name: Debug Owner | Role: hiring_manager | DeptID: None (None) | Managed: ['Debug Dept 8c14e13f']
+ID: 5accdbb0-07f4-45fa-a5b9-c2658474cf7e | Name: Debug Owner | Role: hiring_manager | DeptID: None (None) | Managed: ['Debug Dept 41c17387']
+ID: 8e8ebef2-d90c-4fb0-9637-6ec3f041b6cb | Name: Inactive User | Role: interviewer | DeptID: None (None) | Managed: []
+ID: 6b672c34-f64f-42eb-927e-57a8a0cdfea5 | Name: Debug Owner | Role: hiring_manager | DeptID: None (None) | Managed: ['Debug Dept 9a99069f']
+ID: 988d0881-b1fa-4dfb-aa6d-1af8c5406e05 | Name: Debug Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: 02d92019-627d-40e6-9381-ede11da6cd2c | Name: Tech interviewer 2 | Role: interviewer | DeptID: 9f36172a-e00c-4c20-9c21-b6c278a24afb (Dev Team) | Managed: []
+ID: 6027be03-f887-44bf-bc9e-80dcc9df92d6 | Name: Debug Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: bd9e791f-157c-40d6-8715-641f0983497b | Name: Debug Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: 7633123b-5746-4e4f-9f30-ef843dcde257 | Name: Tech Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: b979fe49-c77d-438e-a6f7-912c0bca474e | Name: Hiring manager3 | Role: hiring_manager | DeptID: None (None) | Managed: ['Engineering', 'Product']
+ID: e5c368cc-a4d4-475c-9687-fa1036f8ef90 | Name: HR | Role: hr | DeptID: None (None) | Managed: []
+ID: 0a4ecf76-300d-4acc-bf88-fa3f8ce7bb84 | Name: To Be Deleted | Role: interviewer | DeptID: None (None) | Managed: []
+ID: b9f16665-6dc5-458c-aed8-1c59c11fb97f | Name: Debug Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: 9e22ddb7-1167-4adf-98b1-9090edc970c1 | Name: Debug Interviewer | Role: interviewer | DeptID: None (None) | Managed: []
+ID: 413fb0e0-6b48-4d1d-95ed-854c6414f8ed | Name: System Admin | Role: owner | DeptID: None (None) | Managed: []
