@@ -71,11 +71,17 @@ def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100
     return job_service.get_jobs_by_department(db, department_id, skip=skip, limit=limit, status=status)
 
 @router.get("/{job_id}", response_model=JobResponse)
-def read_job(job_id: UUID, db: Session = Depends(get_db)):
+def read_job(job_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     # Allow fetching archived jobs by ID
     db_job = job_service.get_job(db, job_id=job_id, include_deleted=True)
     if not db_job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Redact salary for Interviewers
+    if current_user.role == UserRole.INTERVIEWER:
+        db_job.min_salary = None
+        db_job.max_salary = None
+        
     return db_job
 
 @router.put("/{job_id}", response_model=JobResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])

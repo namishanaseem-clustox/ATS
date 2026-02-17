@@ -23,6 +23,8 @@ def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depend
         joinedload(ScheduledActivity.job),
         joinedload(ScheduledActivity.assignees)
     ).join(ScheduledActivity.assignees).filter(User.id == current_user.id).all()
+
+@router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
     activity_data = activity.dict(exclude={"assignee_ids"})
     db_activity = ScheduledActivity(**activity_data)

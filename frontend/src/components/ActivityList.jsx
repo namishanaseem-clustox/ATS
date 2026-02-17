@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Users, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote } from 'lucide-react';
 import { getJobActivities, getCandidateActivities, deleteActivity } from '../api/activities';
 import ActivityModal from './ActivityModal';
 
