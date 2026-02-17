@@ -35,16 +35,32 @@ def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, statu
         # For now, matching existing pattern of 'owner' visibility.
         
     elif current_user.role == UserRole.INTERVIEWER:
-        # Interviewer sees ONLY jobs in their assigned department
-        if current_user.department_id:
-             filter_by_dept_id = current_user.department_id
-        else:
-             return []
+        # Interviewer sees ONLY jobs for which they are assigned activities
+        from app.models.scheduled_activity import ScheduledActivity
+        assigned_job_ids = db.query(ScheduledActivity.job_id).join(ScheduledActivity.assignees).filter(
+            User.id == current_user.id,
+            ScheduledActivity.job_id.isnot(None)
+        ).distinct().all()
+        
+        if not assigned_job_ids:
+            return []
+        
+        # Extract job IDs from the result tuples
+        job_ids = [job_id[0] for job_id in assigned_job_ids]
+        
+        # Get jobs that are in the assigned job IDs list
+        jobs = job_service.get_jobs_by_ids(db, job_ids, skip=skip, limit=limit, status=status)
+        
+        # Redact salary for Interviewers
+        for job in jobs:
+            job.min_salary = None
+            job.max_salary = None
+            
+        return jobs
 
     # We need to update job_service.get_jobs to support filter_by_dept_id if it doesn't already
     # checking service... it doesn't seem to have it in the call below.
     # We might need to filter manually here or update service.
-    # Let's filter manually if service update is too big, or update service.
     # Actually, job_service.get_jobs takes **kwargs or we can add it.
     
     # Let's try to pass it to service if we update service next, 
@@ -57,7 +73,7 @@ def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, statu
             return [] # Requesting dept they don't belong to
         department_id = filter_by_dept_id
 
-    return job_service.get_jobs(
+    jobs = job_service.get_jobs(
         db, 
         skip=skip, 
         limit=limit, 
@@ -65,6 +81,14 @@ def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, statu
         filter_by_owner_id=filter_by_owner_id,
         filter_by_department_id=department_id # passing the param already in signature
     )
+
+    # Redact salary for Interviewers
+    if current_user.role == UserRole.INTERVIEWER:
+        for job in jobs:
+            job.min_salary = None
+            job.max_salary = None
+            
+    return jobs
 
 @router.get("/department/{department_id}", response_model=List[JobResponse])
 def read_jobs_by_department(department_id: UUID, skip: int = 0, limit: int = 100, status: str = None, db: Session = Depends(get_db)):
@@ -131,13 +155,51 @@ from app.services.candidate_service import candidate_service
 from app.schemas.candidate import JobApplicationResponse
 
 @router.get("/{job_id}/candidates", response_model=List[JobApplicationResponse])
-def read_job_candidates(job_id: UUID, db: Session = Depends(get_db)):
+def read_job_candidates(job_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     # Verify job exists first
     db_job = job_service.get_job(db, job_id=job_id)
     if db_job is None:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # For interviewers, check if they are assigned to any activities for this job
+    if current_user.role == UserRole.INTERVIEWER:
+        from app.models.scheduled_activity import ScheduledActivity
+        assigned_activities = db.query(ScheduledActivity).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.job_id == job_id,
+            User.id == current_user.id
+        ).all()
         
-    return candidate_service.get_candidates_by_job(db, job_id=job_id)
+        if not assigned_activities:
+            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this job")
+        
+        # Get candidate IDs from assigned activities
+        assigned_candidate_ids = set()
+        for activity in assigned_activities:
+            if activity.candidate_id:
+                assigned_candidate_ids.add(activity.candidate_id)
+        
+        # Only return applications for candidates they're assigned to
+        applications = candidate_service.get_candidates_by_job(db, job_id=job_id)
+        filtered_applications = [app for app in applications if str(app.candidate.id) in assigned_candidate_ids]
+        
+        # Redact salary for Interviewers
+        for app in filtered_applications:
+            if app.candidate:
+                app.candidate.current_salary = None
+                app.candidate.expected_salary = None
+                
+        return filtered_applications
+        
+    applications = candidate_service.get_candidates_by_job(db, job_id=job_id)
+    
+    # Redact salary for Interviewers
+    if current_user.role == UserRole.INTERVIEWER:
+        for app in applications:
+            if app.candidate:
+                app.candidate.current_salary = None
+                app.candidate.expected_salary = None
+                
+    return applications
 
 @router.put("/{job_id}/candidates/{candidate_id}/stage")
 def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, db: Session = Depends(get_db)):

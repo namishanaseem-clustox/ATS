@@ -67,14 +67,19 @@ from sqlalchemy.orm import joinedload
 
 @router.get("/users", response_model=List[UserResponse])
 def read_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+    # Eager load managed_departments to avoid N+1 and manual mapping
+    # Filter out deleted users
+    users = db.query(User).options(joinedload(User.managed_departments)).filter(User.is_deleted.isnot(True)).all()
+    
+    # Filter users based on current user's role
+    if current_user.role == UserRole.INTERVIEWER:
+        # Interviewers can only see other interviewers (for assignment purposes)
+        users = [user for user in users if user.role == UserRole.INTERVIEWER]
+    elif current_user.role not in [UserRole.OWNER, UserRole.HR, UserRole.HIRING_MANAGER]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to view users"
         )
-    # Eager load managed_departments to avoid N+1 and manual mapping
-    # Filter out deleted users
-    users = db.query(User).options(joinedload(User.managed_departments)).filter(User.is_deleted.isnot(True)).all()
     
     for user in users:
         # Fallback for UI 'department_id' (legacy single view)

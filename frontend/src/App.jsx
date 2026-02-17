@@ -13,6 +13,7 @@ import Login from './pages/Login';
 import logo from './assets/Clustox Logo Black_Artboard 1.png';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MyInterviews from './pages/MyInterviews';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const queryClient = new QueryClient();
 
@@ -34,9 +35,13 @@ const Layout = () => {
             Clustox ATS
           </span>
           <div className="space-x-6">
-            <Link to="/departments" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Departments</Link>
+            {user?.role !== 'interviewer' && (
+              <Link to="/departments" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Departments</Link>
+            )}
             <Link to="/jobs" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Jobs</Link>
-            <Link to="/candidates" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Candidates</Link>
+            {user?.role !== 'interviewer' && (
+              <Link to="/candidates" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Candidates</Link>
+            )}
             <Link to="/my-interviews" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">My Interviews</Link>
             {['hr', 'owner'].includes(user?.role) && (
               <Link to="/team" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Team</Link>
@@ -70,16 +75,44 @@ function App() {
             {/* Protected Routes */}
             <Route element={<Layout />}>
               <Route path="/" element={<Navigate to="/jobs" replace />} />
-              <Route path="/departments" element={<DepartmentsPage />} />
-              <Route path="/departments/:id" element={<DepartmentDetail />} />
+              <Route path="/departments" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <DepartmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/departments/:id" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <DepartmentDetail />
+                </ProtectedRoute>
+              } />
               <Route path="/jobs" element={<JobBoard />} />
-              <Route path="/jobs/new" element={<JobWizard />} />
+              <Route path="/jobs/new" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <JobWizard />
+                </ProtectedRoute>
+              } />
               <Route path="/jobs/:id" element={<JobDetail />} />
-              <Route path="/jobs/:id/edit" element={<JobWizard />} />
-              <Route path="/candidates" element={<Candidates />} />
-              <Route path="/candidates/:id" element={<CandidateDetail />} />
+              <Route path="/jobs/:id/edit" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <JobWizard />
+                </ProtectedRoute>
+              } />
+              <Route path="/candidates" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <Candidates />
+                </ProtectedRoute>
+              } />
+              <Route path="/candidates/:id" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <CandidateDetail />
+                </ProtectedRoute>
+              } />
               <Route path="/my-interviews" element={<MyInterviews />} />
-              <Route path="/team" element={<Team />} />
+              <Route path="/team" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <Team />
+                </ProtectedRoute>
+              } />
             </Route>
           </Routes>
         </Router>

@@ -203,6 +203,9 @@ class CandidateService:
                  
             return db_candidate
         
+    def get_candidates_by_ids(self, db: Session, candidate_ids: list[UUID], skip: int = 0, limit: int = 100):
+        return db.query(Candidate).filter(Candidate.id.in_(candidate_ids)).offset(skip).limit(limit).all()
+
     def get_candidates_by_job(self, db: Session, job_id: UUID):
         # Return all applications for this job, joining the candidate details
         return db.query(JobApplication).filter(JobApplication.job_id == job_id).options(

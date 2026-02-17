@@ -35,6 +35,13 @@ const JobDetail = () => {
     ];
 
     useEffect(() => {
+        // Redirect interviewers away from restricted tabs
+        if (user?.role === 'interviewer' && (activeTab === 'candidates' || activeTab === 'pipeline' || activeTab === 'settings')) {
+            setActiveTab('overview');
+        }
+    }, [activeTab, user?.role]);
+
+    useEffect(() => {
         const fetchJob = async () => {
             try {
                 const data = await getJob(id);
@@ -206,22 +213,26 @@ const JobDetail = () => {
                         <Layout size={18} className="mr-3" />
                         Overview
                     </button>
-                    <button
-                        onClick={() => setActiveTab('candidates')}
-                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'candidates' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        <Users size={18} className="mr-3" />
-                        Candidates
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('pipeline')}
-                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'pipeline' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        <GitPullRequest size={18} className="mr-3" />
-                        Pipeline
-                    </button>
+                    {user?.role !== 'interviewer' && (
+                        <button
+                            onClick={() => setActiveTab('candidates')}
+                            className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'candidates' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Users size={18} className="mr-3" />
+                            Candidates
+                        </button>
+                    )}
+                    {user?.role !== 'interviewer' && (
+                        <button
+                            onClick={() => setActiveTab('pipeline')}
+                            className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'pipeline' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <GitPullRequest size={18} className="mr-3" />
+                            Pipeline
+                        </button>
+                    )}
                     <button
                         onClick={() => setActiveTab('activity')}
                         className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'activity' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
@@ -238,14 +249,16 @@ const JobDetail = () => {
                         <StickyNote size={18} className="mr-3" />
                         Notes
                     </button>
-                    <button
-                        onClick={() => setActiveTab('settings')}
-                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'settings' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        <Settings size={18} className="mr-3" />
-                        Settings
-                    </button>
+                    {user?.role !== 'interviewer' && (
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'settings' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
+                                }`}
+                        >
+                            <Settings size={18} className="mr-3" />
+                            Settings
+                        </button>
+                    )}
                 </nav>
             </div>
 

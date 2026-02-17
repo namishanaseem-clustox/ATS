@@ -25,10 +25,56 @@ def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
         filter_by_owner_id = current_user.id
         
     elif current_user.role == UserRole.INTERVIEWER:
-        if current_user.department_id:
-            filter_by_department_id = current_user.department_id
-        else:
+        # Interviewers only see candidates they are assigned to interview
+        from app.models.scheduled_activity import ScheduledActivity
+        assigned_candidate_ids = db.query(ScheduledActivity.candidate_id).join(ScheduledActivity.assignees).filter(
+            User.id == current_user.id,
+            ScheduledActivity.candidate_id.isnot(None)
+        ).distinct().all()
+        
+        if not assigned_candidate_ids:
             return []
+        
+        # Extract candidate IDs from the result tuples
+        candidate_ids = [candidate_id[0] for candidate_id in assigned_candidate_ids]
+        
+        # Get candidates that are in the assigned candidate IDs list
+        candidates = candidate_service.get_candidates_by_ids(db, candidate_ids, skip=skip, limit=limit)
+        
+        # Manually construction response to bypass Pydantic serialization hang
+        results = []
+        for c in candidates:
+            try:
+                # Basic fields
+                c_dict = {
+                    "id": str(c.id),
+                    "first_name": c.first_name,
+                    "last_name": c.last_name,
+                    "email": c.email,
+                    "phone": c.phone,
+                    "location": c.location,
+                    "current_company": c.current_company,
+                    "current_position": c.current_position,
+                    "experience_years": c.experience_years,
+                    "nationality": c.nationality,
+                    "notice_period": c.notice_period,
+                    "skills": c.skills or [],
+                    "education": c.education or [],
+                    "experience_history": c.experience_history or [],
+                    "social_links": c.social_links or {},
+                    "created_at": c.created_at.isoformat() if c.created_at else None,
+                    "updated_at": c.updated_at.isoformat() if c.updated_at else None,
+                    "resume_file_path": c.resume_file_path,
+                    "parsed_at": c.parsed_at.isoformat() if c.parsed_at else None,
+                    "current_salary": None,  # Always redact for interviewers
+                    "expected_salary": None,  # Always redact for interviewers
+                }
+                results.append(c_dict)
+            except Exception as e:
+                # Skip invalid records but don't crash the whole list
+                continue
+                
+        return results
 
     # Pass filter to service (which we need to update to support it)
     # candidates = db.query(Candidate).offset(skip).limit(limit).all()
@@ -86,12 +132,19 @@ def read_candidate(candidate_id: UUID, db: Session = Depends(get_db), current_us
     if db_candidate is None:
         raise HTTPException(status_code=404, detail="Candidate not found")
     
+    # For interviewers, check if they are assigned to this candidate
+    if current_user.role == UserRole.INTERVIEWER:
+        from app.models.scheduled_activity import ScheduledActivity
+        assigned_activity = db.query(ScheduledActivity).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.candidate_id == candidate_id,
+            User.id == current_user.id
+        ).first()
+        
+        if not assigned_activity:
+            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this candidate")
+    
     # Redact salary for Interviewers
     if current_user.role == UserRole.INTERVIEWER:
-        # We need to be careful not to mutate the DB object directly if it's attached to session
-        # But for response serialization it might be okay. 
-        # Safer to just set the attributes on the object before return, 
-        # as long as we don't commit.
         db_candidate.current_salary = None
         db_candidate.expected_salary = None
 

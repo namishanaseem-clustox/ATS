@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { getCandidates, deleteCandidate } from '../api/candidates';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import RoleGuard from '../components/RoleGuard';
 
 import CandidateForm from '../components/CandidateForm';
 import ResumeUpload from '../components/ResumeUpload';
@@ -14,6 +16,7 @@ const Candidates = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
+    const { user } = useAuth();
 
     const handleSearch = () => {
         setSearchQuery(inputValue);
@@ -70,13 +73,15 @@ const Candidates = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Candidates</h1>
                     <p className="text-gray-500 mt-1">Manage your talent pool and applicants.</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                >
-                    <Plus size={20} className="mr-2" />
-                    Add Candidate
-                </button>
+                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+                    >
+                        <Plus size={20} className="mr-2" />
+                        Add Candidate
+                    </button>
+                </RoleGuard>
             </div>
 
             {/* Filters placeholder */}
@@ -167,12 +172,14 @@ const Candidates = () => {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <button
-                                                    onClick={(e) => handleDelete(e, candidate.id)}
-                                                    className="text-red-600 hover:text-red-900"
-                                                >
-                                                    Delete
-                                                </button>
+                                                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                                    <button
+                                                        onClick={(e) => handleDelete(e, candidate.id)}
+                                                        className="text-red-600 hover:text-red-900"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </RoleGuard>
                                             </td>
                                         </tr>
                                     ))}

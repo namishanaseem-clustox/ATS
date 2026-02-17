@@ -82,6 +82,14 @@ class JobService:
         else:
             return query.offset(skip).limit(limit).all()
         
+    def get_jobs_by_ids(self, db: Session, job_ids: list[UUID], skip: int = 0, limit: int = 100, status: str = None):
+        query = db.query(Job).options(joinedload(Job.department)).filter(Job.id.in_(job_ids), Job.is_deleted == False)
+        
+        if status:
+            query = query.filter(Job.status == status)
+            
+        return query.offset(skip).limit(limit).all()
+
     def get_jobs_by_department(self, db: Session, department_id: UUID, skip: int = 0, limit: int = 100, status: str = None):
         if status == JobStatus.ARCHIVED.value:
              query = db.query(Job).options(joinedload(Job.department)).filter(Job.department_id == department_id, Job.is_deleted == True)

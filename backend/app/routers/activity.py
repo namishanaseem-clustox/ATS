@@ -13,7 +13,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.routers.auth import get_current_active_user
 
 @router.get("/my-interviews", response_model=List[ActivityResponse])
@@ -40,7 +40,18 @@ def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
     return db_activity
 
 @router.get("/job/{job_id}", response_model=List[ActivityResponse])
-def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db)):
+def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    # For interviewers, only return activities assigned to them
+    if current_user.role == UserRole.INTERVIEWER:
+        return db.query(ScheduledActivity).options(
+            joinedload(ScheduledActivity.candidate),
+            joinedload(ScheduledActivity.job),
+            joinedload(ScheduledActivity.assignees)
+        ).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.job_id == job_id,
+            User.id == current_user.id
+        ).all()
+    
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
@@ -48,7 +59,18 @@ def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db)):
     ).filter(ScheduledActivity.job_id == job_id).all()
 
 @router.get("/candidate/{candidate_id}", response_model=List[ActivityResponse])
-def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db)):
+def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    # For interviewers, only return activities assigned to them
+    if current_user.role == UserRole.INTERVIEWER:
+        return db.query(ScheduledActivity).options(
+            joinedload(ScheduledActivity.candidate),
+            joinedload(ScheduledActivity.job),
+            joinedload(ScheduledActivity.assignees)
+        ).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.candidate_id == candidate_id,
+            User.id == current_user.id
+        ).all()
+    
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
@@ -56,12 +78,18 @@ def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db
     ).filter(ScheduledActivity.candidate_id == candidate_id).all()
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
-def get_activity(activity_id: UUID, db: Session = Depends(get_db)):
+def get_activity(activity_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_activity = db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.assignees)
     ).filter(ScheduledActivity.id == activity_id).first()
     if db_activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")
+    
+    # For interviewers, check if they are assigned to this activity
+    if current_user.role == UserRole.INTERVIEWER:
+        if not any(assignee.id == current_user.id for assignee in db_activity.assignees):
+            raise HTTPException(status_code=403, detail="Access denied: Not assigned to this activity")
+    
     return db_activity
 
 @router.put("/{activity_id}", response_model=ActivityResponse)
