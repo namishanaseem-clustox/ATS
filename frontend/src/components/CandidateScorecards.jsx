@@ -48,16 +48,18 @@ const CandidateScorecards = ({ candidateId }) => {
                                         }`}>
                                         Recommendation: {feedback.recommendation}
                                     </p>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        by {feedback.interviewer?.first_name && feedback.interviewer?.last_name 
+                                            ? `${feedback.interviewer.first_name} ${feedback.interviewer.last_name}`
+                                            : feedback.interviewer?.email || 'Unknown Interviewer'
+                                        }
+                                    </p>
                                 </div>
                             </div>
                             <div className="text-right">
                                 <div className="flex items-center text-xs text-gray-500 mb-1">
                                     <Calendar className="h-3 w-3 mr-1" />
                                     {new Date(feedback.created_at).toLocaleDateString()}
-                                </div>
-                                <div className="flex items-center text-xs text-gray-500">
-                                    <User className="h-3 w-3 mr-1" />
-                                    Interviewer ID: {feedback.interviewer_id.slice(0, 8)}...
                                 </div>
                             </div>
                         </div>

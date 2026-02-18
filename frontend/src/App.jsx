@@ -10,6 +10,7 @@ import Candidates from './pages/Candidates';
 import CandidateDetail from './pages/CandidateDetail';
 import Team from './pages/Team';
 import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
 import logo from './assets/Clustox Logo Black_Artboard 1.png';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import MyInterviews from './pages/MyInterviews';
@@ -25,6 +26,14 @@ const Layout = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // Determine default route based on user role
+  const getDefaultRoute = () => {
+    if (['owner', 'hr'].includes(user?.role)) {
+      return '/dashboard';
+    }
+    return '/jobs';
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {/* Simple Navbar for Navigation */}
@@ -35,6 +44,7 @@ const Layout = () => {
             Clustox ATS
           </span>
           <div className="space-x-6">
+            <Link to="/dashboard" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Dashboard</Link>
             {user?.role !== 'interviewer' && (
               <Link to="/departments" className="text-gray-600 hover:text-[#00C853] font-medium transition-colors">Departments</Link>
             )}
@@ -64,6 +74,27 @@ const Layout = () => {
   );
 };
 
+// Default route component
+const DefaultRoute = () => {
+  const { user, loading } = useAuth();
+  
+  // Show loading spinner while user data is being fetched
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
+  
+  const getDefaultRoute = () => {
+    // All users go to dashboard (content will be role-based)
+    return '/dashboard';
+  };
+  
+  return <Navigate to={getDefaultRoute()} replace />;
+};
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -74,7 +105,8 @@ function App() {
 
             {/* Protected Routes */}
             <Route element={<Layout />}>
-              <Route path="/" element={<Navigate to="/jobs" replace />} />
+              <Route path="/" element={<DefaultRoute />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/departments" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
                   <DepartmentsPage />

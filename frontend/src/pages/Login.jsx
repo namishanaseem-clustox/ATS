@@ -13,7 +13,8 @@ const Login = () => {
     // Redirect if already logged in
     useEffect(() => {
         if (user) {
-            navigate('/jobs');
+            // Let the DefaultRoute handle the redirection based on role
+            navigate('/');
         }
     }, [user, navigate]);
 
@@ -22,7 +23,8 @@ const Login = () => {
         setError('');
         try {
             await login(email, password);
-            navigate('/jobs');
+            // Let the DefaultRoute handle the redirection based on role
+            navigate('/');
         } catch (err) {
             if (err.response && err.response.data && err.response.data.detail) {
                 setError(err.response.data.detail);

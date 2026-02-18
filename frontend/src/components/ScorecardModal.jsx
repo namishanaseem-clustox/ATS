@@ -11,7 +11,7 @@ const SCORECARD_CRITERIA = [
     "Relevant Experience"
 ];
 
-const ScorecardModal = ({ isOpen, onClose, activity, onSave }) => {
+const ScorecardModal = ({ isOpen, onClose, activity, onSave, existingFeedback }) => {
     const [overallScore, setOverallScore] = useState(0);
     const [recommendation, setRecommendation] = useState('');
     const [scorecard, setScorecard] = useState(
@@ -20,6 +20,27 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave }) => {
     const [comments, setComments] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    // Initialize form with existing feedback if provided
+    React.useEffect(() => {
+        if (existingFeedback) {
+            setOverallScore(existingFeedback.overall_score || 0);
+            setRecommendation(existingFeedback.recommendation || '');
+            setComments(existingFeedback.comments || '');
+            if (existingFeedback.scorecard && existingFeedback.scorecard.length > 0) {
+                setScorecard(existingFeedback.scorecard);
+            }
+            setIsUpdating(true);
+        } else {
+            // Reset form for new feedback
+            setOverallScore(0);
+            setRecommendation('');
+            setComments('');
+            setScorecard(SCORECARD_CRITERIA.map(c => ({ criteria: c, score: 0, comment: '' })));
+            setIsUpdating(false);
+        }
+    }, [existingFeedback, isOpen]);
 
     const handleScoreChange = (index, score) => {
         const newScorecard = [...scorecard];
@@ -57,11 +78,13 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave }) => {
                 comments
             };
 
+            console.log('Submitting feedback payload:', payload);
             await createFeedback(payload);
             onSave();
             onClose();
         } catch (error) {
             console.error("Failed to submit feedback", error);
+            console.error("Error response:", error.response?.data);
             setError(error.response?.data?.detail || "Failed to submit feedback");
         } finally {
             setLoading(false);
@@ -84,7 +107,7 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave }) => {
                         <div className="flex justify-between items-center mb-6">
                             <div>
                                 <h3 className="text-xl leading-6 font-bold text-gray-900 border-b-2 border-green-500 inline-block pb-1">
-                                    Interview Scorecard
+                                    {isUpdating ? 'Update Interview Scorecard' : 'Interview Scorecard'}
                                 </h3>
                                 <p className="text-sm text-gray-500 mt-2">
                                     Feedback for <span className="font-semibold text-gray-700">{activity.candidate?.first_name} {activity.candidate?.last_name}</span>
@@ -215,9 +238,9 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave }) => {
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            Submitting...
+                                            {isUpdating ? 'Updating...' : 'Submitting...'}
                                         </>
-                                    ) : 'Submit Scorecard'}
+                                    ) : (isUpdating ? 'Update Scorecard' : 'Submit Scorecard')}
                                 </button>
                             </div>
                         </form>

@@ -1,10 +1,15 @@
-import React from 'react';
-import { User, Briefcase, MapPin, Trash2, Eye, Brain } from 'lucide-react';
+import React, { useState } from 'react';
+import { User, Briefcase, MapPin, Trash2, Eye, Brain, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ApplicationStatusBadge from './ApplicationStatusBadge';
+import FeedbackViewModal from './FeedbackViewModal';
+import { useAuth } from '../context/AuthContext';
+import RoleGuard from './RoleGuard';
 
 const CandidateCard = ({ candidate, onDelete, onAIScreen }) => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const {
         id, first_name, last_name, current_position, current_company,
         location, experience_years, applications
@@ -64,21 +69,40 @@ const CandidateCard = ({ candidate, onDelete, onAIScreen }) => {
                     </button>
                 )}
                 <div className="flex gap-2">
+                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                        <button
+                            onClick={() => setIsFeedbackModalOpen(true)}
+                            className="flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            title="View Interview Feedback"
+                        >
+                            <MessageSquare size={16} className="mr-2" />
+                            Feedback
+                        </button>
+                    </RoleGuard>
                     <button
                         onClick={() => navigate(`/candidates/${id}`)}
                         className="flex items-center px-3 py-1.5 text-sm font-medium text-[#00C853] hover:bg-green-50 rounded-md transition-colors"
                     >
                         <Eye size={16} className="mr-2" /> View
                     </button>
-                    <button
-                        onClick={() => onDelete(id)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Delete"
-                    >
-                        <Trash2 size={16} />
-                    </button>
+                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                        <button
+                            onClick={() => onDelete(id)}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                            title="Delete"
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </RoleGuard>
                 </div>
             </div>
+            
+            {/* Feedback Modal */}
+            <FeedbackViewModal
+                isOpen={isFeedbackModalOpen}
+                onClose={() => setIsFeedbackModalOpen(false)}
+                candidate={candidate}
+            />
         </div>
     );
 };

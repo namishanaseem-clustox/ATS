@@ -254,6 +254,14 @@ const CandidateDetail = () => {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Interview Feedback Section - Only visible to HR, Owner, and Hiring Managers */}
+                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                        <div>
+                                            <h3 className="text-base font-bold text-gray-900 mb-4">Interview Feedback</h3>
+                                            <CandidateScorecards candidateId={candidate.id} />
+                                        </div>
+                                    </RoleGuard>
                                 </div>
                             )}
 

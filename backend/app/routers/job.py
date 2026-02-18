@@ -172,11 +172,11 @@ def read_job_candidates(job_id: UUID, db: Session = Depends(get_db), current_use
         if not assigned_activities:
             raise HTTPException(status_code=403, detail="Access denied: Not assigned to this job")
         
-        # Get candidate IDs from assigned activities
+        # Get candidate IDs from assigned activities (as strings for consistent comparison)
         assigned_candidate_ids = set()
         for activity in assigned_activities:
             if activity.candidate_id:
-                assigned_candidate_ids.add(activity.candidate_id)
+                assigned_candidate_ids.add(str(activity.candidate_id))
         
         # Only return applications for candidates they're assigned to
         applications = candidate_service.get_candidates_by_job(db, job_id=job_id)

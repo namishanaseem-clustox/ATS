@@ -3,6 +3,12 @@ from typing import Optional, List, Any
 from uuid import UUID
 from datetime import datetime
 
+class InterviewerInfo(BaseModel):
+    id: UUID
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: str
+
 class ScorecardField(BaseModel):
     criteria: str
     score: int # 1-5
@@ -28,6 +34,7 @@ class FeedbackUpdate(BaseModel):
 class FeedbackResponse(FeedbackBase):
     id: UUID
     interviewer_id: UUID
+    interviewer: Optional[InterviewerInfo] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import departments, job, candidate, activity, auth, feedback
+from app.routers import departments, job, candidate, activity, auth, feedback, dashboard
 from app.database import Base, engine
 
 
@@ -39,6 +39,7 @@ app.include_router(candidate.router)
 app.include_router(activity.router)
 app.include_router(auth.router)
 app.include_router(feedback.router)
+app.include_router(dashboard.router)
 
 @app.get("/")
 def read_root():
