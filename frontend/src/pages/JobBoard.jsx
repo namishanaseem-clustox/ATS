@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Search, Trash2, Archive, SlidersHorizontal, Briefcase } from 'lucide-react';
+import { Plus, X, Search, Trash2, Archive, SlidersHorizontal, Briefcase, Columns } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -7,8 +7,20 @@ import { getJobs, updateJob, permanentlyDeleteJob } from '../api/jobs';
 import { getDepartments } from '../api/departments';
 import PermanentDeleteModal from '../components/PermanentDeleteModal';
 import Breadcrumb from '../components/Breadcrumb';
+import ColumnSelector from '../components/ColumnSelector';
+import useColumnPersistence from '../hooks/useColumnPersistence';
+
+const JOB_COLUMNS = [
+    { id: 'title', label: 'Position Name', required: true },
+    { id: 'department', label: 'Job Department' },
+    { id: 'location', label: 'Job Location' },
+    { id: 'headcount', label: 'Headcount' },
+    { id: 'stage', label: 'Job Stage' },
+    { id: 'salary', label: 'Salary Range' }
+];
 
 const JobBoard = ({ embeddedDepartmentId }) => {
+    const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_jobs_columns', JOB_COLUMNS.map(c => c.id));
     const [showFilters, setShowFilters] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [jobs, setJobs] = useState([]);
@@ -165,14 +177,27 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                 <button
                     onClick={() => setShowFilters(f => !f)}
                     className={`flex items-center px-4 py-2 border rounded-md text-sm transition-colors ${showFilters || statusFilter === 'Archived'
-                            ? 'bg-[#00C853]/10 text-[#00C853] border-[#00C853]/30'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        ? 'bg-[#00C853]/10 text-[#00C853] border-[#00C853]/30'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                         }`}
                 >
                     <SlidersHorizontal size={15} className="mr-1.5" />
                     Filters
                     {statusFilter === 'Archived' && <span className="ml-1.5 bg-[#00C853] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">1</span>}
                 </button>
+
+                {/* Column Selector */}
+                <div className="flex-shrink-0">
+                    <ColumnSelector
+                        columns={JOB_COLUMNS}
+                        visibleColumns={visibleColumns}
+                        onToggle={(id) => {
+                            const col = JOB_COLUMNS.find(c => c.id === id);
+                            if (col && col.required) return;
+                            toggleColumn(id);
+                        }}
+                    />
+                </div>
             </div>
 
             {/* Collapsible filter panel */}
@@ -188,8 +213,8 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                             setSearchParams(newParams);
                         }}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${statusFilter === 'Archived'
-                                ? 'bg-yellow-50 text-yellow-700 border-yellow-300'
-                                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                            ? 'bg-yellow-50 text-yellow-700 border-yellow-300'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                     >
                         {statusFilter === 'Archived' ? '✓ Archived' : 'Archived'}
@@ -236,12 +261,12 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position Name</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Department</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Location</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Headcount</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Stage</th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary Range</th>
+                                    {visibleColumns.includes('title') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position Name</th>}
+                                    {visibleColumns.includes('department') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Department</th>}
+                                    {visibleColumns.includes('location') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Location</th>}
+                                    {visibleColumns.includes('headcount') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Headcount</th>}
+                                    {visibleColumns.includes('stage') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Stage</th>}
+                                    {visibleColumns.includes('salary') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salary Range</th>}
                                     {statusFilter === 'Archived' && (
                                         <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                     )}
@@ -254,37 +279,49 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                         className="hover:bg-gray-50 transition-colors cursor-pointer"
                                         onClick={() => navigate(`/jobs/${job.id}`)}
                                     >
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-blue-600 hover:text-blue-800">{job.title}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            {job.department ? (
-                                                <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                    {job.department.name}
+                                        {visibleColumns.includes('title') && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-blue-600 hover:text-blue-800">{job.title}</div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('department') && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {job.department ? (
+                                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                                        {job.department.name}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-sm text-gray-500">-</span>
+                                                )}
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('location') && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-500">{job.location}</div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('headcount') && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">{job.headcount}</div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('stage') && (
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status === 'Published' ? 'bg-green-100 text-green-800' :
+                                                    job.status === 'Archived' ? 'bg-yellow-100 text-yellow-800' :
+                                                        'bg-gray-100 text-gray-800'
+                                                    }`}>
+                                                    {job.status}
                                                 </span>
-                                            ) : (
-                                                <span className="text-sm text-gray-500">-</span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-500">{job.location}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">{job.headcount}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${job.status === 'Published' ? 'bg-green-100 text-green-800' :
-                                                job.status === 'Archived' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                {job.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {job.min_salary && job.max_salary
-                                                ? `${job.min_salary.toLocaleString()} - ${job.max_salary.toLocaleString()}`
-                                                : 'Negotiable'}
-                                        </td>
+                                            </td>
+                                        )}
+                                        {visibleColumns.includes('salary') && (
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {job.min_salary && job.max_salary
+                                                    ? `${job.min_salary.toLocaleString()} - ${job.max_salary.toLocaleString()}`
+                                                    : 'Negotiable'}
+                                            </td>
+                                        )}
                                         {statusFilter === 'Archived' && (
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                 <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>

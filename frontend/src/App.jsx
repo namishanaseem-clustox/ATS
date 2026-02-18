@@ -105,7 +105,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/candidates/:id" element={
-                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager', 'interviewer']}>
                   <CandidateDetail />
                 </ProtectedRoute>
               } />

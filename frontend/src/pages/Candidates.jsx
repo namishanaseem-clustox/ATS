@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Users } from 'lucide-react';
+import { Plus, Search, Users, Columns } from 'lucide-react';
 import { getCandidates, deleteCandidate } from '../api/candidates';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -7,6 +7,18 @@ import RoleGuard from '../components/RoleGuard';
 import CandidateForm from '../components/CandidateForm';
 import ResumeUpload from '../components/ResumeUpload';
 import Breadcrumb from '../components/Breadcrumb';
+import ColumnSelector from '../components/ColumnSelector';
+import useColumnPersistence from '../hooks/useColumnPersistence';
+
+const CANDIDATE_COLUMNS = [
+    { id: 'name', label: 'Candidate Name', required: true },
+    { id: 'position', label: 'Current Position' },
+    { id: 'company', label: 'Current Company' },
+    { id: 'notice', label: 'Notice Period' },
+    { id: 'experience', label: 'Years of Exp' },
+    { id: 'university', label: 'University' },
+    { id: 'actions', label: 'Actions', required: true }
+];
 
 const Candidates = () => {
     const [candidates, setCandidates] = useState([]);
@@ -17,6 +29,8 @@ const Candidates = () => {
     const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
     const { user } = useAuth();
+
+    const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_candidates_columns', CANDIDATE_COLUMNS.map(c => c.id));
 
     const handleSearch = () => {
         setSearchQuery(inputValue);
@@ -86,7 +100,7 @@ const Candidates = () => {
             </div>
 
             {/* Filters placeholder */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4 items-center">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
@@ -104,6 +118,20 @@ const Candidates = () => {
                 >
                     <Search size={18} className="mr-2" /> Search
                 </button>
+
+                {/* Column Selector */}
+                <div className="flex-shrink-0">
+                    <ColumnSelector
+                        columns={CANDIDATE_COLUMNS}
+                        visibleColumns={visibleColumns}
+                        onToggle={(id) => {
+                            // Don't allowing toggling required columns
+                            const col = CANDIDATE_COLUMNS.find(c => c.id === id);
+                            if (col && col.required) return;
+                            toggleColumn(id);
+                        }}
+                    />
+                </div>
             </div>
 
             {loading ? (
@@ -115,17 +143,13 @@ const Candidates = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate Name</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Position</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Company</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notice Period</th>
-                                        {/*
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Salary</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expected Salary</th>
-                                        */}
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Years of Exp</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>
-                                        <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                                        {visibleColumns.includes('name') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Candidate Name</th>}
+                                        {visibleColumns.includes('position') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Position</th>}
+                                        {visibleColumns.includes('company') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Company</th>}
+                                        {visibleColumns.includes('notice') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notice Period</th>}
+                                        {visibleColumns.includes('experience') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Years of Exp</th>}
+                                        {visibleColumns.includes('university') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">University</th>}
+                                        {visibleColumns.includes('actions') && <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>}
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
@@ -135,53 +159,59 @@ const Candidates = () => {
                                             className="hover:bg-gray-50 transition-colors cursor-pointer"
                                             onClick={() => navigate(`/candidates/${candidate.id}`)}
                                         >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-[#00C853] text-white font-bold">
-                                                        {candidate.first_name && candidate.first_name[0]}{candidate.last_name && candidate.last_name[0]}
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
-                                                            {candidate.first_name} {candidate.last_name}
+                                            {visibleColumns.includes('name') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-[#00C853] text-white font-bold">
+                                                            {candidate.first_name && candidate.first_name[0]}{candidate.last_name && candidate.last_name[0]}
+                                                        </div>
+                                                        <div className="ml-4">
+                                                            <div className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                                                                {candidate.first_name} {candidate.last_name}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{candidate.current_position || '-'}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">{candidate.current_company || '-'}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{candidate.notice_period ? `${candidate.notice_period} Days` : 'Immediate'}</div>
-                                            </td>
-                                            {/*
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{candidate.current_salary || 'NA'}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{candidate.expected_salary || 'NA'}</div>
-                                            </td>
-                                            */}
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{candidate.experience_years || 0}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">
-                                                    {candidate.education && candidate.education.length > 0 ? candidate.education[0].school : '-'}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
-                                                    <button
-                                                        onClick={(e) => handleDelete(e, candidate.id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </RoleGuard>
-                                            </td>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('position') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{candidate.current_position || '-'}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('company') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-500">{candidate.current_company || '-'}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('notice') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{candidate.notice_period ? `${candidate.notice_period} Days` : 'Immediate'}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('experience') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{candidate.experience_years || 0}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('university') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-500">
+                                                        {candidate.education && candidate.education.length > 0 ? candidate.education[0].school : '-'}
+                                                    </div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('actions') && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                                        <button
+                                                            onClick={(e) => handleDelete(e, candidate.id)}
+                                                            className="text-red-600 hover:text-red-900"
+                                                        >
+                                                            Delete
+                                                        </button>
+                                                    </RoleGuard>
+                                                </td>
+                                            )}
                                         </tr>
                                     ))}
                                 </tbody>

@@ -96,9 +96,6 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4 px-4">
                 <h3 className="text-lg font-semibold text-gray-800">Pipeline Stages</h3>
-                <button className="text-sm text-gray-500 hover:text-[#00C853] flex items-center">
-                    <Settings size={14} className="mr-1" /> Configure
-                </button>
             </div>
 
             <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
@@ -138,7 +135,6 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                 {stageCandidates.length}
                                                             </span>
                                                         </div>
-                                                        <MoreVertical size={16} className="text-gray-400 cursor-pointer hover:text-gray-600" />
                                                     </div>
 
                                                     {/* Candidate List Droppable */}

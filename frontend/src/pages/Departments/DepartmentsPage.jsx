@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Columns } from 'lucide-react';
 
 import DepartmentModal from '../../components/DepartmentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -9,6 +9,19 @@ import useDepartmentStore from '../../store/useDepartmentStore';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../../api/departments';
 import { useAuth } from '../../context/AuthContext';
 import Breadcrumb from '../../components/Breadcrumb';
+import ColumnSelector from '../../components/ColumnSelector';
+import useColumnPersistence from '../../hooks/useColumnPersistence';
+
+const DEPARTMENT_COLUMNS = [
+    { id: 'name', label: 'Department Name', required: true },
+    { id: 'job_count', label: 'Job Count' },
+    { id: 'location', label: 'Department Location' },
+    { id: 'status', label: 'Department Status' },
+    { id: 'owner', label: 'Department Owner' },
+    { id: 'type', label: 'Department Type' },
+    { id: 'created_at', label: 'Department Created' },
+    { id: 'actions', label: 'Actions', required: true }
+];
 
 const DepartmentsPage = () => {
     const queryClient = useQueryClient();
@@ -26,6 +39,8 @@ const DepartmentsPage = () => {
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
+
+    const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_departments_columns', DEPARTMENT_COLUMNS.map(c => c.id));
 
     const handleSearch = () => {
         setSearchQuery(inputValue);
@@ -117,7 +132,7 @@ const DepartmentsPage = () => {
                 </div>
 
                 {/* Search and Filter Bar */}
-                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4">
+                <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4 items-center">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                         <input
@@ -135,6 +150,19 @@ const DepartmentsPage = () => {
                     >
                         <Search size={18} className="mr-2" /> Search
                     </button>
+
+                    {/* Column Selector */}
+                    <div className="flex-shrink-0">
+                        <ColumnSelector
+                            columns={DEPARTMENT_COLUMNS}
+                            visibleColumns={visibleColumns}
+                            onToggle={(id) => {
+                                const col = DEPARTMENT_COLUMNS.find(c => c.id === id);
+                                if (col && col.required) return;
+                                toggleColumn(id);
+                            }}
+                        />
+                    </div>
                 </div>
 
                 {filteredDepartments.length === 0 ? (
@@ -150,13 +178,13 @@ const DepartmentsPage = () => {
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Name</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Count</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Location</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Status</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Owner</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Type</th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Created</th>
+                                        {visibleColumns.includes('name') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Name</th>}
+                                        {visibleColumns.includes('job_count') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Count</th>}
+                                        {visibleColumns.includes('location') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Location</th>}
+                                        {visibleColumns.includes('status') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Status</th>}
+                                        {visibleColumns.includes('owner') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Owner</th>}
+                                        {visibleColumns.includes('type') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Type</th>}
+                                        {visibleColumns.includes('created_at') && <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department Created</th>}
                                         {canManageDepartments && (
                                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
                                         )}
@@ -165,55 +193,69 @@ const DepartmentsPage = () => {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {filteredDepartments.map((dept) => (
                                         <tr key={dept.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-primary font-bold">
-                                                        {dept.name.substring(0, 2).toUpperCase()}
-                                                    </div>
-                                                    <div className="ml-4">
-                                                        <div
-                                                            className="text-sm font-medium text-indigo-600 hover:text-indigo-900 cursor-pointer hover:underline"
-                                                            onClick={() => navigate(`/departments/${dept.id}`)}
-                                                        >
-                                                            {dept.name}
+                                            {visibleColumns.includes('name') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-blue-100 text-primary font-bold">
+                                                            {dept.name.substring(0, 2).toUpperCase()}
+                                                        </div>
+                                                        <div className="ml-4">
+                                                            <div
+                                                                className="text-sm font-medium text-indigo-600 hover:text-indigo-900 cursor-pointer hover:underline"
+                                                                onClick={() => navigate(`/departments/${dept.id}`)}
+                                                            >
+                                                                {dept.name}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{dept.total_jobs_count || 0}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-500">{dept.location || "Lahore, Punjab, Pakistan"}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${dept.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                    {dept.status || 'Active'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    {dept.owner ? (
-                                                        <>
-                                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs text-indigo-700 mr-2 font-bold">
-                                                                {dept.owner.full_name.substring(0, 2).toUpperCase()}
-                                                            </div>
-                                                            <div className="text-sm text-gray-900">{dept.owner.full_name}</div>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 mr-2">OA</div>
-                                                            <div className="text-sm text-gray-500">Unassigned</div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                Department
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                {new Date(dept.created_at).toLocaleDateString()}
-                                            </td>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('job_count') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">{dept.total_jobs_count || 0}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('location') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-500">{dept.location || "Lahore, Punjab, Pakistan"}</div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('status') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${dept.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                                                        {dept.status || 'Active'}
+                                                    </span>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('owner') && (
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center">
+                                                        {dept.owner ? (
+                                                            <>
+                                                                <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-xs text-indigo-700 mr-2 font-bold">
+                                                                    {dept.owner.full_name.substring(0, 2).toUpperCase()}
+                                                                </div>
+                                                                <div className="text-sm text-gray-900">{dept.owner.full_name}</div>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-500 mr-2">OA</div>
+                                                                <div className="text-sm text-gray-500">Unassigned</div>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('type') && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    Department
+                                                </td>
+                                            )}
+                                            {visibleColumns.includes('created_at') && (
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {new Date(dept.created_at).toLocaleDateString()}
+                                                </td>
+                                            )}
                                             {canManageDepartments && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button onClick={() => openEditModal(dept)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
