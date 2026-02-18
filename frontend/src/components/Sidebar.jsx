@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Briefcase, Users, Building2, UserCheck,
     ChevronDown, ChevronRight, UsersRound, LogOut, Menu, X,
@@ -9,7 +9,6 @@ import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
 
 const NavGroup = ({ label, icon: Icon, children, defaultOpen = false }) => {
-    const location = useLocation();
     const [open, setOpen] = useState(() => {
         // Auto-open group if a child route is active
         return defaultOpen;

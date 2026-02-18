@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { X, Brain, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { screenCandidate } from '../api/jobs';
+import Counter from './Counter';
 
 const AIScreeningModal = ({ isOpen, onClose, jobId, candidateId, candidateName, initialData, onScreeningComplete }) => {
     const [loading, setLoading] = useState(false);
@@ -109,7 +110,7 @@ const AIScreeningModal = ({ isOpen, onClose, jobId, candidateId, candidateName, 
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-gray-700">Match Score</span>
                                         <span className={`text-3xl font-bold ${getScoreColor(screeningData.match_score)}`}>
-                                            {screeningData.match_score}/100
+                                            <Counter end={screeningData.match_score} />/100
                                         </span>
                                     </div>
                                 </div>

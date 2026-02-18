@@ -10,6 +10,7 @@ import { Users, TrendingUp, Activity, Award, BarChart3, Calendar, UserCheck, Bri
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MyInterviews from './MyInterviews';
+import WelcomeModal from '../components/WelcomeModal';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -138,6 +139,8 @@ const Dashboard = () => {
         <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
         <p className="text-gray-500 mt-2">Overview of your ATS system performance and activities</p>
       </div>
+
+      <WelcomeModal />
 
       {/* Today's Focus Panel - Hooked Model Trigger */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-8">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { getJob, updatePipeline, cloneJob, deleteJob, updateJob, updateCandidateStage } from '../api/jobs';
-import { getJobCandidates } from '../api/candidates';
+import { getJobCandidates, unlinkJobApplication } from '../api/candidates';
 import JobPipeline from '../components/JobPipeline';
 import CandidateCard from '../components/CandidateCard';
 import ActivityList from '../components/ActivityList';
@@ -159,12 +159,27 @@ const JobDetail = () => {
         }
     };
 
-    const handleCandidateDelete = (candidateId) => {
-        // Just remove from view for now, effectively "unlinking" or hiding would be better but
-        // CandidateCard calls deleteCandidate which deletes the whole candidate.
-        // Maybe we should warn the user that deleting from here deletes the candidate entirely?
-        // For now, let's just refresh the list.
+    const handleCandidateDelete = async (candidateId) => {
+        if (!window.confirm("Are you sure you want to remove this candidate from the job?")) {
+            return;
+        }
+
+        // Optimistic update
         setCandidates(prev => prev.filter(app => app.candidate.id !== candidateId));
+
+        try {
+            await unlinkJobApplication(candidateId, id);
+        } catch (error) {
+            console.error("Failed to unlink candidate", error);
+            alert("Failed to remove candidate. Please try again.");
+            // Re-fetch candidates to revert UI
+            try {
+                const data = await getJobCandidates(id);
+                setCandidates(data);
+            } catch (refetchError) {
+                console.error("Failed to refresh candidates", refetchError);
+            }
+        }
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading job details...</div>;
