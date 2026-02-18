@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getCandidate, unlinkJobApplication } from '../api/candidates';
 import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, FileText, Trash2 } from 'lucide-react';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
@@ -20,6 +20,8 @@ const CandidateDetail = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const { user } = useAuth();
 
+    const location = useLocation();
+
     const fetchCandidate = async () => {
         try {
             const data = await getCandidate(id);
@@ -30,6 +32,14 @@ const CandidateDetail = () => {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const tab = params.get('tab');
+        if (tab) {
+            setActiveTab(tab);
+        }
+    }, [location.search]);
 
     useEffect(() => {
         fetchCandidate();

@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import MyInterviews from './pages/MyInterviews';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
+import Notifications from './components/Notifications';
 
 const queryClient = new QueryClient();
 
@@ -33,8 +34,17 @@ const Layout = () => {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(c => !c)}
       />
-      <main className="flex-1 overflow-auto">
-        <Outlet />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0 z-10">
+          <Notifications />
+          {/* User profile could go here too if we wanted duplicates, but it's in sidebar footer */}
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-auto">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

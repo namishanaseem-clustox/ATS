@@ -57,46 +57,46 @@ const CandidateCard = ({ candidate, onDelete, onAIScreen }) => {
                 </div>
             </div>
 
-            <div className="mt-6 flex justify-between gap-2 border-t pt-4 border-gray-50">
+            <div className="mt-6 flex flex-wrap justify-between items-center gap-2 border-t pt-4 border-gray-50">
                 {onAIScreen && latestApp && (
                     <button
                         onClick={() => onAIScreen(latestApp)}
-                        className="flex items-center px-3 py-1.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                        className="flex items-center px-2 py-1.5 text-sm font-medium text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
                         title="AI Screening Analysis"
                     >
-                        <Brain size={16} className="mr-2" />
-                        {latestApp.ai_score ? 'View Analysis' : 'Run AI Screen'}
+                        <Brain size={16} className="mr-1" />
+                        {latestApp.ai_score ? 'Analysis' : 'AI Screen'}
                     </button>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-1 ml-auto">
                     <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
                         <button
                             onClick={() => setIsFeedbackModalOpen(true)}
-                            className="flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
                             title="View Interview Feedback"
                         >
-                            <MessageSquare size={16} className="mr-2" />
-                            Feedback
+                            <MessageSquare size={18} />
                         </button>
                     </RoleGuard>
                     <button
                         onClick={() => navigate(`/candidates/${id}`)}
-                        className="flex items-center px-3 py-1.5 text-sm font-medium text-[#00C853] hover:bg-green-50 rounded-md transition-colors"
+                        className="p-1.5 text-[#00C853] hover:bg-green-50 rounded-md transition-colors"
+                        title="View Profile"
                     >
-                        <Eye size={16} className="mr-2" /> View
+                        <Eye size={18} />
                     </button>
                     <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
                         <button
                             onClick={() => onDelete(id)}
                             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                            title="Delete"
+                            title="Delete Candidate"
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                         </button>
                     </RoleGuard>
                 </div>
             </div>
-            
+
             {/* Feedback Modal */}
             <FeedbackViewModal
                 isOpen={isFeedbackModalOpen}

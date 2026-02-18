@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  getDashboardOverview, 
-  getRecentActivities, 
-  getTopPerformers, 
-  getActionsTaken, 
-  getMyPerformance 
+import {
+  getDashboardOverview,
+  getRecentActivities,
+  getTopPerformers,
+  getActionsTaken,
+  getMyPerformance
 } from '../api/dashboard';
 import { Users, TrendingUp, Activity, Award, BarChart3, Calendar, UserCheck, Briefcase } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import MyInterviews from './MyInterviews';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [overview, setOverview] = useState(null);
   const [recentActivities, setRecentActivities] = useState([]);
@@ -137,6 +139,57 @@ const Dashboard = () => {
         <p className="text-gray-500 mt-2">Overview of your ATS system performance and activities</p>
       </div>
 
+      {/* Today's Focus Panel - Hooked Model Trigger */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl shadow-lg p-6 text-white mb-8">
+        <h2 className="text-xl font-bold mb-4 flex items-center">
+          <span className="bg-white/20 p-1.5 rounded-lg mr-3">🎯</span>
+          Today's Focus
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer border border-white/10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-indigo-100 text-sm font-medium mb-1">Interviews Today</p>
+                <p className="text-3xl font-bold">3</p>
+              </div>
+              <span className="bg-white/20 p-1.5 rounded text-xs font-semibold">Urgent</span>
+            </div>
+            <p className="text-xs text-indigo-100 mt-3 flex items-center">
+              Next: Frontend Dev w/ Sarah <span className="ml-auto opacity-75">10:00 AM</span>
+            </p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer border border-white/10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-indigo-100 text-sm font-medium mb-1">New Candidates</p>
+                <p className="text-3xl font-bold">12</p>
+              </div>
+              <span className="bg-green-400/20 text-green-300 p-1.5 rounded text-xs font-semibold">Pending Review</span>
+            </div>
+            <button
+              onClick={() => navigate('/candidates')}
+              className="text-xs bg-white/10 hover:bg-white/20 py-1.5 px-3 rounded-md mt-3 w-full text-center transition-colors"
+            >
+              Review Candidates →
+            </button>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 hover:bg-white/20 transition-colors cursor-pointer border border-white/10">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-indigo-100 text-sm font-medium mb-1">Jobs Expiring</p>
+                <p className="text-3xl font-bold">2</p>
+              </div>
+              <Activity size={16} className="text-orange-300" />
+            </div>
+            <p className="text-xs text-indigo-100 mt-3">
+              Senior PM & Product Designer
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Overview Cards */}
       {overview && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -234,7 +287,7 @@ const Dashboard = () => {
               <Award size={18} className="mr-2" />
               Top Performers
             </h3>
-            
+
             <div className="mb-6">
               <h4 className="text-sm font-semibold text-gray-700 mb-3">Top Hiring Managers</h4>
               <div className="space-y-2">
@@ -335,7 +388,7 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">Monthly Trend</h4>
               <div className="space-y-2">

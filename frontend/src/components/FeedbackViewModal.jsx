@@ -3,7 +3,10 @@ import { X, Star, Calendar, User, FileText, AlertCircle } from 'lucide-react';
 import { getCandidateFeedbacks } from '../api/feedbacks';
 import { useAuth } from '../context/AuthContext';
 
+import { useNavigate } from 'react-router-dom';
+
 const FeedbackViewModal = ({ isOpen, onClose, candidate }) => {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const [feedbacks, setFeedbacks] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -102,7 +105,7 @@ const FeedbackViewModal = ({ isOpen, onClose, candidate }) => {
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-gray-900">
-                                                        {feedback.interviewer?.first_name && feedback.interviewer?.last_name 
+                                                        {feedback.interviewer?.first_name && feedback.interviewer?.last_name
                                                             ? `${feedback.interviewer.first_name} ${feedback.interviewer.last_name}`
                                                             : feedback.interviewer?.email || 'Unknown Interviewer'
                                                         }
@@ -174,6 +177,39 @@ const FeedbackViewModal = ({ isOpen, onClose, candidate }) => {
                                 ))}
                             </div>
                         )}
+                    </div>
+
+                    {/* Investment Loop - Next Action Prompt */}
+                    <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+                        <p className="text-sm text-gray-600 italic">
+                            Done reviewing? Keep the momentum going.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    navigate(`/candidates/${candidate.id}?tab=activities`);
+                                }}
+                                className="px-4 py-2 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-md text-sm font-medium transition-colors"
+                            >
+                                Schedule Next Interview
+                            </button>
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    // Try to find the job ID from applications
+                                    const jobId = candidate.applications?.[0]?.job_id || candidate.applications?.[0]?.job?.id;
+                                    if (jobId) {
+                                        navigate(`/jobs/${jobId}?tab=pipeline`);
+                                    } else {
+                                        navigate('/jobs');
+                                    }
+                                }}
+                                className="px-4 py-2 bg-[#00C853] hover:bg-green-600 text-white rounded-md text-sm font-medium shadow-sm transition-colors"
+                            >
+                                Move to Next Stage
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -4,6 +4,7 @@ import { MoreVertical, User, Settings, Star, MoreHorizontal } from 'lucide-react
 import ScoreModal from './ScoreModal';
 import { updateCandidateScore } from '../api/jobs';
 import { useParams } from 'react-router-dom';
+import { triggerConfetti } from '../utils/confetti';
 
 const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMoveCandidate }) => {
     const { id: jobId } = useParams();
@@ -11,17 +12,6 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
     const [scoringCandidate, setScoringCandidate] = useState(null);
     const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0); // Simple way to force re-render if needed, though props should handle it
-
-    // Local candidates state to handle optimistic updates for scores
-    // But since candidates come from parent, we might need a way to notify parent or just update local list till refresh
-    // For now, let's just rely on parent prop updates or force a refresh if possible. 
-    // Actually, we can update the candidate object in the local scope variables if we can't easily trigger parent refresh from here without a new prop.
-    // Let's assume we trigger a parent refresh or update the specific candidate in the candidates array if we could.
-    // Since candidates is a prop, we can't mutate it. We'll rely on onMoveCandidate triggering a refresh? No, scoring is different.
-    // Let's add an onCandidateUpdate prop to JobPipeline eventually, but for now we will just reload the page or use an internal hack?
-    // Better: We should probably lift the state up, but for this task, I'll pass a callback if possible, or just refresh the window (crude but works for MVP).
-    // Wait, I can just accept an onRefresh prop? Or I just don't verify persistent UI update immediately in this step?
-    // Let's try to update the displayed candidates locally.
 
     const handleDragEnd = (result) => {
         const { source, destination, type, draggableId } = result;
@@ -44,8 +34,16 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
         // Handle Candidate Moving
         if (type === 'CANDIDATE') {
             const newStageId = destination.droppableId;
+            const destStage = stages.find(s => s.id === newStageId);
+
             if (source.droppableId !== destination.droppableId) {
                 console.log("JobPipeline: Drag detected", draggableId, "to", newStageId);
+
+                // Trigger confetti if moved to "Hired"
+                if (destStage && destStage.name === 'Hired') {
+                    triggerConfetti();
+                }
+
                 onMoveCandidate(draggableId, newStageId);
             }
         }
@@ -103,14 +101,14 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                 </button>
             </div>
 
-            <div className="flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="flex-1 overflow-x-auto overflow-y-hidden pb-2">
                 <DragDropContext onDragEnd={handleDragEnd}>
                     <Droppable droppableId="pipeline-stages" direction="horizontal" type="STAGE">
                         {(provided) => (
                             <div
                                 {...provided.droppableProps}
                                 ref={provided.innerRef}
-                                className="flex h-full space-x-4 px-4 pb-4"
+                                className="flex h-full space-x-4 px-4 pb-4 min-w-max"
                             >
                                 {stages.map((stage, index) => {
                                     const stageCandidates = getCandidatesForStage(stage.id);
