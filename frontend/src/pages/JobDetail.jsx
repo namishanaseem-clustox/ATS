@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getJob, updatePipeline, cloneJob, deleteJob, updateJob, updateCandidateStage } from '../api/jobs';
 import { getJobCandidates } from '../api/candidates';
 import JobPipeline from '../components/JobPipeline';
@@ -8,7 +8,8 @@ import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
 import JobActivityLog from '../components/JobActivityLog';
 import AIScreeningModal from '../components/AIScreeningModal';
-import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote } from 'lucide-react';
+import Breadcrumb from '../components/Breadcrumb';
+import { Layout, GitPullRequest, Activity, Settings, Copy, Archive, Send, Users, StickyNote, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 
@@ -22,6 +23,8 @@ const JobDetail = () => {
     const [activeTab, setActiveTab] = useState('overview');
     const [isAIScreeningModalOpen, setIsAIScreeningModalOpen] = useState(false);
     const [aiScreeningCandidate, setAiScreeningCandidate] = useState(null);
+    const [showOverflow, setShowOverflow] = useState(false);
+    const overflowRef = useRef(null);
 
     const defaultPipeline = [
         { name: "New Candidates", id: "new" },
@@ -159,7 +162,7 @@ const JobDetail = () => {
 
     return (
         <div className="flex bg-gray-50 min-h-screen">
-            {/* Sidebar / Tabs */}
+            {/* Job sidebar / Tabs */}
             <div className="w-64 bg-white border-r border-gray-200 flex-shrink-0">
                 <div className="p-4 border-b border-gray-100">
                     {/* Archived Banner */}
@@ -184,6 +187,15 @@ const JobDetail = () => {
                                 {job.title}
                             </h2>
                             <p className="text-sm text-gray-500 mt-1">{job.job_code}</p>
+                            {/* Connected UI: clickable department link */}
+                            {job.department && (
+                                <Link
+                                    to={`/departments/${job.department.id}`}
+                                    className="text-xs text-[#00C853] hover:underline mt-1 inline-block"
+                                >
+                                    {job.department.name}
+                                </Link>
+                            )}
                         </div>
                         {job.status === 'Draft' && (
                             <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
@@ -266,6 +278,12 @@ const JobDetail = () => {
             <div className="flex-1 overflow-auto">
                 {activeTab === 'overview' && (
                     <div className="p-8 max-w-4xl">
+                        {/* Breadcrumb for connected navigation */}
+                        <Breadcrumb items={[
+                            { label: 'Jobs', to: '/jobs' },
+                            ...(job.department ? [{ label: job.department.name, to: `/departments/${job.department.id}` }] : []),
+                            { label: job.title }
+                        ]} />
                         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                             <h3 className="text-lg font-bold text-gray-800 mb-4">Job Details</h3>
                             <div className="grid grid-cols-2 gap-6 mb-6">
@@ -388,66 +406,68 @@ const JobDetail = () => {
                 {activeTab === 'settings' && (
                     <div className="p-8">
                         <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl">
-                            <h3 className="text-lg font-bold text-gray-800 mb-6">Actions</h3>
+                            <h3 className="text-lg font-bold text-gray-800 mb-2">Job Settings</h3>
+                            <p className="text-sm text-gray-500 mb-6">Manage the status and visibility of this job posting.</p>
 
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-4 border rounded-lg border-green-200 bg-green-50">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">
-                                            {job.status === 'Draft' ? 'Publish Job' : 'Unpublish Job'}
-                                        </h4>
-                                        <p className="text-sm text-gray-600">
-                                            {job.status === 'Draft'
-                                                ? 'Make this job visible to candidates.'
-                                                : 'Change job status back to Draft.'}
-                                        </p>
-                                    </div>
-                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
-                                        <button
-                                            onClick={handleStatusToggle}
-                                            className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${job.status === 'Draft'
+                            {/* PRIMARY action: Publish/Unpublish */}
+                            <div className="flex items-center justify-between p-4 border rounded-lg border-green-200 bg-green-50 mb-4">
+                                <div>
+                                    <h4 className="font-medium text-gray-900">
+                                        {job.status === 'Draft' ? 'Publish Job' : 'Unpublish Job'}
+                                    </h4>
+                                    <p className="text-sm text-gray-600">
+                                        {job.status === 'Draft'
+                                            ? 'Make this job visible to candidates.'
+                                            : 'Change job status back to Draft.'}
+                                    </p>
+                                </div>
+                                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                    <button
+                                        onClick={handleStatusToggle}
+                                        className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white ${job.status === 'Draft'
                                                 ? 'bg-[#00C853] hover:bg-green-700'
                                                 : 'bg-gray-600 hover:bg-gray-700'
-                                                }`}
-                                        >
-                                            <Send size={16} className="mr-2" />
-                                            {job.status === 'Draft' ? 'Publish' : 'Unpublish'}
-                                        </button>
-                                    </RoleGuard>
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 border rounded-lg border-gray-200">
-                                    <div>
-                                        <h4 className="font-medium text-gray-900">Clone Job</h4>
-                                        <p className="text-sm text-gray-500">Create a copy of this job posting in Draft status.</p>
-                                    </div>
-                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
-                                        <button
-                                            onClick={handleClone}
-                                            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                        >
-                                            <Copy size={16} className="mr-2" />
-                                            Clone
-                                        </button>
-                                    </RoleGuard>
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 border rounded-lg border-red-200 bg-red-50">
-                                    <div>
-                                        <h4 className="font-medium text-red-900">Archive Job</h4>
-                                        <p className="text-sm text-red-500">Hide this job from the board. This action is reversible.</p>
-                                    </div>
-                                    <RoleGuard allowedRoles={['hr', 'owner']}>
-                                        <button
-                                            onClick={handleDelete}
-                                            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
-                                        >
-                                            <Archive size={16} className="mr-2" />
-                                            Archive
-                                        </button>
-                                    </RoleGuard>
-                                </div>
+                                            }`}
+                                    >
+                                        <Send size={16} className="mr-2" />
+                                        {job.status === 'Draft' ? 'Publish' : 'Unpublish'}
+                                    </button>
+                                </RoleGuard>
                             </div>
+
+                            {/* SECONDARY actions: overflow menu */}
+                            <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                <div className="relative" ref={overflowRef}>
+                                    <button
+                                        onClick={() => setShowOverflow(o => !o)}
+                                        className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <MoreHorizontal size={16} />
+                                        More actions
+                                    </button>
+                                    {showOverflow && (
+                                        <div className="absolute left-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-1">
+                                            <button
+                                                onClick={() => { setShowOverflow(false); handleClone(); }}
+                                                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                                            >
+                                                <Copy size={15} className="text-gray-400" />
+                                                Clone this job
+                                            </button>
+                                            <RoleGuard allowedRoles={['hr', 'owner']}>
+                                                <div className="border-t border-gray-100 my-1" />
+                                                <button
+                                                    onClick={() => { setShowOverflow(false); handleDelete(); }}
+                                                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                >
+                                                    <Archive size={15} className="text-red-400" />
+                                                    Archive job
+                                                </button>
+                                            </RoleGuard>
+                                        </div>
+                                    )}
+                                </div>
+                            </RoleGuard>
                         </div>
                     </div>
                 )}

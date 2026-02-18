@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Search, Trash2, Archive } from 'lucide-react';
+import { Plus, X, Search, Trash2, Archive, SlidersHorizontal, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-
 import { getJobs, updateJob, permanentlyDeleteJob } from '../api/jobs';
 import { getDepartments } from '../api/departments';
 import PermanentDeleteModal from '../components/PermanentDeleteModal';
+import Breadcrumb from '../components/Breadcrumb';
 
 const JobBoard = ({ embeddedDepartmentId }) => {
+    const [showFilters, setShowFilters] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -105,106 +106,127 @@ const JobBoard = ({ embeddedDepartmentId }) => {
         <div className={embeddedDepartmentId ? "p-4" : "p-8 max-w-7xl mx-auto"}>
             {/* Show header ONLY if NOT embedded */}
             {!embeddedDepartmentId && (
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        {selectedDepartment ? (
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <h1 className="text-2xl font-bold text-gray-800">{selectedDepartment.name}</h1>
-                                </div>
-                                <p className="text-gray-500 mt-1">{selectedDepartment.description || 'No description available.'}</p>
-                            </div>
-                        ) : (
-                            <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
-                        )}
+                <>
+                    {/* Breadcrumb */}
+                    <Breadcrumb items={[
+                        ...(selectedDepartment ? [{ label: 'Departments', to: '/departments' }, { label: selectedDepartment.name, to: `/departments/${departmentId}` }] : []),
+                        { label: 'Jobs' }
+                    ]} />
 
-                        {statusFilter && (
-                            <div className="mt-2">
-                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
-                                    Status: {statusFilter}
-                                    <button
-                                        onClick={() => {
-                                            const newParams = new URLSearchParams(searchParams);
-                                            newParams.delete('status');
-                                            setSearchParams(newParams);
-                                        }}
-                                        className="ml-2 hover:bg-blue-100 rounded-full p-0.5"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </span>
-                            </div>
-                        )}
+                    {/* Page header — max 2 primary actions */}
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                            {selectedDepartment ? (
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800">{selectedDepartment.name}</h1>
+                                    <p className="text-gray-500 mt-1">{selectedDepartment.description || 'No description available.'}</p>
+                                </div>
+                            ) : (
+                                <div>
+                                    <h1 className="text-2xl font-bold text-gray-800">Jobs</h1>
+                                    <p className="text-gray-500 mt-1">All open positions across your organization.</p>
+                                </div>
+                            )}
+                        </div>
+                        {/* PRIMARY action only — secondary is the filter toggle below */}
+                        <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                            <button
+                                onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
+                                className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+                            >
+                                <Plus size={18} className="mr-2" />
+                                New Job
+                            </button>
+                        </RoleGuard>
                     </div>
-                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
-                        <button
-                            onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
-                            className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                        >
-                            <Plus size={20} className="mr-2" />
-                            Create Job
-                        </button>
-                    </RoleGuard>
-                </div>
+                </>
             )}
 
-            {/* Search and Filter Bar */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex gap-4 justify-between">
-                <div className="flex gap-4 flex-1">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search jobs by title, department, or location..."
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#00C853]"
-                        />
-                    </div>
+            {/* Search bar + SECONDARY action: Filters toggle */}
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-4 flex gap-3 items-center">
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search by title, department, or location..."
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
+                    />
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={handleSearch}
-                        className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-gray-600 hover:bg-gray-50 bg-gray-50 active:bg-gray-200 transition-colors"
-                    >
-                        <Search size={18} className="mr-2" /> Search
-                    </button>
+                <button
+                    onClick={handleSearch}
+                    className="flex items-center px-4 py-2 border border-gray-200 rounded-md text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                    <Search size={15} className="mr-1.5" /> Search
+                </button>
+                {/* SECONDARY action — collapses extra options */}
+                <button
+                    onClick={() => setShowFilters(f => !f)}
+                    className={`flex items-center px-4 py-2 border rounded-md text-sm transition-colors ${showFilters || statusFilter === 'Archived'
+                            ? 'bg-[#00C853]/10 text-[#00C853] border-[#00C853]/30'
+                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                >
+                    <SlidersHorizontal size={15} className="mr-1.5" />
+                    Filters
+                    {statusFilter === 'Archived' && <span className="ml-1.5 bg-[#00C853] text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">1</span>}
+                </button>
+            </div>
+
+            {/* Collapsible filter panel */}
+            {showFilters && (
+                <div className="bg-white border border-gray-100 rounded-lg px-4 py-3 mb-4 flex items-center gap-4 shadow-sm">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</span>
                     <button
                         onClick={() => {
                             const newStatus = statusFilter === 'Archived' ? null : 'Archived';
                             const newParams = new URLSearchParams(searchParams);
-                            if (newStatus) {
-                                newParams.set('status', newStatus);
-                            } else {
-                                newParams.delete('status');
-                            }
+                            if (newStatus) newParams.set('status', newStatus);
+                            else newParams.delete('status');
                             setSearchParams(newParams);
                         }}
-                        className={`flex items-center px-4 py-2 border rounded-md transition-colors ${statusFilter === 'Archived'
-                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'
-                            : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${statusFilter === 'Archived'
+                                ? 'bg-yellow-50 text-yellow-700 border-yellow-300'
+                                : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                     >
-                        {statusFilter === 'Archived' ? 'Show Active Jobs' : 'Show Archived'}
+                        {statusFilter === 'Archived' ? '✓ Archived' : 'Archived'}
                     </button>
+                    {statusFilter && (
+                        <button
+                            onClick={() => { const p = new URLSearchParams(searchParams); p.delete('status'); setSearchParams(p); }}
+                            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                        >
+                            <X size={12} /> Clear filters
+                        </button>
+                    )}
                 </div>
-            </div>
+            )}
 
             {filteredJobs.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                    <p className="text-gray-500 mb-4">
+                <div className="text-center py-16 bg-white rounded-lg border-2 border-dashed border-gray-200">
+                    <div className="flex justify-center mb-4">
+                        <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
+                            <Briefcase size={24} className="text-gray-400" />
+                        </div>
+                    </div>
+                    <h3 className="text-base font-semibold text-gray-700 mb-1">
+                        {statusFilter === 'Archived' ? 'No archived jobs' : 'No jobs yet'}
+                    </h3>
+                    <p className="text-sm text-gray-400 mb-5">
                         {statusFilter === 'Archived'
-                            ? 'No archived jobs found.'
-                            : (departmentId ? `No jobs found for ${selectedDepartment?.name || 'this department'}.` : 'No jobs found.')
+                            ? 'Archived jobs will appear here.'
+                            : (departmentId ? `Start hiring for ${selectedDepartment?.name || 'this department'}.` : 'Post your first open position to start hiring.')
                         }
                     </p>
                     {statusFilter !== 'Archived' && (
                         <button
                             onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
-                            className="text-[#00C853] font-medium hover:underline"
+                            className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
                         >
-                            Create your first job
+                            <Plus size={16} className="mr-2" /> Create your first job
                         </button>
                     )}
                 </div>

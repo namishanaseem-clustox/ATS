@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Users } from 'lucide-react';
 import { getCandidates, deleteCandidate } from '../api/candidates';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
-
 import CandidateForm from '../components/CandidateForm';
 import ResumeUpload from '../components/ResumeUpload';
+import Breadcrumb from '../components/Breadcrumb';
 
 const Candidates = () => {
     const [candidates, setCandidates] = useState([]);
@@ -68,6 +68,7 @@ const Candidates = () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
+            <Breadcrumb items={[{ label: 'Candidates' }]} />
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">Candidates</h1>
@@ -78,7 +79,7 @@ const Candidates = () => {
                         onClick={() => setShowModal(true)}
                         className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
                     >
-                        <Plus size={20} className="mr-2" />
+                        <Plus size={18} className="mr-2" />
                         Add Candidate
                     </button>
                 </RoleGuard>
@@ -188,8 +189,21 @@ const Candidates = () => {
                         </div>
                     ) : (
                         <div className="text-center py-16 bg-gray-50 border-t border-gray-200">
-                            <p className="text-gray-500 text-lg mb-2">No candidates found.</p>
-                            <p className="text-gray-400 text-sm">Upload a resume or add a candidate manually to get started.</p>
+                            <div className="flex justify-center mb-4">
+                                <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center">
+                                    <Users size={24} className="text-gray-400" />
+                                </div>
+                            </div>
+                            <h3 className="text-base font-semibold text-gray-700 mb-1">No candidates yet</h3>
+                            <p className="text-sm text-gray-400 mb-5">Upload a resume or add a candidate manually to start building your talent pool.</p>
+                            <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                <button
+                                    onClick={() => setShowModal(true)}
+                                    className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
+                                >
+                                    <Plus size={16} className="mr-2" /> Add your first candidate
+                                </button>
+                            </RoleGuard>
                         </div>
                     )}
                 </div>

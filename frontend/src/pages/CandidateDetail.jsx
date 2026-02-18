@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getCandidate, unlinkJobApplication } from '../api/candidates';
-import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, ArrowLeft, FileText, Trash2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Briefcase, Calendar, Linkedin, FileText, Trash2 } from 'lucide-react';
 import ApplicationStatusBadge from '../components/ApplicationStatusBadge';
 import ActivityList from '../components/ActivityList';
 import NoteList from '../components/NoteList';
 import CandidateScorecards from '../components/CandidateScorecards';
-
+import Breadcrumb from '../components/Breadcrumb';
 import CandidateModal from '../components/CandidateModal';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
@@ -55,14 +55,10 @@ const CandidateDetail = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-8 bg-gray-50 min-h-screen">
-            <div className="flex justify-between items-center mb-6">
-                <button onClick={() => navigate('/candidates')} className="flex items-center text-gray-500 hover:text-gray-900 transition-colors">
-                    <ArrowLeft size={18} className="mr-2" /> Back to Candidates
-                </button>
-                <div className="flex space-x-2">
-                    {/* Add any other header actions here */}
-                </div>
-            </div>
+            <Breadcrumb items={[
+                { label: 'Candidates', to: '/candidates' },
+                { label: `${candidate.first_name} ${candidate.last_name}` }
+            ]} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Sidebar */}

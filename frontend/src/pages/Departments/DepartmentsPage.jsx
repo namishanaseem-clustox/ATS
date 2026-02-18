@@ -8,6 +8,7 @@ import ConfirmationModal from '../../components/ConfirmationModal';
 import useDepartmentStore from '../../store/useDepartmentStore';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../../api/departments';
 import { useAuth } from '../../context/AuthContext';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const DepartmentsPage = () => {
     const queryClient = useQueryClient();
@@ -98,6 +99,7 @@ const DepartmentsPage = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-8">
             <div className="max-w-7xl mx-auto">
+                <Breadcrumb items={[{ label: 'Departments' }]} />
                 <div className="flex justify-between items-center mb-8">
                     <div>
                         <h1 className="text-3xl font-bold text-dark mb-2">Departments</h1>
