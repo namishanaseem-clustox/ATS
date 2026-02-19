@@ -252,7 +252,7 @@ const ActivityCard = ({ activity, onRate, onEdit, completed = false }) => {
                         <div></div>
                     )}
 
-                    {!completed && activity.activity_type === 'Interview' && (
+                    {!completed && ['Interview', 'Call', 'Meeting'].includes(activity.activity_type) && (
                         <button
                             onClick={(e) => { e.stopPropagation(); onRate(); }}
                             className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors shadow-sm"

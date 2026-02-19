@@ -19,6 +19,7 @@ class ActivityStatus(str, Enum):
 class ActivityBase(BaseModel):
     job_id: Optional[UUID] = None
     candidate_id: Optional[UUID] = None
+    scorecard_template_id: Optional[UUID] = None
     activity_type: ActivityType = ActivityType.TASK
     title: str
     status: ActivityStatus = ActivityStatus.PENDING
@@ -41,12 +42,14 @@ class ActivityUpdate(BaseModel):
     participants: Optional[List[str]] = None
     candidate_id: Optional[UUID] = None
     job_id: Optional[UUID] = None
+    scorecard_template_id: Optional[UUID] = None
     assignee_ids: Optional[List[UUID]] = None
     details: Optional[Dict[str, Any]] = None
 
 from app.schemas.candidate import CandidateBasicResponse
 from app.schemas.job import JobResponse
 from app.schemas.user import UserResponse
+from app.schemas.scorecard import ScorecardTemplateResponse
 
 class ActivityResponse(ActivityBase):
     id: UUID
@@ -64,6 +67,7 @@ class ActivityResponse(ActivityBase):
     candidate: Optional[CandidateBasicResponse] = None
     job: Optional[JobResponse] = None
     assignees: List[UserResponse] = []
+    scorecard_template: Optional[ScorecardTemplateResponse] = None
 
     class Config:
         from_attributes = True

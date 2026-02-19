@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'lucide-react';
+import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase, ClipboardList } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getJobCandidates } from '../api/candidates';
 import { getJobs } from '../api/jobs';
 import { createActivity, updateActivity } from '../api/activities';
 import { getUsers } from '../api/users';
+import { getScorecardTemplates } from '../api/scorecards';
 import CustomSelect from './CustomSelect';
 import MultiSelect from './MultiSelect';
 
@@ -13,7 +14,6 @@ const ACTIVITY_TYPES = [
     { value: 'Meeting', label: 'Meeting' },
     { value: 'Interview', label: 'Interview' },
     { value: 'Call', label: 'Call' },
-    { value: 'Note', label: 'Note' },
 ];
 
 const ACTIVITY_STATUSES = [
@@ -46,6 +46,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         description: '',
         status: 'Pending',
         assignee_ids: [],
+        scorecard_template_id: '',
     });
 
     const [loading, setLoading] = useState(false);
@@ -53,6 +54,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
     const [candidates, setCandidates] = useState([]);
     const [jobs, setJobs] = useState([]);
     const [users, setUsers] = useState([]);
+    const [scorecardTemplates, setScorecardTemplates] = useState([]);
 
     // Pre-fill form when editing
     useEffect(() => {
@@ -68,6 +70,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 description: activity.description || '',
                 status: activity.status || 'Pending',
                 assignee_ids: activity.assignees?.map(a => a.id) || [],
+                scorecard_template_id: activity.scorecard_template_id || '',
             });
         } else {
             setFormData({
@@ -81,6 +84,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 description: '',
                 status: 'Pending',
                 assignee_ids: [],
+                scorecard_template_id: '',
             });
         }
     }, [activity, isOpen, jobId, candidateId, initialType]);
@@ -98,8 +102,12 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                     const jobsList = await getJobs();
                     setJobs(jobsList || []);
                 }
-                const usersList = await getUsers();
+                const [usersList, templatesList] = await Promise.all([
+                    getUsers(),
+                    getScorecardTemplates(),
+                ]);
                 setUsers(usersList || []);
+                setScorecardTemplates(templatesList || []);
             } catch (err) {
                 console.error('Failed to fetch modal data:', err);
             }
@@ -121,7 +129,11 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 ...formData,
                 job_id: formData.job_id || jobId || null,
                 candidate_id: formData.candidate_id || candidateId || null,
+                scorecard_template_id: formData.scorecard_template_id || null,
                 scheduled_at: formData.scheduled_at ? new Date(formData.scheduled_at).toISOString() : null,
+                participants: formData.participants && typeof formData.participants === 'string'
+                    ? formData.participants.split(',').map(p => p.trim()).filter(p => p)
+                    : (Array.isArray(formData.participants) ? formData.participants : []),
             };
             let saved;
             if (activity?.id) {
@@ -326,6 +338,27 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     onChange={handleChange}
                                     className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
                                 ></textarea>
+                            </div>
+
+                            {/* Scorecard Template */}
+                            <div>
+                                <CustomSelect
+                                    label={
+                                        <span className="flex items-center">
+                                            <ClipboardList className="h-4 w-4 mr-2" />
+                                            Scorecard Template
+                                        </span>
+                                    }
+                                    name="scorecard_template_id"
+                                    value={formData.scorecard_template_id}
+                                    onChange={handleChange}
+                                    options={[
+                                        { value: '', label: '-- None (use default) --' },
+                                        ...scorecardTemplates.map(t => ({ value: t.id, label: t.name }))
+                                    ]}
+                                    className="mb-0"
+                                    disabled={isRestricted}
+                                />
                             </div>
 
                             {/* Status (Edit only, ALLOWED) */}

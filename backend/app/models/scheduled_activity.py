@@ -24,6 +24,7 @@ class ScheduledActivity(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     job_id = Column(UUID(as_uuid=True), ForeignKey("jobs.id"), nullable=True)
     candidate_id = Column(UUID(as_uuid=True), ForeignKey("candidates.id"), nullable=True)
+    scorecard_template_id = Column(UUID(as_uuid=True), ForeignKey("scorecard_templates.id"), nullable=True)
     
     activity_type = Column(String, nullable=False, default=ActivityType.TASK.value)
     title = Column(String, nullable=False)
@@ -53,6 +54,7 @@ class ScheduledActivity(Base):
     job = relationship("Job", back_populates="scheduled_activities")
     candidate = relationship("Candidate", back_populates="scheduled_activities")
     assignees = relationship("User", secondary="activity_assignees", backref="assigned_activities")
+    scorecard_template = relationship("ScorecardTemplate")
 
 # Association Table for Many-to-Many
 from sqlalchemy import Table, ForeignKey

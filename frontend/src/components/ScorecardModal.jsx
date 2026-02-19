@@ -37,10 +37,16 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave, existingFeedback })
             setOverallScore(0);
             setRecommendation('');
             setComments('');
-            setScorecard(SCORECARD_CRITERIA.map(c => ({ criteria: c, score: 0, comment: '' })));
+
+            let criteria = SCORECARD_CRITERIA;
+            if (activity?.scorecard_template?.sections) {
+                criteria = activity.scorecard_template.sections.map(s => s.label);
+            }
+
+            setScorecard(criteria.map(c => ({ criteria: c, score: 0, comment: '' })));
             setIsUpdating(false);
         }
-    }, [existingFeedback, isOpen]);
+    }, [existingFeedback, isOpen, activity]);
 
     const handleScoreChange = (index, score) => {
         const newScorecard = [...scorecard];
@@ -140,8 +146,8 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave, existingFeedback })
                                                         type="button"
                                                         onClick={() => handleScoreChange(index, s)}
                                                         className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold transition-all ${item.score === s
-                                                                ? 'bg-green-600 text-white shadow-lg shadow-green-200'
-                                                                : 'bg-white text-gray-400 border hover:border-green-300 hover:text-green-500'
+                                                            ? 'bg-green-600 text-white shadow-lg shadow-green-200'
+                                                            : 'bg-white text-gray-400 border hover:border-green-300 hover:text-green-500'
                                                             }`}
                                                     >
                                                         {s}
@@ -176,8 +182,8 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave, existingFeedback })
                                                 type="button"
                                                 onClick={() => setOverallScore(s)}
                                                 className={`flex-1 h-12 rounded-xl flex items-center justify-center text-lg font-black transition-all ${overallScore === s
-                                                        ? 'bg-green-600 text-white shadow-xl shadow-green-200 scale-105'
-                                                        : 'bg-gray-50 text-gray-400 border border-transparent hover:border-green-300 hover:text-green-500'
+                                                    ? 'bg-green-600 text-white shadow-xl shadow-green-200 scale-105'
+                                                    : 'bg-gray-50 text-gray-400 border border-transparent hover:border-green-300 hover:text-green-500'
                                                     }`}
                                             >
                                                 {s}
@@ -197,8 +203,8 @@ const ScorecardModal = ({ isOpen, onClose, activity, onSave, existingFeedback })
                                                 type="button"
                                                 onClick={() => setRecommendation(r)}
                                                 className={`py-2 px-3 rounded-lg text-xs font-bold transition-all border ${recommendation === r
-                                                        ? (r.includes('Yes') ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600')
-                                                        : 'bg-white text-gray-600 hover:border-gray-300'
+                                                    ? (r.includes('Yes') ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600')
+                                                    : 'bg-white text-gray-600 hover:border-gray-300'
                                                     }`}
                                             >
                                                 {r}
