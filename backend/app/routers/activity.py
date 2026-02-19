@@ -16,6 +16,22 @@ router = APIRouter(
 from app.models.user import User, UserRole
 from app.routers.auth import get_current_active_user
 
+@router.get("/all", response_model=List[ActivityResponse])
+def get_all_activities(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    """Get all activities. Interviewers see only their assigned activities; others see all."""
+    if current_user.role == UserRole.INTERVIEWER:
+        return db.query(ScheduledActivity).options(
+            joinedload(ScheduledActivity.candidate),
+            joinedload(ScheduledActivity.job),
+            joinedload(ScheduledActivity.assignees)
+        ).join(ScheduledActivity.assignees).filter(User.id == current_user.id).all()
+    
+    return db.query(ScheduledActivity).options(
+        joinedload(ScheduledActivity.candidate),
+        joinedload(ScheduledActivity.job),
+        joinedload(ScheduledActivity.assignees)
+    ).all()
+
 @router.get("/my-interviews", response_model=List[ActivityResponse])
 def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     return db.query(ScheduledActivity).options(

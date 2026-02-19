@@ -12,10 +12,11 @@ import Team from './pages/Team';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import MyInterviews from './pages/MyInterviews';
+import Tasks from './pages/Tasks';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Notifications from './components/Notifications';
+<Route path="/tasks" element={<Tasks />} />
 
 const queryClient = new QueryClient();
 
@@ -77,6 +78,7 @@ function App() {
             <Route element={<Layout />}>
               <Route path="/" element={<DefaultRoute />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tasks" element={<Tasks />} />
               <Route path="/departments" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
                   <DepartmentsPage />
@@ -109,7 +111,7 @@ function App() {
                   <CandidateDetail />
                 </ProtectedRoute>
               } />
-              <Route path="/my-interviews" element={<MyInterviews />} />
+
               <Route path="/team" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <Team />

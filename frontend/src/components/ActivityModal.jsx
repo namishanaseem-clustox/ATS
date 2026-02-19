@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'lucide-react';
-import { getJobCandidates, getCandidate } from '../api/candidates';
+import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { getJobCandidates } from '../api/candidates';
+import { getJobs } from '../api/jobs';
 import { createActivity, updateActivity } from '../api/activities';
 import { getUsers } from '../api/users';
 import CustomSelect from './CustomSelect';
@@ -20,88 +22,90 @@ const ACTIVITY_STATUSES = [
     { value: 'Cancelled', label: 'Cancelled' },
 ];
 
+const toDatetimeLocal = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = null, onSave, initialType = 'Task' }) => {
+    const { user } = useAuth();
+    const isInterviewer = user?.role === 'interviewer';
+    // Interviewers editing an existing activity can only change time, link, description, status
+    const isRestricted = isInterviewer && !!activity;
+
     const [formData, setFormData] = useState({
         activity_type: initialType,
         title: '',
-        status: 'Pending',
-        scheduled_at: '',
-        location: '',
-        description: '',
-        participants: '',
         candidate_id: candidateId || '',
         job_id: jobId || '',
-        assignee_ids: []
+        scheduled_at: '',
+        location: '',
+        participants: '',
+        description: '',
+        status: 'Pending',
+        assignee_ids: [],
     });
 
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
     const [candidates, setCandidates] = useState([]);
     const [jobs, setJobs] = useState([]);
     const [users, setUsers] = useState([]);
-    const [loading, setLoading] = useState(false);
 
+    // Pre-fill form when editing
     useEffect(() => {
-        if (isOpen) {
-            fetchUsers();
-            if (jobId) {
-                fetchCandidates();
-            } else if (candidateId) {
-                fetchCandidateJobs();
-            }
-        }
-
         if (activity) {
             setFormData({
-                ...activity,
-                scheduled_at: activity.scheduled_at ? activity.scheduled_at.slice(0, 16) : '',
-                participants: Array.isArray(activity.participants) ? activity.participants.join(', ') : '',
-                candidate_id: activity.candidate_id || '',
-                job_id: activity.job_id || '',
-                assignee_ids: activity.assignees ? activity.assignees.map(u => u.id) : []
+                activity_type: activity.activity_type || initialType,
+                title: activity.title || '',
+                candidate_id: activity.candidate_id || candidateId || '',
+                job_id: activity.job_id || jobId || '',
+                scheduled_at: toDatetimeLocal(activity.scheduled_at),
+                location: activity.location || '',
+                participants: activity.participants || '',
+                description: activity.description || '',
+                status: activity.status || 'Pending',
+                assignee_ids: activity.assignees?.map(a => a.id) || [],
             });
         } else {
             setFormData({
                 activity_type: initialType,
                 title: '',
-                status: 'Pending',
-                scheduled_at: '',
-                location: '',
-                description: '',
-                participants: '',
                 candidate_id: candidateId || '',
                 job_id: jobId || '',
-                assignee_ids: []
+                scheduled_at: '',
+                location: '',
+                participants: '',
+                description: '',
+                status: 'Pending',
+                assignee_ids: [],
             });
         }
-    }, [isOpen, activity, jobId, candidateId, initialType]);
+    }, [activity, isOpen, jobId, candidateId, initialType]);
 
-    const fetchUsers = async () => {
-        try {
-            const data = await getUsers();
-            setUsers(data);
-        } catch (error) {
-            console.error("Failed to fetch users", error);
-        }
-    };
-
-    const fetchCandidates = async () => {
-        try {
-            const data = await getJobCandidates(jobId);
-            setCandidates(data.map(app => app.candidate));
-        } catch (error) {
-            console.error("Failed to fetch candidates", error);
-        }
-    };
-
-    const fetchCandidateJobs = async () => {
-        try {
-            const data = await getCandidate(candidateId);
-            if (data.applications) {
-                setJobs(data.applications.map(app => app.job).filter(job => job));
+    // Fetch related data
+    useEffect(() => {
+        if (!isOpen) return;
+        const fetchData = async () => {
+            try {
+                if (jobId) {
+                    const cands = await getJobCandidates(jobId);
+                    setCandidates(cands || []);
+                }
+                if (!jobId) {
+                    const jobsList = await getJobs();
+                    setJobs(jobsList || []);
+                }
+                const usersList = await getUsers();
+                setUsers(usersList || []);
+            } catch (err) {
+                console.error('Failed to fetch modal data:', err);
             }
-        } catch (error) {
-            console.error("Failed to fetch candidate jobs", error);
-        }
-    };
+        };
+        fetchData();
+    }, [isOpen, jobId]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -109,32 +113,27 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         setLoading(true);
-
+        setError('');
         try {
             const payload = {
                 ...formData,
-                participants: typeof formData.participants === 'string'
-                    ? formData.participants.split(',').map(p => p.trim()).filter(p => p)
-                    : formData.participants,
+                job_id: formData.job_id || jobId || null,
+                candidate_id: formData.candidate_id || candidateId || null,
                 scheduled_at: formData.scheduled_at ? new Date(formData.scheduled_at).toISOString() : null,
-                candidate_id: formData.candidate_id || null,
-                job_id: formData.job_id || null
             };
-
-            let savedActivity;
-            if (activity) {
-                savedActivity = await updateActivity(activity.id, payload);
+            let saved;
+            if (activity?.id) {
+                saved = await updateActivity(activity.id, payload);
             } else {
-                savedActivity = await createActivity(payload);
+                saved = await createActivity(payload);
             }
-
-            onSave(savedActivity);
+            if (onSave) onSave(saved);
             onClose();
-        } catch (error) {
-            console.error("Failed to save activity", error);
-            alert("Failed to save activity");
+        } catch (err) {
+            console.error('Failed to save activity:', err);
+            setError(err.message || 'Failed to save activity. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -162,6 +161,18 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             </button>
                         </div>
 
+                        {error && (
+                            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+                                {error}
+                            </div>
+                        )}
+
+                        {isRestricted && (
+                            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
+                                As an interviewer, you can only edit Time, Location/Link, Description, and Status.
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {/* Title & Type */}
                             <div className="grid grid-cols-3 gap-4">
@@ -173,6 +184,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         onChange={handleChange}
                                         options={ACTIVITY_TYPES}
                                         className="mb-0"
+                                        disabled={isRestricted}
                                     />
                                 </div>
                                 <div className="col-span-2">
@@ -183,8 +195,9 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         required
                                         value={formData.title}
                                         onChange={handleChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
                                         placeholder="e.g. Initial Screening"
+                                        disabled={isRestricted}
                                     />
                                 </div>
                             </div>
@@ -203,10 +216,11 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         value={formData.candidate_id}
                                         onChange={handleChange}
                                         options={[
-                                            { value: "", label: "-- None --" },
+                                            { value: '', label: '-- None --' },
                                             ...candidates.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }))
                                         ]}
                                         className="mb-0"
+                                        disabled={isRestricted}
                                     />
                                 </div>
                             ) : (
@@ -223,19 +237,20 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         onChange={handleChange}
                                         required={!jobId}
                                         options={[
-                                            { value: "", label: "-- Select Job --" },
+                                            { value: '', label: '-- Select Job --' },
                                             ...jobs.map(j => ({ value: j.id, label: j.title }))
                                         ]}
                                         className="mb-0"
+                                        disabled={isRestricted}
                                     />
                                 </div>
                             )}
 
-                            {/* Date & Time */}
+                            {/* Date & Time (ALLOWED) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                                     <Clock className="h-4 w-4 mr-2" />
-                                    Date & Time
+                                    Date &amp; Time
                                 </label>
                                 <input
                                     type="datetime-local"
@@ -246,7 +261,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                 />
                             </div>
 
-                            {/* Location */}
+                            {/* Location (ALLOWED) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                                     <MapPin className="h-4 w-4 mr-2" />
@@ -262,23 +277,24 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                 />
                             </div>
 
-                            {/* Participants (External) */}
+                            {/* Participants (RESTRICTED) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                                     <Users className="h-4 w-4 mr-2" />
-                                    Participants (External/Text)
+                                    Participants (External)
                                 </label>
                                 <input
                                     type="text"
                                     name="participants"
                                     value={formData.participants}
                                     onChange={handleChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
                                     placeholder="Jane Doe (Client), etc."
+                                    disabled={isRestricted}
                                 />
                             </div>
 
-                            {/* Assignees (Internal Users) */}
+                            {/* Assignees (RESTRICTED) */}
                             <div>
                                 <MultiSelect
                                     label={
@@ -293,10 +309,11 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     options={users.map(u => ({ value: u.id, label: u.full_name || u.email }))}
                                     placeholder="Select Interviewers..."
                                     className="mb-0"
+                                    disabled={isRestricted}
                                 />
                             </div>
 
-                            {/* Description */}
+                            {/* Description (ALLOWED) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 flex items-center">
                                     <AlignLeft className="h-4 w-4 mr-2" />
@@ -311,7 +328,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                 ></textarea>
                             </div>
 
-                            {/* Status (Edit only) */}
+                            {/* Status (Edit only, ALLOWED) */}
                             {activity && (
                                 <div>
                                     <CustomSelect
@@ -324,9 +341,9 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     />
                                 </div>
                             )}
-
                         </form>
                     </div>
+
                     <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                         <button
                             type="button"

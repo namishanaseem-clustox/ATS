@@ -35,3 +35,8 @@ export const getMyInterviews = async () => {
     return data;
 };
 
+export const getAllActivities = async () => {
+    const { data } = await client.get('/activities/all/');
+    return data;
+};
+

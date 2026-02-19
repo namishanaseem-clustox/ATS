@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Briefcase, Users, Building2, UserCheck,
     ChevronDown, ChevronRight, UsersRound, LogOut, Menu, X,
-    CalendarCheck
+    CalendarCheck, Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
@@ -111,7 +111,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                 <Building2 size={18} />
                             </NavLink>
                         )}
-                        <NavLink to="/my-interviews" title="My Interviews"
+                        <NavLink to="/tasks" title="My Tasks"
                             className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
                             <CalendarCheck size={18} />
                         </NavLink>
@@ -129,7 +129,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         <div className="pt-1">
                             <NavGroup label="My Work" icon={LayoutDashboard} defaultOpen={true}>
                                 <NavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
-                                <NavItem to="/my-interviews" icon={CalendarCheck} label="My Interviews" />
+                                <NavItem to="/tasks" icon={CalendarCheck} label="My Tasks" />
                             </NavGroup>
                         </div>
                         {/* Recruitment group */}

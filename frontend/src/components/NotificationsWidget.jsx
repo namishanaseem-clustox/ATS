@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Briefcase, UserPlus, FileText, CheckCircle } from 'lucide-react';
 
-// Mock data with requested names
+// Mock data
 const MOCK_NOTIFICATIONS = [
     { id: 1, type: 'candidate', message: 'Jane added a note to candidate Shawn', time: '2 hours ago', user: 'Jane' },
     { id: 2, type: 'job', message: 'Job "Senior React Developer" was published by Josh', time: '5 hours ago', user: 'Josh' },
