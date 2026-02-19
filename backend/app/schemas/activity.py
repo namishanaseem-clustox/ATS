@@ -56,6 +56,7 @@ class ActivityResponse(ActivityBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     created_by: Optional[UUID] = None
+    creator: Optional[UserResponse] = None
     
     # External sync fields
     external_id: Optional[str] = None

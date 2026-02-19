@@ -40,7 +40,9 @@ class ScheduledActivity(Base):
     # Flexible details (e.g. Note Type, Meeting Agenda, etc.)
     details = Column(JSONB, default=dict)
     
-    created_by = Column(UUID(as_uuid=True), nullable=True) # User ID if available
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True) # User ID if available
+    
+    creator = relationship("User", foreign_keys=[created_by])
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

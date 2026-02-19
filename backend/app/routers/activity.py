@@ -23,12 +23,13 @@ from app.models.scheduled_activity import ActivityStatus
 @router.get("/all", response_model=List[ActivityResponse])
 def get_all_activities(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get all activities. Interviewers see only their assigned activities; others see all."""
-    cutoff_date = datetime.now() - timedelta(minutes=1)
+    cutoff_date = datetime.now() - timedelta(days=30)
     
     query = db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
-        joinedload(ScheduledActivity.assignees)
+        joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
     )
     
     if current_user.role == UserRole.INTERVIEWER:
@@ -46,12 +47,13 @@ def get_all_activities(db: Session = Depends(get_db), current_user: User = Depen
 
 @router.get("/my-interviews", response_model=List[ActivityResponse])
 def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    cutoff_date = datetime.now() - timedelta(minutes=1)
+    cutoff_date = datetime.now() - timedelta(days=30)
     
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
-        joinedload(ScheduledActivity.assignees)
+        joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
     ).join(ScheduledActivity.assignees).filter(
         User.id == current_user.id,
         or_(
@@ -61,9 +63,10 @@ def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depend
     ).all()
 
 @router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
-def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
+def create_activity(activity: ActivityCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     activity_data = activity.dict(exclude={"assignee_ids"})
     db_activity = ScheduledActivity(**activity_data)
+    db_activity.created_by = current_user.id
     
     # Handle assignees
     if activity.assignee_ids:
@@ -82,7 +85,8 @@ def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db), current_u
         return db.query(ScheduledActivity).options(
             joinedload(ScheduledActivity.candidate),
             joinedload(ScheduledActivity.job),
-            joinedload(ScheduledActivity.assignees)
+            joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
         ).join(ScheduledActivity.assignees).filter(
             ScheduledActivity.job_id == job_id,
             User.id == current_user.id
@@ -91,7 +95,8 @@ def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db), current_u
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
-        joinedload(ScheduledActivity.assignees)
+        joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
     ).filter(ScheduledActivity.job_id == job_id).all()
 
 @router.get("/candidate/{candidate_id}", response_model=List[ActivityResponse])
@@ -101,7 +106,8 @@ def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db
         return db.query(ScheduledActivity).options(
             joinedload(ScheduledActivity.candidate),
             joinedload(ScheduledActivity.job),
-            joinedload(ScheduledActivity.assignees)
+            joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
         ).join(ScheduledActivity.assignees).filter(
             ScheduledActivity.candidate_id == candidate_id,
             User.id == current_user.id
@@ -110,13 +116,15 @@ def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
-        joinedload(ScheduledActivity.assignees)
+        joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
     ).filter(ScheduledActivity.candidate_id == candidate_id).all()
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 def get_activity(activity_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_activity = db.query(ScheduledActivity).options(
-        joinedload(ScheduledActivity.assignees)
+        joinedload(ScheduledActivity.assignees),
+        joinedload(ScheduledActivity.creator)
     ).filter(ScheduledActivity.id == activity_id).first()
     if db_activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")

@@ -237,6 +237,11 @@ const ActivityCard = ({ activity, onRate, onEdit, completed = false }) => {
                             <span className="truncate">{activity.location}</span>
                         </div>
                     )}
+                    {activity.creator && (
+                        <div className="flex items-center pt-2 mt-2 border-t border-gray-50">
+                            <span className="text-xs text-gray-400">Added by {activity.creator.full_name || activity.creator.email}</span>
+                        </div>
+                    )}
                 </div>
 
                 <div className="pt-4 border-t flex justify-between items-center h-10">
@@ -264,7 +269,7 @@ const ActivityCard = ({ activity, onRate, onEdit, completed = false }) => {
                     {completed && <span className="text-xs font-medium text-gray-400 italic">Completed</span>}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

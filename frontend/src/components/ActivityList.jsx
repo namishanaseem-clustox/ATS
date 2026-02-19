@@ -138,9 +138,13 @@ const ActivityList = ({ jobId, candidateId }) => {
                                                 </span>
                                             </p>
                                             <p className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0 sm:ml-6">
-                                                <MapPin className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                                                 {activity.location || 'Remote'}
                                             </p>
+                                            {activity.creator && (
+                                                <p className="mt-2 flex items-center text-xs text-gray-400 sm:mt-0 sm:ml-6">
+                                                    Added by {activity.creator.full_name || activity.creator.email}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
                                             <Clock className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
