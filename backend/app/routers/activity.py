@@ -16,29 +16,49 @@ router = APIRouter(
 from app.models.user import User, UserRole
 from app.routers.auth import get_current_active_user
 
+from datetime import datetime, timedelta
+from sqlalchemy import or_, func
+from app.models.scheduled_activity import ActivityStatus
+
 @router.get("/all", response_model=List[ActivityResponse])
 def get_all_activities(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get all activities. Interviewers see only their assigned activities; others see all."""
+    cutoff_date = datetime.now() - timedelta(minutes=1)
+    
+    query = db.query(ScheduledActivity).options(
+        joinedload(ScheduledActivity.candidate),
+        joinedload(ScheduledActivity.job),
+        joinedload(ScheduledActivity.assignees)
+    )
+    
     if current_user.role == UserRole.INTERVIEWER:
-        return db.query(ScheduledActivity).options(
-            joinedload(ScheduledActivity.candidate),
-            joinedload(ScheduledActivity.job),
-            joinedload(ScheduledActivity.assignees)
-        ).join(ScheduledActivity.assignees).filter(User.id == current_user.id).all()
+        query = query.join(ScheduledActivity.assignees).filter(User.id == current_user.id)
+    
+    # Filter: Show all PENDING, or COMPLETED/CANCELLED within last 30 days
+    query = query.filter(
+        or_(
+            ScheduledActivity.status == ActivityStatus.PENDING.value,
+            func.coalesce(ScheduledActivity.updated_at, ScheduledActivity.created_at) >= cutoff_date
+        )
+    )
+    
+    return query.all()
+
+@router.get("/my-interviews", response_model=List[ActivityResponse])
+def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    cutoff_date = datetime.now() - timedelta(minutes=1)
     
     return db.query(ScheduledActivity).options(
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
         joinedload(ScheduledActivity.assignees)
+    ).join(ScheduledActivity.assignees).filter(
+        User.id == current_user.id,
+        or_(
+            ScheduledActivity.status == ActivityStatus.PENDING.value,
+            func.coalesce(ScheduledActivity.updated_at, ScheduledActivity.created_at) >= cutoff_date
+        )
     ).all()
-
-@router.get("/my-interviews", response_model=List[ActivityResponse])
-def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    return db.query(ScheduledActivity).options(
-        joinedload(ScheduledActivity.candidate),
-        joinedload(ScheduledActivity.job),
-        joinedload(ScheduledActivity.assignees)
-    ).join(ScheduledActivity.assignees).filter(User.id == current_user.id).all()
 
 @router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
