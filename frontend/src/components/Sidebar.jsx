@@ -126,8 +126,12 @@ const Sidebar = ({ collapsed, onToggle }) => {
                     /* Expanded: grouped submenus */
                     <>
                         {/* My Work */}
-                        <NavItem to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-
+                        <div className="pt-1">
+                            <NavGroup label="My Work" icon={LayoutDashboard} defaultOpen={true}>
+                                <NavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
+                                <NavItem to="/my-interviews" icon={CalendarCheck} label="My Interviews" />
+                            </NavGroup>
+                        </div>
                         {/* Recruitment group */}
                         <div className="pt-2">
                             <NavGroup label="Recruitment" icon={Briefcase} defaultOpen={true}>
@@ -135,13 +139,6 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                 {!isInterviewer && (
                                     <NavItem to="/candidates" icon={Users} label="Candidates" />
                                 )}
-                            </NavGroup>
-                        </div>
-
-                        {/* My Work group */}
-                        <div className="pt-1">
-                            <NavGroup label="My Work" icon={CalendarCheck} defaultOpen={true}>
-                                <NavItem to="/my-interviews" icon={CalendarCheck} label="My Interviews" />
                             </NavGroup>
                         </div>
 
@@ -186,7 +183,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                     </div>
                 )}
             </div>
-        </aside>
+        </aside >
     );
 };
 
