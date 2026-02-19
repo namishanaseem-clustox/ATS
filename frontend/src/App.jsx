@@ -16,7 +16,7 @@ import Tasks from './pages/Tasks';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Notifications from './components/Notifications';
-<Route path="/tasks" element={<Tasks />} />
+import ScorecardTemplatesPage from './pages/ScorecardTemplatesPage';
 
 const queryClient = new QueryClient();
 
@@ -115,6 +115,11 @@ function App() {
               <Route path="/team" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <Team />
+                </ProtectedRoute>
+              } />
+              <Route path="/scorecards" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <ScorecardTemplatesPage />
                 </ProtectedRoute>
               } />
             </Route>

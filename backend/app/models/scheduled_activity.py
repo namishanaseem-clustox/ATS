@@ -35,11 +35,19 @@ class ScheduledActivity(Base):
     
     # List of names or emails of participants
     participants = Column(JSONB, default=list)
+
+    # Flexible details (e.g. Note Type, Meeting Agenda, etc.)
+    details = Column(JSONB, default=dict)
     
     created_by = Column(UUID(as_uuid=True), nullable=True) # User ID if available
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # External Sync Fields
+    external_id = Column(String, nullable=True) # e.g. Google Calendar Event ID
+    external_provider = Column(String, nullable=True) # e.g. "google"
+    event_html_link = Column(String, nullable=True) # Direct link to external event
 
     # Relationships
     job = relationship("Job", back_populates="scheduled_activities")

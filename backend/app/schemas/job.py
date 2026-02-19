@@ -84,6 +84,7 @@ class JobResponse(JobBase):
     is_deleted: bool
     created_at: datetime
     updated_at: Optional[datetime]
+    scorecard_template_id: Optional[UUID4] = None
     
     department: Optional[DepartmentSummary] = None
     activities: List[JobActivityResponse] = []

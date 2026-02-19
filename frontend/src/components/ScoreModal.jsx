@@ -1,47 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { X, Star, Save } from 'lucide-react';
-import { Loader2 } from 'lucide-react';
+import { X, Star, Save, Loader2 } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import { getScorecardTemplate } from '../api/scorecards';
 
 const RECOMMENDATION_OPTIONS = [
-    { value: 'Strong Yes', label: 'Strong Yes' },
-    { value: 'Yes', label: 'Yes' },
-    { value: 'Neutral', label: 'Neutral' },
-    { value: 'No', label: 'No' },
-    { value: 'Strong No', label: 'Strong No' }
+    { value: 'Strong Yes', label: '🌟 Strong Yes' },
+    { value: 'Yes', label: '✅ Yes' },
+    { value: 'Neutral', label: '⚪ Neutral' },
+    { value: 'No', label: '❌ No' },
+    { value: 'Strong No', label: '🚫 Strong No' }
 ];
 
-const ScoreModal = ({ isOpen, onClose, candidateName, initialData, onSave }) => {
-    const [scores, setScores] = useState({
-        technical_score: 0,
-        communication_score: 0,
-        culture_fit_score: 0,
-        problem_solving_score: 0,
-        leadership_score: 0,
-        recommendation: 'Neutral'
-    });
-    const [loading, setLoading] = useState(false);
+const DEFAULT_SECTIONS = [
+    { key: 'technical_score', label: 'Technical Skills' },
+    { key: 'communication_score', label: 'Communication' },
+    { key: 'culture_fit_score', label: 'Culture Fit' },
+    { key: 'problem_solving_score', label: 'Problem Solving' },
+    { key: 'leadership_score', label: 'Leadership' },
+];
 
+const StarRating = ({ value, onChange }) => (
+    <div className="flex items-center gap-0.5">
+        {[1, 2, 3, 4, 5].map((star) => (
+            <button
+                key={star}
+                type="button"
+                onClick={() => onChange(star)}
+                className={`p-0.5 focus:outline-none transition-colors ${value >= star ? 'text-yellow-400' : 'text-gray-200'}`}
+            >
+                <Star size={22} fill={value >= star ? 'currentColor' : 'none'} />
+            </button>
+        ))}
+        <span className="ml-2 text-sm text-gray-500">{value > 0 ? `${value}/5` : 'Not rated'}</span>
+    </div>
+);
+
+// templateId: optional UUID — if provided, dynamic sections are loaded from template
+const ScoreModal = ({ isOpen, onClose, candidateName, initialData, onSave, templateId = null }) => {
+    const [sections, setSections] = useState(DEFAULT_SECTIONS);
+    const [scores, setScores] = useState({});
+    const [loading, setLoading] = useState(false);
+    const [templateLoading, setTemplateLoading] = useState(false);
+
+    // Load template sections when modal opens / templateId changes
     useEffect(() => {
-        if (isOpen && initialData) {
-            setScores(initialData);
-        } else if (isOpen) {
-            setScores({
-                technical_score: 0,
-                communication_score: 0,
-                culture_fit_score: 0,
-                problem_solving_score: 0,
-                leadership_score: 0,
-                recommendation: 'Neutral'
-            });
+        if (!isOpen) return;
+
+        if (templateId) {
+            setTemplateLoading(true);
+            getScorecardTemplate(templateId)
+                .then((tpl) => setSections(tpl.sections || DEFAULT_SECTIONS))
+                .catch(() => setSections(DEFAULT_SECTIONS))
+                .finally(() => setTemplateLoading(false));
+        } else {
+            setSections(DEFAULT_SECTIONS);
+        }
+    }, [isOpen, templateId]);
+
+    // Init scores when modal opens
+    useEffect(() => {
+        if (!isOpen) return;
+        if (initialData) {
+            setScores({ recommendation: 'Neutral', ...initialData });
+        } else {
+            setScores({ recommendation: 'Neutral' });
         }
     }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
-    const handleRating = (field, value) => {
-        setScores(prev => ({ ...prev, [field]: value }));
+    const handleRating = (key, value) => {
+        setScores(prev => ({ ...prev, [key]: value }));
     };
 
     const handleSubmit = async () => {
@@ -50,86 +80,85 @@ const ScoreModal = ({ isOpen, onClose, candidateName, initialData, onSave }) => 
             await onSave(scores);
             onClose();
         } catch (error) {
-            console.error("Failed to save score", error);
+            console.error('Failed to save score', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const renderStarRating = (field, label) => (
-        <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <div className="flex space-x-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                        key={star}
-                        type="button"
-                        onClick={() => handleRating(field, star)}
-                        className={`p-1 focus:outline-none transition-colors ${scores[field] >= star ? 'text-yellow-400' : 'text-gray-300'
-                            }`}
-                    >
-                        <Star size={24} fill={scores[field] >= star ? "currentColor" : "none"} />
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
     return ReactDOM.createPortal(
         <div className="fixed inset-0 z-[9999] overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20">
                 {/* Backdrop */}
-                <div className="fixed inset-0 transition-opacity z-0" aria-hidden="true" onClick={onClose}>
-                    <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-                </div>
-
+                <div className="fixed inset-0 bg-gray-500 opacity-75 z-0" onClick={onClose} />
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-                {/* Modal Panel */}
-                <div className="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-10 relative">
-                    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                        <div className="flex justify-between items-center mb-4 border-b pb-2">
-                            <h3 className="text-lg leading-6 font-medium text-gray-900">
-                                Score Candidate: <span className="text-[#00C853]">{candidateName}</span>
-                            </h3>
-                            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-                                <X className="h-6 w-6" />
+                {/* Modal */}
+                <div className="relative inline-block bg-white rounded-xl text-left shadow-2xl transform transition-all w-full max-w-lg z-10">
+                    <div className="px-6 pt-5 pb-4">
+                        {/* Header */}
+                        <div className="flex justify-between items-center mb-5 border-b pb-3">
+                            <div>
+                                <h3 className="text-lg font-semibold text-gray-900">Score Candidate</h3>
+                                <p className="text-sm text-green-600 font-medium mt-0.5">{candidateName}</p>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100">
+                                <X className="h-5 w-5" />
                             </button>
                         </div>
 
-                        <div className="space-y-4">
-                            {renderStarRating('technical_score', 'Technical Skills')}
-                            {renderStarRating('communication_score', 'Communication')}
-                            {renderStarRating('culture_fit_score', 'Culture Fit')}
-                            {renderStarRating('problem_solving_score', 'Problem Solving')}
-                            {renderStarRating('leadership_score', 'Leadership')}
-
-                            <div className="mt-4">
-                                <CustomSelect
-                                    label="Overall Recommendation"
-                                    value={scores.recommendation}
-                                    onChange={(e) => setScores(prev => ({ ...prev, recommendation: e.target.value }))}
-                                    options={RECOMMENDATION_OPTIONS}
-                                    className="mb-0"
-                                />
+                        {/* Scoring Criteria */}
+                        {templateLoading ? (
+                            <div className="flex items-center justify-center py-8 text-gray-400">
+                                <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                                Loading scorecard...
                             </div>
-                        </div>
+                        ) : (
+                            <div className="space-y-5">
+                                {sections.map((section) => (
+                                    <div key={section.key}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                                            {section.label}
+                                            {section.weight > 1 && (
+                                                <span className="ml-2 text-xs text-green-600 font-normal">×{section.weight} weight</span>
+                                            )}
+                                        </label>
+                                        <StarRating
+                                            value={scores[section.key] || 0}
+                                            onChange={(v) => handleRating(section.key, v)}
+                                        />
+                                    </div>
+                                ))}
+
+                                {/* Overall Recommendation */}
+                                <div className="pt-2 border-t border-gray-100">
+                                    <CustomSelect
+                                        label="Overall Recommendation"
+                                        value={scores.recommendation || 'Neutral'}
+                                        onChange={(e) => setScores(prev => ({ ...prev, recommendation: e.target.value }))}
+                                        options={RECOMMENDATION_OPTIONS}
+                                        className="mb-0"
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
 
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    {/* Footer */}
+                    <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex flex-row-reverse gap-3">
                         <button
                             type="button"
                             onClick={handleSubmit}
-                            disabled={loading}
-                            className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#00C853] text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                            disabled={loading || templateLoading}
+                            className="inline-flex items-center justify-center rounded-lg border border-transparent shadow-sm px-5 py-2 bg-green-600 text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                         >
-                            {loading ? <Loader2 className="animate-spin h-5 w-5 mr-2" /> : <Save className="h-5 w-5 mr-2" />}
+                            {loading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                             Save Score
                         </button>
                         <button
                             type="button"
                             onClick={onClose}
-                            className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                            className="inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
                         >
                             Cancel
                         </button>

@@ -4,6 +4,15 @@ import { getJobCandidates, getCandidate } from '../api/candidates';
 import { createActivity, updateActivity } from '../api/activities';
 import CustomSelect from './CustomSelect';
 
+const NOTE_TYPE_OPTIONS = [
+    { value: 'General', label: '📝 General' },
+    { value: 'Screening', label: '🔍 Screening' },
+    { value: 'Interview', label: '🎤 Interview' },
+    { value: 'Evaluation', label: '⭐ Evaluation' },
+    { value: 'Offer', label: '📄 Offer' },
+    { value: 'Reference Check', label: '📞 Reference Check' },
+];
+
 const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, onSave }) => {
     const [formData, setFormData] = useState({
         activity_type: 'Note',
@@ -11,7 +20,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
         status: 'Pending',
         description: '',
         candidate_id: candidateId || '',
-        job_id: jobId || ''
+        job_id: jobId || '',
+        details: { note_type: 'General' }
     });
 
     const [candidates, setCandidates] = useState([]);
@@ -31,7 +41,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
             setFormData({
                 ...note,
                 candidate_id: note.candidate_id || '',
-                job_id: note.job_id || ''
+                job_id: note.job_id || '',
+                details: note.details || { note_type: 'General' }
             });
         } else {
             // Reset form for new note
@@ -41,7 +52,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                 status: 'Pending',
                 description: '',
                 candidate_id: candidateId || '',
-                job_id: jobId || ''
+                job_id: jobId || '',
+                details: { note_type: 'General' }
             });
         }
     }, [isOpen, note, jobId, candidateId]);
@@ -82,7 +94,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                 candidate_id: formData.candidate_id || null,
                 job_id: formData.job_id || null,
                 participants: [], // Ensure participants is present as empty list
-                scheduled_at: null // Notes don't have a schedule
+                scheduled_at: null, // Notes don't have a schedule
+                details: formData.details || { note_type: 'General' }
             };
 
             let savedNote;
@@ -126,6 +139,15 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Note Type */}
+                            <CustomSelect
+                                label="Note Type"
+                                value={formData.details?.note_type || 'General'}
+                                onChange={(e) => setFormData(prev => ({ ...prev, details: { ...prev.details, note_type: e.target.value } }))}
+                                options={NOTE_TYPE_OPTIONS}
+                                className="mb-0"
+                            />
+
                             {/* Title */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">Title</label>

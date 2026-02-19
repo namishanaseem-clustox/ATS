@@ -6,7 +6,7 @@ import { updateCandidateScore } from '../api/jobs';
 import { useParams } from 'react-router-dom';
 import { triggerConfetti } from '../utils/confetti';
 
-const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMoveCandidate }) => {
+const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMoveCandidate, scorecardTemplateId = null }) => {
     const { id: jobId } = useParams();
     const [stages, setStages] = useState(pipelineConfig || []);
     const [scoringCandidate, setScoringCandidate] = useState(null);
@@ -65,30 +65,27 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
     const handleSaveScore = async (scoreData) => {
         if (!scoringCandidate) return;
         try {
-            console.log("Sending score data:", JSON.stringify(scoreData, null, 2));
+            console.log('Sending score data:', JSON.stringify(scoreData, null, 2));
             await updateCandidateScore(jobId, scoringCandidate.candidate.id, scoreData);
 
-            // Update local state to show score immediately (Optimistic-ish)
+            // Update local state to show score immediately
             scoringCandidate.score_details = scoreData;
 
-            // Calc overall for display
-            const scores = [
-                scoreData.technical_score,
-                scoreData.communication_score,
-                scoreData.culture_fit_score,
-                scoreData.problem_solving_score,
-                scoreData.leadership_score
-            ];
-            const overall = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+            // Dynamically avg all numeric keys except recommendation
+            const numericScores = Object.entries(scoreData)
+                .filter(([k, v]) => k !== 'recommendation' && typeof v === 'number')
+                .map(([, v]) => v);
+            const overall = numericScores.length
+                ? (numericScores.reduce((a, b) => a + b, 0) / numericScores.length).toFixed(1)
+                : 0;
             scoringCandidate.overall_score = overall;
             scoringCandidate.recommendation = scoreData.recommendation;
 
             setIsScoreModalOpen(false);
             setScoringCandidate(null);
-            // Optionally call onRefresh if provided
         } catch (error) {
-            console.error("Failed to save score", error);
-            alert("Failed to save score");
+            console.error('Failed to save score', error);
+            alert('Failed to save score');
         }
     };
 
@@ -232,6 +229,7 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                     recommendation: scoringCandidate.recommendation || 'Neutral'
                 } : null}
                 onSave={handleSaveScore}
+                templateId={scorecardTemplateId}
             />
 
         </div>

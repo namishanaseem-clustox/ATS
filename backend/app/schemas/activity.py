@@ -29,6 +29,7 @@ class ActivityBase(BaseModel):
 
 class ActivityCreate(ActivityBase):
     assignee_ids: List[UUID] = []
+    details: Optional[Dict[str, Any]] = None
 
 class ActivityUpdate(BaseModel):
     title: Optional[str] = None
@@ -41,6 +42,7 @@ class ActivityUpdate(BaseModel):
     candidate_id: Optional[UUID] = None
     job_id: Optional[UUID] = None
     assignee_ids: Optional[List[UUID]] = None
+    details: Optional[Dict[str, Any]] = None
 
 from app.schemas.candidate import CandidateBasicResponse
 from app.schemas.job import JobResponse
@@ -51,6 +53,13 @@ class ActivityResponse(ActivityBase):
     created_at: datetime
     updated_at: Optional[datetime] = None
     created_by: Optional[UUID] = None
+    
+    # External sync fields
+    external_id: Optional[str] = None
+    external_provider: Optional[str] = None
+    event_html_link: Optional[str] = None
+    
+    details: Optional[Dict[str, Any]] = None
     
     candidate: Optional[CandidateBasicResponse] = None
     job: Optional[JobResponse] = None

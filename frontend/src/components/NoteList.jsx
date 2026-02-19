@@ -77,7 +77,14 @@ const NoteList = ({ jobId, candidateId }) => {
                         <div key={note.id} className="bg-yellow-50 overflow-hidden shadow rounded-lg border border-yellow-200 relative">
                             <div className="px-4 py-3 border-b border-yellow-200 bg-yellow-100 flex justify-between items-start">
                                 <div>
-                                    <h4 className="text-sm font-medium text-yellow-900">{note.title}</h4>
+                                    <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-medium text-yellow-900">{note.title}</h4>
+                                        {note.details?.note_type && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-yellow-800 border border-yellow-300">
+                                                {note.details.note_type}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="text-xs text-yellow-700 mt-0.5">
                                         {new Date(note.created_at).toLocaleDateString()}
                                     </p>

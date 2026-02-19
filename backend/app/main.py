@@ -5,6 +5,7 @@ load_dotenv()
 
 from fastapi.middleware.cors import CORSMiddleware
 from app.routers import departments, job, candidate, activity, auth, feedback, dashboard
+from app.routers import scorecard as scorecard_router
 from app.database import Base, engine
 
 
@@ -40,6 +41,7 @@ app.include_router(activity.router)
 app.include_router(auth.router)
 app.include_router(feedback.router)
 app.include_router(dashboard.router)
+app.include_router(scorecard_router.router)
 
 @app.get("/")
 def read_root():

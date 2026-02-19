@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Briefcase, Users, Building2, UserCheck,
     ChevronDown, ChevronRight, UsersRound, LogOut, Menu, X,
-    CalendarCheck, Calendar
+    CalendarCheck, Calendar, Star
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
@@ -149,6 +149,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                     <NavItem to="/departments" icon={Building2} label="Departments" />
                                     {isAdminOrHR && (
                                         <NavItem to="/team" icon={UsersRound} label="Team" />
+                                    )}
+                                    {isAdminOrHR && (
+                                        <NavItem to="/scorecards" icon={Star} label="Scorecards" />
                                     )}
                                 </NavGroup>
                             </div>

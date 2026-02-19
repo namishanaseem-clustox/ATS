@@ -55,6 +55,9 @@ class Job(Base):
         {"name": "Rejected", "id": "rejected", "type": "standard"}
     ])
     
+    # Optional: link to a specific scorecard template for this job
+    scorecard_template_id = Column(UUID(as_uuid=True), ForeignKey("scorecard_templates.id"), nullable=True)
+    
     is_deleted = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

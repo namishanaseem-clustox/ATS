@@ -25,6 +25,8 @@ from app.models.user import User
 from app.models.candidate import Candidate, JobApplication
 from app.models.scheduled_activity import ScheduledActivity
 from app.models.feedback import Feedback # Added for migrations
+from app.models.user_integration import UserIntegration # Added for Sync
+from app.models.scorecard_template import ScorecardTemplate # Added for Dynamic Scorecards
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
