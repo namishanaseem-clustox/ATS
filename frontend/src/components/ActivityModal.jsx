@@ -59,7 +59,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         if (activity) {
             setFormData({
                 activity_type: activity.activity_type || initialType,
-                title: activity.title || '',
+                title: activity.title || activity.activity_type || '',
                 candidate_id: activity.candidate_id || candidateId || '',
                 job_id: activity.job_id || jobId || '',
                 scheduled_at: toDatetimeLocal(activity.scheduled_at),
@@ -217,7 +217,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         onChange={handleChange}
                                         options={[
                                             { value: '', label: '-- None --' },
-                                            ...candidates.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }))
+                                            ...candidates.filter(c => c.candidate).map(c => ({ value: c.candidate.id, label: `${c.candidate.first_name} ${c.candidate.last_name}` }))
                                         ]}
                                         className="mb-0"
                                         disabled={isRestricted}

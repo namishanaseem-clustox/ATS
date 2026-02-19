@@ -144,10 +144,11 @@ const CalendarView = ({ activities, onRefresh }) => {
         .rbc-day-bg { border-left: 1px solid #f3f4f6; }
         .rbc-off-range-bg { bg-color: #f9fafb; }
         .rbc-today { background-color: #f0fdf4 !important; }
-        .rbc-event { border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: none; padding: 0 !important; }
+        .rbc-event { border-radius: 4px; box-shadow: none; border: none; padding: 0 !important; overflow: hidden; }
+        .rbc-time-view .rbc-event { width: 100% !important; }
         .rbc-current-time-indicator { background-color: #ef4444; }
         .rbc-event-label { display: none !important; }
-        .rbc-event-content { padding: 4px; height: 100%; }
+        .rbc-event-content { padding: 4px; height: 100%; min-height: 24px; }
     `;
 
     const eventPropGetter = (event) => {
