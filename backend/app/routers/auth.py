@@ -124,7 +124,11 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
 
 @router.put("/users/{user_id}", response_model=UserResponse)
 def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+    # Allow if user is updating themselves OR if user is Owner/HR
+    is_self_update = current_user.id == user_id
+    is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
+
+    if not is_self_update and not is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update users"
@@ -137,7 +141,22 @@ def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(ge
     # Optional checks could be added here (e.g., HR cannot edit Owner)
 
     update_data = user_update.dict(exclude_unset=True)
+
+    # Security check: Non-admins cannot change their own Role, Status, or Department
+    if not is_admin:
+        if "role" in update_data:
+            del update_data["role"]
+        if "is_active" in update_data:
+            del update_data["is_active"]
+        if "department_id" in update_data:
+            del update_data["department_id"]
     
+    # Check if email is being updated and if it's already taken
+    if "email" in update_data and update_data["email"] != db_user.email:
+        existing_user = db.query(User).filter(User.email == update_data["email"]).first()
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=400, detail="Email already registered")
+
     if "password" in update_data:
         password = update_data.pop("password")
         if password: # strict check to ensure not empty string if sent?

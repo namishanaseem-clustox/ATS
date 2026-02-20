@@ -7,6 +7,19 @@ import os
 import shutil
 from fastapi import UploadFile
 
+def _get_first_stage_id(db: Session, job_id) -> str:
+    """Return the first stage ID from the job's pipeline_config, falling back to 'new'."""
+    try:
+        from app.models.job import Job
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if job and job.pipeline_config and len(job.pipeline_config) > 0:
+            first_stage_id = job.pipeline_config[0].get("id")
+            if first_stage_id:
+                return first_stage_id
+    except Exception:
+        pass
+    return "new"
+
 UPLOAD_DIR = "uploads"
 
 if not os.path.exists(UPLOAD_DIR):
@@ -70,7 +83,7 @@ class CandidateService:
             application = JobApplication(
                 candidate_id=db_candidate.id,
                 job_id=job_id,
-                current_stage="new",
+                current_stage=_get_first_stage_id(db, job_id),
                 application_status="New"
             )
             db.add(application)
@@ -108,7 +121,7 @@ class CandidateService:
                  application = JobApplication(
                     candidate_id=db_candidate.id,
                     job_id=job_id,
-                    current_stage="new",
+                    current_stage=_get_first_stage_id(db, job_id),
                     application_status="New"
                 )
                  db.add(application)
@@ -163,7 +176,7 @@ class CandidateService:
                          application = JobApplication(
                             candidate_id=existing_candidate.id,
                             job_id=job_id,
-                            current_stage="new",
+                            current_stage=_get_first_stage_id(db, job_id),
                             application_status="New"
                         )
                          db.add(application)
@@ -194,7 +207,7 @@ class CandidateService:
                  application = JobApplication(
                     candidate_id=db_candidate.id,
                     job_id=job_id,
-                    current_stage="new",
+                    current_stage=_get_first_stage_id(db, job_id),
                     application_status="New"
                 )
                  db.add(application)

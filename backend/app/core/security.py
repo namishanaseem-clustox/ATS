@@ -6,7 +6,7 @@ from passlib.context import CryptContext
 # SECRET_KEY should be in env variables for production
 SECRET_KEY = "CHANGE_THIS_TO_A_SECURE_SECRET_KEY" 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 5
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

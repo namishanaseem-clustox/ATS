@@ -60,3 +60,13 @@ export const screenCandidate = async (jobId, candidateId) => {
     const { data } = await client.post(`/jobs/${jobId}/candidates/${candidateId}/screen`);
     return data;
 };
+
+export const syncPipelineFromTemplate = async (jobId) => {
+    const { data } = await client.post(`/jobs/${jobId}/pipeline/sync`);
+    return data;
+};
+
+export const changePipelineTemplate = async (jobId, templateId) => {
+    const { data } = await client.patch(`/jobs/${jobId}/pipeline/template`, { pipeline_template_id: templateId });
+    return data;
+};

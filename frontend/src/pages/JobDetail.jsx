@@ -447,7 +447,7 @@ const JobDetail = () => {
                                     {candidates.length > 0 ? (
                                         (() => {
                                             // Create map of stage ID to stage Name
-                                            const basePipeline = job?.pipeline || defaultPipeline;
+                                            const basePipeline = job?.pipeline_config || defaultPipeline;
                                             const stageMap = basePipeline.reduce((acc, stage) => {
                                                 acc[stage.id] = stage.name;
                                                 return acc;
@@ -502,6 +502,7 @@ const JobDetail = () => {
                             onUpdatePipeline={handlePipelineUpdate}
                             onMoveCandidate={handleMoveCandidate}
                             scorecardTemplateId={job.scorecard_template_id || null}
+                            pipelineTemplateId={job.pipeline_template_id || null}
                         />
                     </div>
                 )}

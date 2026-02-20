@@ -147,6 +147,108 @@ def update_pipeline_config(job_id: UUID, config: List[dict], db: Session = Depen
         raise HTTPException(status_code=404, detail="Job not found")
     return db_job
 
+@router.post("/{job_id}/pipeline/sync", response_model=JobResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
+def sync_pipeline_from_template(job_id: UUID, db: Session = Depends(get_db)):
+    """Re-apply the job's linked pipeline template stages onto the job's pipeline_config."""
+    from app.models.pipeline_template import PipelineTemplate
+    from app.models.pipeline_stage import PipelineStage
+    from app.models.candidate import JobApplication
+    
+    db_job = job_service.get_job(db, job_id=job_id)
+    if not db_job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not db_job.pipeline_template_id:
+        raise HTTPException(status_code=400, detail="Job has no linked pipeline template")
+        
+    template = db.query(PipelineTemplate).filter(PipelineTemplate.id == db_job.pipeline_template_id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Pipeline template not found")
+        
+    # Get current (old) config map {id: name}
+    old_config = db_job.pipeline_config or []
+    old_stage_map = {stage.get("id"): stage.get("name") for stage in old_config}
+    
+    # Get new stages
+    stages = db.query(PipelineStage).filter(PipelineStage.pipeline_template_id == template.id).order_by(PipelineStage.order).all()
+    new_config = [{"id": str(s.id), "name": s.name, "color": s.color, "order": s.order} for s in stages]
+    
+    # Update job config
+    updated_job = job_service.update_pipeline_config(db, job_id=job_id, config=new_config)
+    
+    # Migrate candidates
+    # New map {name: id}
+    new_stage_name_map = {s.name: str(s.id) for s in stages}
+    default_stage_id = str(stages[0].id) if stages else "new"
+    
+    applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
+    for app in applications:
+        current_stage_name = old_stage_map.get(app.current_stage)
+        # Try to find stage with same name in new config
+        if current_stage_name and current_stage_name in new_stage_name_map:
+            new_stage_id = new_stage_name_map[current_stage_name]
+            if new_stage_id != app.current_stage:
+                app.current_stage = new_stage_id
+        else:
+            # Fallback: if current stage ID not in new config, move to default
+            # Check if current stage ID is valid in new config (unlikely for sync unless ID persisted)
+            # Actually for sync, if stage ID persists, we don't need to change. 
+            # But if stage was deleted/re-added, ID changes.
+            if app.current_stage not in [str(s.id) for s in stages]:
+                app.current_stage = default_stage_id
+                
+    db.commit()
+    return updated_job
+
+@router.patch("/{job_id}/pipeline/template", response_model=JobResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
+def change_pipeline_template(job_id: UUID, body: dict, db: Session = Depends(get_db)):
+    """Switch the job to a different pipeline template and sync its stages."""
+    from app.models.pipeline_template import PipelineTemplate
+    from app.models.pipeline_stage import PipelineStage
+    from app.models.candidate import JobApplication
+    
+    template_id = body.get("pipeline_template_id")
+    if not template_id:
+        raise HTTPException(status_code=400, detail="pipeline_template_id is required")
+        
+    db_job = job_service.get_job(db, job_id=job_id)
+    if not db_job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    template = db.query(PipelineTemplate).filter(PipelineTemplate.id == template_id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Pipeline template not found")
+        
+    # Get current (old) config map {id: name}
+    old_config = db_job.pipeline_config or []
+    old_stage_map = {stage.get("id"): stage.get("name") for stage in old_config}
+    
+    # Get new stages
+    stages = db.query(PipelineStage).filter(PipelineStage.pipeline_template_id == template.id).order_by(PipelineStage.order).all()
+    new_config = [{"id": str(s.id), "name": s.name, "color": s.color, "order": s.order} for s in stages]
+    
+    # Update template link and config
+    db_job.pipeline_template_id = template.id
+    db_job.pipeline_config = new_config
+    
+    # Migrate candidates
+    new_stage_name_map = {s.name: str(s.id) for s in stages}
+    default_stage_id = str(stages[0].id) if stages else "new"
+    
+    applications = db.query(JobApplication).filter(JobApplication.job_id == job_id).all()
+    for app in applications:
+        current_stage_name = old_stage_map.get(app.current_stage)
+        
+        # Try to map by name
+        if current_stage_name and current_stage_name in new_stage_name_map:
+            app.current_stage = new_stage_name_map[current_stage_name]
+        else:
+            # If no name match, move to first stage
+            app.current_stage = default_stage_id
+
+    db.commit()
+    db.refresh(db_job)
+    return db_job
+
 from app.services.candidate_service import candidate_service
 # We need a schema for this, ideally ApplicationResponse or similar, but for now let's reuse a generic list
 # or create a temporary response model. The requirement says "return list of candidates".

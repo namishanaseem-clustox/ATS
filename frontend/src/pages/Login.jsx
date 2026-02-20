@@ -7,13 +7,12 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login, user } = useAuth();
+    const { login, user, sessionMessage, clearSessionMessage } = useAuth();
     const navigate = useNavigate();
 
     // Redirect if already logged in
     useEffect(() => {
         if (user) {
-            // Let the DefaultRoute handle the redirection based on role
             navigate('/');
         }
     }, [user, navigate]);
@@ -23,7 +22,6 @@ const Login = () => {
         setError('');
         try {
             await login(email, password);
-            // Let the DefaultRoute handle the redirection based on role
             navigate('/');
         } catch (err) {
             if (err.response && err.response.data && err.response.data.detail) {
@@ -33,6 +31,7 @@ const Login = () => {
             }
         }
     };
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -44,6 +43,17 @@ const Login = () => {
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+                {/* Session-expired banner */}
+                {sessionMessage && (
+                    <div className="mb-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        <svg className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                        <span className="flex-1">{sessionMessage}</span>
+                        <button onClick={clearSessionMessage} className="text-amber-500 hover:text-amber-700">✕</button>
+                    </div>
+                )}
+
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import client from '../api/client';
 
 const AuthContext = createContext(null);
@@ -7,14 +7,29 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
-
-    // Use shared client instance
-
+    const [sessionMessage, setSessionMessage] = useState(null);
 
     // Set default auth header for all requests
     if (token) {
         client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
+
+    const logout = useCallback(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        delete client.defaults.headers.common['Authorization'];
+    }, []);
+
+    // Listen for session expiry fired by the Axios 401 interceptor
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            logout();
+            setSessionMessage('Your session has expired. Please sign in again.');
+        };
+        window.addEventListener('session:expired', handleSessionExpired);
+        return () => window.removeEventListener('session:expired', handleSessionExpired);
+    }, [logout]);
 
     const fetchUser = async () => {
         try {
@@ -25,8 +40,11 @@ export const AuthProvider = ({ children }) => {
             const response = await client.get('/users/me');
             setUser(response.data);
         } catch (error) {
-            console.error("Failed to fetch user", error);
-            logout();
+            // 401 is already handled by the interceptor – avoid double logout
+            if (error.response?.status !== 401) {
+                console.error("Failed to fetch user", error);
+                logout();
+            }
         } finally {
             setLoading(false);
         }
@@ -50,22 +68,16 @@ export const AuthProvider = ({ children }) => {
             const { access_token } = response.data;
             localStorage.setItem('token', access_token);
             setToken(access_token);
-            // Fetch user immediately to update state
+            setSessionMessage(null);
             client.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
             await fetchUser();
             return true;
         } catch (error) {
-            // Error is handled by the calling component
             throw error;
         }
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        setToken(null);
-        setUser(null);
-        delete client.defaults.headers.common['Authorization'];
-    };
+    const clearSessionMessage = () => setSessionMessage(null);
 
     const value = {
         user,
@@ -73,7 +85,9 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         isAuthenticated: !!user,
-        client // Expose the configured axios client
+        sessionMessage,
+        clearSessionMessage,
+        client,
     };
 
     return (
