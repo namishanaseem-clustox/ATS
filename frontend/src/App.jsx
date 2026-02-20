@@ -17,6 +17,13 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import Notifications from './components/Notifications';
 import ScorecardTemplatesPage from './pages/ScorecardTemplatesPage';
+import AdminPage from './pages/Admin/AdminPage';
+import PipelineSettingsPage from './pages/Admin/PipelineSettingsPage';
+import PermissionsPage from './pages/Admin/PermissionsPage';
+import SettingsPage from './pages/Settings/SettingsPage';
+import ProfileSettings from './pages/Settings/ProfileSettings';
+import NotificationsSettings from './pages/Settings/NotificationsSettings';
+import AppearanceSettings from './pages/Settings/AppearanceSettings';
 
 const queryClient = new QueryClient();
 
@@ -112,16 +119,46 @@ function App() {
                 </ProtectedRoute>
               } />
 
-              <Route path="/team" element={
+              <Route path="/admin" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/team" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <Team />
                 </ProtectedRoute>
               } />
-              <Route path="/scorecards" element={
+              <Route path="/admin/scorecards" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <ScorecardTemplatesPage />
                 </ProtectedRoute>
               } />
+              <Route path="/admin/departments" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <DepartmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/pipeline" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <PipelineSettingsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/permissions" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <PermissionsPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Settings routes — accessible to all logged-in users */}
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings/profile" element={<ProfileSettings />} />
+              <Route path="/settings/notifications" element={<NotificationsSettings />} />
+              <Route path="/settings/appearance" element={<AppearanceSettings />} />
+
+              {/* Redirects for legacy routes */}
+              <Route path="/team" element={<Navigate to="/admin/team" replace />} />
+              <Route path="/scorecards" element={<Navigate to="/admin/scorecards" replace />} />
             </Route>
           </Routes>
         </Router>

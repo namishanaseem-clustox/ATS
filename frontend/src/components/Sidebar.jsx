@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard, Briefcase, Users, Building2, UserCheck,
     ChevronDown, ChevronRight, UsersRound, LogOut, Menu, X,
-    CalendarCheck, Calendar, Star
+    CalendarCheck, Calendar, Star, ShieldCheck, Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
@@ -116,11 +116,15 @@ const Sidebar = ({ collapsed, onToggle }) => {
                             <CalendarCheck size={18} />
                         </NavLink>
                         {isAdminOrHR && (
-                            <NavLink to="/team" title="Team"
+                            <NavLink to="/admin" title="Administration"
                                 className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <UsersRound size={18} />
+                                <ShieldCheck size={18} />
                             </NavLink>
                         )}
+                        <NavLink to="/settings" title="Settings"
+                            className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
+                            <Settings size={18} />
+                        </NavLink>
                     </div>
                 ) : (
                     /* Expanded: grouped submenus */
@@ -147,15 +151,16 @@ const Sidebar = ({ collapsed, onToggle }) => {
                             <div className="pt-1">
                                 <NavGroup label="Organization" icon={Building2} defaultOpen={!isHiringManager}>
                                     <NavItem to="/departments" icon={Building2} label="Departments" />
-                                    {isAdminOrHR && (
-                                        <NavItem to="/team" icon={UsersRound} label="Team" />
-                                    )}
-                                    {isAdminOrHR && (
-                                        <NavItem to="/scorecards" icon={Star} label="Scorecards" />
-                                    )}
                                 </NavGroup>
                             </div>
                         )}
+
+                        <div className="pt-2 mt-auto">
+                            {isAdminOrHR && (
+                                <NavItem to="/admin" icon={ShieldCheck} label="Administration" />
+                            )}
+                            <NavItem to="/settings" icon={Settings} label="Settings" />
+                        </div>
                     </>
                 )}
             </nav>

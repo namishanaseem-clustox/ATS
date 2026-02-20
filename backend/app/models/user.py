@@ -4,6 +4,10 @@ from sqlalchemy import Column, String, Boolean, Enum, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
+# import user_preferences implicitly by string reference in relationship, 
+# but we might need to avoid circular imports if we import the class.
+# Using string "UserPreferences" works if it's in the same Base metadata.
+
 
 class UserRole(str, enum.Enum):
     OWNER = "owner"
@@ -32,3 +36,5 @@ class User(Base):
     managed_departments = relationship("Department", back_populates="owner", foreign_keys="Department.owner_id", viewonly=True)
     
     # managed_jobs = relationship("Job", back_populates="hiring_manager") # To be added to Job model
+
+    preferences = relationship("UserPreferences", uselist=False, back_populates="user", cascade="all, delete-orphan")

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Send } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import { getPipelineTemplates } from '../api/pipeline';
 
 const EMPLOYMENT_TYPES = [
     { value: 'Full-time', label: 'Full-time' },
@@ -23,8 +24,29 @@ const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartme
         skills: '', // Comma separated string for input
         description: '',
         deadline: '',
+        pipeline_template_id: '',
         ...initialData // Override defaults if provided
     });
+
+    const [pipelineTemplates, setPipelineTemplates] = useState([]);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const data = await getPipelineTemplates();
+                setPipelineTemplates(data);
+                if (!initialData && !formData.pipeline_template_id) {
+                    const defaultTemplate = data.find(t => t.is_default);
+                    if (defaultTemplate) {
+                        setFormData(prev => ({ ...prev, pipeline_template_id: defaultTemplate.id }));
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to load pipeline templates", error);
+            }
+        };
+        fetchTemplates();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -102,6 +124,18 @@ const JobForm = ({ initialData, departments, onSubmit, onCancel, disableDepartme
                             onChange={handleChange}
                             options={EMPLOYMENT_TYPES}
                             className="mb-0"
+                        />
+                    </div>
+
+                    <div>
+                        <CustomSelect
+                            label="Pipeline Template"
+                            name="pipeline_template_id"
+                            value={formData.pipeline_template_id}
+                            onChange={handleChange}
+                            options={pipelineTemplates.map(t => ({ value: t.id, label: t.name }))}
+                            className="mb-0"
+                            placeholder="Select Pipeline"
                         />
                     </div>
                 </div>

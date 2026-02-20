@@ -22,6 +22,7 @@ class JobBase(BaseModel):
     deadline: Optional[datetime] = None
     
     pipeline_config: Optional[List[dict]] = None
+    pipeline_template_id: Optional[UUID4] = None
 
     @validator('max_salary')
     def check_salary_range(cls, v, values):

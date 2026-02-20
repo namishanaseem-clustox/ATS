@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2 } from 'lucide-react';
+import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2, MoreVertical } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser } from '../api/users';
 import { getDepartments } from '../api/departments';
 import RoleGuard from '../components/RoleGuard';
@@ -16,6 +16,53 @@ const STATUS_OPTIONS = [
     { value: 'true', label: 'Active' },
     { value: 'false', label: 'Inactive' },
 ];
+
+const UserActions = ({ onEdit, onDelete }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const menuRef = React.useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative inline-block text-left" ref={menuRef}>
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors focus:outline-none"
+            >
+                <MoreVertical size={20} />
+            </button>
+
+            {isOpen && (
+                <div className="origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 focus:outline-none">
+                    <div className="py-1">
+                        <button
+                            onClick={() => { setIsOpen(false); onEdit(); }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                            <Pencil size={16} className="mr-2 text-indigo-500" />
+                            Edit
+                        </button>
+                        <button
+                            onClick={() => { setIsOpen(false); onDelete(); }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                            <Trash2 size={16} className="mr-2" />
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 const Team = () => {
     const [users, setUsers] = useState([]);
@@ -230,16 +277,10 @@ const Team = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <RoleGuard allowedRoles={['owner', 'hr']}>
-                                        <button onClick={() => openEditModal(user)} className="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
-                                            <Pencil size={18} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(user)}
-                                            className="text-red-600 hover:text-red-900"
-                                            title="Delete User"
-                                        >
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <UserActions
+                                            onEdit={() => openEditModal(user)}
+                                            onDelete={() => handleDelete(user)}
+                                        />
                                     </RoleGuard>
                                 </td>
                             </tr>
@@ -261,7 +302,7 @@ const Team = () => {
                         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
                             <form onSubmit={handleSubmit}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{isEditing ? 'Edit Team Member' : 'Add New Team Member'}</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{isEditing ? 'Edit Member' : 'Add Member'}</h3>
 
                                     {error && (
                                         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">

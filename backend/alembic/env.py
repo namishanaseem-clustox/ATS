@@ -27,6 +27,9 @@ from app.models.scheduled_activity import ScheduledActivity
 from app.models.feedback import Feedback # Added for migrations
 from app.models.user_integration import UserIntegration # Added for Sync
 from app.models.scorecard_template import ScorecardTemplate # Added for Dynamic Scorecards
+from app.models.pipeline_template import PipelineTemplate
+from app.models.pipeline_stage import PipelineStage
+from app.models.user_preferences import UserPreferences
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

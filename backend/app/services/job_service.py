@@ -115,7 +115,26 @@ class JobService:
 
     def create_job(self, db: Session, job: JobCreate, user_id: UUID = None):
         job_code = self._generate_job_code(db, job.title)
-        db_job = Job(**job.dict(), job_code=job_code)
+        
+        job_data = job.dict()
+        
+        # Populate pipeline_config from template if provided
+        if job.pipeline_template_id:
+            from app.models.pipeline_stage import PipelineStage
+            stages = db.query(PipelineStage).filter(PipelineStage.pipeline_template_id == job.pipeline_template_id).order_by(PipelineStage.order).all()
+            if stages:
+                pipeline_config = [
+                    {
+                        "id": str(stage.id),
+                        "name": stage.name,
+                        "color": stage.color,
+                        "type": "standard"
+                    }
+                    for stage in stages
+                ]
+                job_data['pipeline_config'] = pipeline_config
+
+        db_job = Job(**job_data, job_code=job_code)
         db.add(db_job)
         db.commit()
         db.refresh(db_job)
