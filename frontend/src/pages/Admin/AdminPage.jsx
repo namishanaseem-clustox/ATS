@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-    UsersRound, FileText, Building2, KanbanSquare, ShieldCheck, ChevronRight
+    UsersRound, FileText, Building2, KanbanSquare, ShieldCheck, ChevronRight, Users
 } from 'lucide-react';
 
 const AdminCard = ({ to, icon: Icon, title, description }) => (
@@ -31,6 +31,12 @@ const AdminPage = () => {
                     icon={UsersRound}
                     title="Team Management"
                     description="Add users, assign roles, and manage department access."
+                />
+                <AdminCard
+                    to="/admin/candidates"
+                    icon={Users}
+                    title="Candidates"
+                    description="Manage candidate profiles, add new applicants, and remove records."
                 />
                 <AdminCard
                     to="/admin/scorecards"

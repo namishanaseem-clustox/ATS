@@ -99,13 +99,13 @@ const Sidebar = ({ collapsed, onToggle }) => {
                             className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
                             <Briefcase size={18} />
                         </NavLink>
-                        {!isInterviewer && (
+                        {!isInterviewer && !isAdminOrHR && (
                             <NavLink to="/candidates" title="Candidates"
                                 className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
                                 <Users size={18} />
                             </NavLink>
                         )}
-                        {!isInterviewer && (
+                        {!isInterviewer && !isAdminOrHR && (
                             <NavLink to="/departments" title="Departments"
                                 className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
                                 <Building2 size={18} />
@@ -140,16 +140,16 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         <div className="pt-2">
                             <NavGroup label="Recruitment" icon={Briefcase} defaultOpen={true}>
                                 <NavItem to="/jobs" icon={Briefcase} label="Jobs" />
-                                {!isInterviewer && (
+                                {!isInterviewer && !isAdminOrHR && (
                                     <NavItem to="/candidates" icon={Users} label="Candidates" />
                                 )}
                             </NavGroup>
                         </div>
 
                         {/* Organization group — hidden for interviewers */}
-                        {!isInterviewer && (
+                        {!isInterviewer && !isAdminOrHR && (
                             <div className="pt-1">
-                                <NavGroup label="Organization" icon={Building2} defaultOpen={true}>
+                                <NavGroup label="Organization" icon={Building2} iconColor="text-gray-400" defaultOpen={true}>
                                     <NavItem to="/departments" icon={Building2} label="Departments" />
                                 </NavGroup>
                             </div>

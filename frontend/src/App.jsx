@@ -88,7 +88,7 @@ function App() {
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/departments" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
-                  <DepartmentsPage />
+                  <DepartmentsPage readOnly={true} />
                 </ProtectedRoute>
               } />
               <Route path="/departments/:id" element={
@@ -110,7 +110,7 @@ function App() {
               } />
               <Route path="/candidates" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
-                  <Candidates />
+                  <Candidates readOnly={true} />
                 </ProtectedRoute>
               } />
               <Route path="/candidates/:id" element={
@@ -137,6 +137,11 @@ function App() {
               <Route path="/admin/departments" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <DepartmentsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/candidates" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr']}>
+                  <Candidates />
                 </ProtectedRoute>
               } />
               <Route path="/admin/pipeline" element={

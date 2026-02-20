@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Users, Columns } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Plus, Filter, Download as DownloadIcon, ChevronDown, Trash2, Users } from 'lucide-react';
+import ActionMenu from '../components/ActionMenu';
 import { getCandidates, deleteCandidate } from '../api/candidates';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -20,7 +21,7 @@ const CANDIDATE_COLUMNS = [
     { id: 'actions', label: 'Actions', required: true }
 ];
 
-const Candidates = () => {
+const Candidates = ({ readOnly = false }) => {
     const [candidates, setCandidates] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -88,7 +89,7 @@ const Candidates = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Candidates</h1>
                     <p className="text-gray-500 mt-1">Manage your talent pool and applicants.</p>
                 </div>
-                <RoleGuard allowedRoles={['hr', 'owner']}>
+                <RoleGuard allowedRoles={readOnly ? [] : ['hr', 'owner']}>
                     <button
                         onClick={() => setShowModal(true)}
                         className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
@@ -202,13 +203,17 @@ const Candidates = () => {
                                             )}
                                             {visibleColumns.includes('actions') && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <RoleGuard allowedRoles={['hr', 'owner']}>
-                                                        <button
-                                                            onClick={(e) => handleDelete(e, candidate.id)}
-                                                            className="text-red-600 hover:text-red-900"
-                                                        >
-                                                            Delete
-                                                        </button>
+                                                    <RoleGuard allowedRoles={readOnly ? [] : ['hr', 'owner']}>
+                                                        <ActionMenu
+                                                            actions={[
+                                                                {
+                                                                    label: 'Delete',
+                                                                    icon: <Trash2 size={16} />,
+                                                                    onClick: () => handleDelete({ stopPropagation: () => { } }, candidate.id),
+                                                                    className: 'text-red-600 hover:text-red-700'
+                                                                }
+                                                            ]}
+                                                        />
                                                     </RoleGuard>
                                                 </td>
                                             )}
@@ -226,7 +231,7 @@ const Candidates = () => {
                             </div>
                             <h3 className="text-base font-semibold text-gray-700 mb-1">No candidates yet</h3>
                             <p className="text-sm text-gray-400 mb-5">Upload a resume or add a candidate manually to start building your talent pool.</p>
-                            <RoleGuard allowedRoles={['hr', 'owner']}>
+                            <RoleGuard allowedRoles={readOnly ? [] : ['hr', 'owner']}>
                                 <button
                                     onClick={() => setShowModal(true)}
                                     className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
@@ -309,5 +314,3 @@ const Candidates = () => {
 };
 
 export default Candidates;
-
-// permissions updated

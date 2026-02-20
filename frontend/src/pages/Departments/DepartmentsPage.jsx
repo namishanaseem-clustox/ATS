@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search, Columns } from 'lucide-react';
+import { Plus, Search, Columns, Edit, Trash2 } from 'lucide-react';
+
+import ActionMenu from '../../components/ActionMenu';
 
 import DepartmentModal from '../../components/DepartmentModal';
 import ConfirmationModal from '../../components/ConfirmationModal';
@@ -23,7 +25,7 @@ const DEPARTMENT_COLUMNS = [
     { id: 'actions', label: 'Actions', required: true }
 ];
 
-const DepartmentsPage = () => {
+const DepartmentsPage = ({ readOnly = false }) => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
     const { user } = useAuth();
@@ -106,7 +108,7 @@ const DepartmentsPage = () => {
         }
     };
 
-    const canManageDepartments = user?.role === 'owner' || user?.role === 'hr';
+    const canManageDepartments = !readOnly && (user?.role === 'owner' || user?.role === 'hr');
 
     if (isLoading) return <div className="flex justify-center items-center h-screen text-primary">Loading...</div>;
     if (isError) return <div className="flex justify-center items-center h-screen text-red-500">Error loading departments. Is backend running?</div>;
@@ -258,8 +260,12 @@ const DepartmentsPage = () => {
                                             )}
                                             {canManageDepartments && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <button onClick={() => openEditModal(dept)} className="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
-                                                    <button onClick={() => handleDelete(dept.id)} className="text-red-600 hover:text-red-900">Delete</button>
+                                                    <ActionMenu
+                                                        actions={[
+                                                            { label: 'Edit', icon: <Edit size={16} />, onClick: () => openEditModal(dept) },
+                                                            { label: 'Delete', icon: <Trash2 size={16} />, onClick: () => handleDelete(dept.id), className: 'text-red-600 hover:text-red-700' }
+                                                        ]}
+                                                    />
                                                 </td>
                                             )}
                                         </tr>
