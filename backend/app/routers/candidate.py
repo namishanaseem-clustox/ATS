@@ -122,7 +122,7 @@ def read_candidates(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
             
     return results
 
-@router.post("/", response_model=CandidateResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
+@router.post("/", response_model=CandidateResponse, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER]))])
 def create_candidate(candidate: CandidateCreate, db: Session = Depends(get_db)):
     return candidate_service.create_candidate(db=db, candidate=candidate)
 
@@ -178,7 +178,7 @@ async def upload_resume(
     file: UploadFile = File(...), 
     job_id: Optional[UUID] = Form(None),
     db: Session = Depends(get_db),
-    _: User = Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))
+    _: User = Depends(RoleChecker([UserRole.HR, UserRole.OWNER]))
 ):
     # 1. Read file content
     content = await file.read()

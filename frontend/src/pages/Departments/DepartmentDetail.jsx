@@ -19,10 +19,9 @@ const DepartmentDetail = () => {
     const [isRemoveModalOpen, setIsRemoveModalOpen] = useState(false);
     const [memberToRemove, setMemberToRemove] = useState(null);
 
-    // Permission check: Owner, HR, or the specific Department Owner
+    // Permission check: Owner or HR only
     const canManageMembers = currentUser?.role === 'owner' ||
-        currentUser?.role === 'hr' ||
-        (department && currentUser?.id === department.owner_id);
+        currentUser?.role === 'hr';
 
     useEffect(() => {
         const fetchData = async () => {

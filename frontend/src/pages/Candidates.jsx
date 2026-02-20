@@ -88,7 +88,7 @@ const Candidates = () => {
                     <h1 className="text-2xl font-bold text-gray-800">Candidates</h1>
                     <p className="text-gray-500 mt-1">Manage your talent pool and applicants.</p>
                 </div>
-                <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                <RoleGuard allowedRoles={['hr', 'owner']}>
                     <button
                         onClick={() => setShowModal(true)}
                         className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
@@ -202,7 +202,7 @@ const Candidates = () => {
                                             )}
                                             {visibleColumns.includes('actions') && (
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                                    <RoleGuard allowedRoles={['hr', 'owner']}>
                                                         <button
                                                             onClick={(e) => handleDelete(e, candidate.id)}
                                                             className="text-red-600 hover:text-red-900"
@@ -226,7 +226,7 @@ const Candidates = () => {
                             </div>
                             <h3 className="text-base font-semibold text-gray-700 mb-1">No candidates yet</h3>
                             <p className="text-sm text-gray-400 mb-5">Upload a resume or add a candidate manually to start building your talent pool.</p>
-                            <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                            <RoleGuard allowedRoles={['hr', 'owner']}>
                                 <button
                                     onClick={() => setShowModal(true)}
                                     className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
@@ -309,3 +309,5 @@ const Candidates = () => {
 };
 
 export default Candidates;
+
+// permissions updated

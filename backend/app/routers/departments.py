@@ -60,13 +60,15 @@ def read_departments(skip: int = 0, limit: int = 100, db: Session = Depends(get_
         logger.info(f"Role: {current_user.role} - No filters (Admin/HR/Owner)")
     
     # Use service to fetch and populate counts
-    return department_service.get_departments(
-        db, 
+    depts = department_service.get_departments(
+        db=db, 
         skip=skip, 
         limit=limit, 
         filter_by_owner_id=filter_by_owner_id, 
         filter_by_member_id=filter_by_member_id
     )
+    logger.info(f"Found {len(depts)} departments for user {current_user.email} with role {current_user.role}")
+    return depts
 
 @router.get("/{department_id}", response_model=DepartmentResponse)
 def read_department(department_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
@@ -108,9 +110,8 @@ def remove_member(department_id: UUID, user_id: UUID, db: Session = Depends(get_
 
     # 2. Check Permissions
     is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
-    is_dept_owner = dept.owner_id == current_user.id
     
-    if not (is_admin or is_dept_owner):
+    if not is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to remove members from this department")
 
     # 3. Get Target User

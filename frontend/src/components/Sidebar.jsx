@@ -149,7 +149,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         {/* Organization group — hidden for interviewers */}
                         {!isInterviewer && (
                             <div className="pt-1">
-                                <NavGroup label="Organization" icon={Building2} defaultOpen={!isHiringManager}>
+                                <NavGroup label="Organization" icon={Building2} defaultOpen={true}>
                                     <NavItem to="/departments" icon={Building2} label="Departments" />
                                 </NavGroup>
                             </div>

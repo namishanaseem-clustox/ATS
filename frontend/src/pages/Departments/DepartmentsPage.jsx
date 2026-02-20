@@ -57,7 +57,7 @@ const DepartmentsPage = () => {
         const query = searchQuery.toLowerCase();
         const name = (dept.name || '').toLowerCase();
         const location = (dept.location || '').toLowerCase();
-        const owner = (dept.owner || '').toLowerCase();
+        const owner = (dept.owner?.full_name || '').toLowerCase();
         return name.includes(query) || location.includes(query) || owner.includes(query);
     });
 
