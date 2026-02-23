@@ -131,8 +131,16 @@ const RequisitionDetail = () => {
                     )}
 
                     {isHR && (req.status === 'Open' || req.status === 'Approved') && (
-                        <button onClick={() => convertReq.mutate(req.id)} className="flex items-center gap-2 bg-[#00C853] text-white px-4 py-2 rounded shadow hover:bg-green-600">
-                            <FileText size={16} /> Create Job Posting
+                        <button
+                            onClick={() => { if (req.status === 'Approved') convertReq.mutate(req.id); }}
+                            disabled={req.status === 'Open'}
+                            className={`flex items-center gap-2 px-4 py-2 rounded shadow transition-colors ${req.status === 'Open'
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-[#00C853] text-white hover:bg-green-600'
+                                }`}
+                        >
+                            <FileText size={16} />
+                            {req.status === 'Open' ? 'Job Posting Created' : 'Create Job Posting'}
                         </button>
                     )}
                 </div>
