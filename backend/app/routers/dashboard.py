@@ -82,12 +82,19 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
             detail="Not authorized to access dashboard"
         )
     
+    from sqlalchemy import or_, desc, func
+    
     is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
     
     # Get recent job activities
     job_query = db.query(Job).filter(Job.created_at >= datetime.utcnow() - timedelta(days=7))
     if not is_admin:
-        job_query = job_query.filter(Job.department_id == current_user.department_id)
+        job_query = job_query.filter(
+            or_(
+                Job.department_id == current_user.department_id,
+                Job.hiring_manager_id == current_user.id
+            )
+        )
     recent_job_activities = job_query.order_by(desc(Job.created_at)).limit(10).all()
     
     activities = []
@@ -105,7 +112,12 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
     candidate_query = db.query(Candidate).filter(Candidate.created_at >= datetime.utcnow() - timedelta(days=7))
     if not is_admin:
         from app.models.candidate import JobApplication
-        candidate_query = candidate_query.join(JobApplication).join(Job).filter(Job.department_id == current_user.department_id)
+        candidate_query = candidate_query.join(JobApplication).join(Job).filter(
+            or_(
+                Job.department_id == current_user.department_id,
+                Job.hiring_manager_id == current_user.id
+            )
+        )
     recent_candidate_activities = candidate_query.order_by(desc(Candidate.created_at)).limit(10).all()
     
     for candidate in recent_candidate_activities:
@@ -123,6 +135,7 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
         # Get recent pending requisitions
         from app.models.requisition import JobRequisition, RequisitionStatus
         
+        # Base query for everyone to see recent active/updated reqs
         req_query = db.query(JobRequisition).filter(
             or_(
                 JobRequisition.updated_at >= datetime.utcnow() - timedelta(days=7),
@@ -131,20 +144,23 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
         )
         
         if is_admin:
-            req_query = req_query.filter(
-                JobRequisition.status.in_([
-                    RequisitionStatus.PENDING_HR, 
-                    RequisitionStatus.PENDING_OWNER,
-                    RequisitionStatus.OPEN,
-                    RequisitionStatus.DRAFT,
-                    RequisitionStatus.CANCELLED,
-                    RequisitionStatus.FILLED
-                ])
-            )
+            # HR sees Pending_HR, Approved (for them to create job), plus general ones
+            # Owner sees Pending_Owner, Open (to know it's live), plus general ones
+            admin_visible_statuses = [
+                RequisitionStatus.DRAFT,
+                RequisitionStatus.CANCELLED,
+                RequisitionStatus.FILLED
+            ]
+            
+            if current_user.role == UserRole.HR:
+                admin_visible_statuses.extend([RequisitionStatus.PENDING_HR, RequisitionStatus.APPROVED])
+            elif current_user.role == UserRole.OWNER:
+                admin_visible_statuses.extend([RequisitionStatus.PENDING_OWNER, RequisitionStatus.OPEN])
+                
+            req_query = req_query.filter(JobRequisition.status.in_(admin_visible_statuses))
         else:
-            req_query = req_query.filter(
-                JobRequisition.hiring_manager_id == current_user.id
-            )
+            # Hiring managers only see their own requisitions, regardless of status
+            req_query = req_query.filter(JobRequisition.hiring_manager_id == current_user.id)
 
         recent_reqs = req_query.order_by(desc(func.coalesce(JobRequisition.updated_at, JobRequisition.created_at))).limit(10).all()
         

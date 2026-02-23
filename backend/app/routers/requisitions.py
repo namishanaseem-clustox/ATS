@@ -169,8 +169,8 @@ def convert_to_job(req_id: UUID, db: Session = Depends(get_db), current_user: Us
     )
     db.add(new_job)
 
-    # Mark requisition as filled
-    req.status = RequisitionStatus.FILLED
+    # Mark requisition as OPEN to signal the end of the approval flow and start of recruitment
+    req.status = RequisitionStatus.OPEN
     log = RequisitionLog(requisition_id=req.id, user_id=current_user.id, action="Converted to Job Posting")
     db.add(log)
     
