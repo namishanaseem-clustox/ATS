@@ -10,6 +10,7 @@ class RequisitionStatus(str, enum.Enum):
     DRAFT = "Draft"
     PENDING_HR = "Pending_HR"
     PENDING_OWNER = "Pending_Owner"
+    APPROVED = "Approved"
     OPEN = "Open"
     FILLED = "Filled"
     CANCELLED = "Cancelled"

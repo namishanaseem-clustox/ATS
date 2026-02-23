@@ -36,6 +36,11 @@ const RequisitionDetail = () => {
 
     const isHiringManager = user?.role === 'hiring_manager';
     const isHrOrOwner = ['owner', 'hr'].includes(user?.role);
+    const isHR = user?.role === 'hr';
+    const isOwner = user?.role === 'owner';
+
+    // Determine if the current user can approve/reject the requisition
+    const canApproveReject = (isHR && req?.status === 'Pending_HR') || (isOwner && req?.status === 'Pending_Owner');
 
     const submitRejection = () => {
         if (!rejectReason.trim()) return;
@@ -91,8 +96,6 @@ const RequisitionDetail = () => {
                     <h1 className="text-3xl font-bold text-gray-900">{req.job_title}</h1>
                     <div className="mt-2 text-sm text-gray-500 flex items-center gap-4">
                         <span className="font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-700">{req.req_code}</span>
-                        <span>{req.department_name}</span>
-                        <span>{req.location}</span>
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                             ${req.status === 'Open' ? 'bg-green-100 text-green-800' :
                                 req.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
@@ -116,7 +119,7 @@ const RequisitionDetail = () => {
                         </>
                     )}
 
-                    {isHrOrOwner && (req.status === 'Pending_HR' || req.status === 'Pending_Owner') && (
+                    {canApproveReject && (
                         <>
                             <button onClick={() => setIsRejectModalOpen(true)} className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded shadow-sm hover:bg-gray-50">
                                 <XCircle size={16} /> Reject
@@ -127,7 +130,7 @@ const RequisitionDetail = () => {
                         </>
                     )}
 
-                    {isHrOrOwner && req.status === 'Open' && (
+                    {isHR && (req.status === 'Open' || req.status === 'Approved') && (
                         <button onClick={() => convertReq.mutate(req.id)} className="flex items-center gap-2 bg-[#00C853] text-white px-4 py-2 rounded shadow hover:bg-green-600">
                             <FileText size={16} /> Create Job Posting
                         </button>
@@ -147,6 +150,24 @@ const RequisitionDetail = () => {
 
             <div className="grid grid-cols-3 gap-6">
                 <div className="col-span-2 space-y-6">
+                    <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
+                        <h3 className="text-lg font-semibold border-b pb-2 mb-4">Job Details</h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <span className="text-sm text-gray-500 block">Department</span>
+                                <span className="font-medium">{req.department_name}</span>
+                            </div>
+                            <div>
+                                <span className="text-sm text-gray-500 block">Location</span>
+                                <span className="font-medium">{req.location}</span>
+                            </div>
+                            <div>
+                                <span className="text-sm text-gray-500 block">Employment Type</span>
+                                <span className="font-medium capitalize">{req.employment_type?.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="bg-white p-6 rounded-lg shadow border border-gray-200">
                         <h3 className="text-lg font-semibold border-b pb-2 mb-4">Business Justification</h3>
                         <p className="text-gray-700 whitespace-pre-wrap">{req.justification || 'No justification provided.'}</p>

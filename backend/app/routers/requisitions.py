@@ -126,7 +126,7 @@ def approve_requisition(req_id: UUID, db: Session = Depends(get_db), current_use
         req.status = RequisitionStatus.PENDING_OWNER
         action = "Approved by HR"
     elif req.status == RequisitionStatus.PENDING_OWNER and current_user.role == UserRole.OWNER:
-        req.status = RequisitionStatus.OPEN
+        req.status = RequisitionStatus.APPROVED
         action = "Approved by Owner"
     else:
         raise HTTPException(status_code=400, detail=f"Cannot approve from status {req.status.value} as your role")
@@ -154,8 +154,8 @@ def reject_requisition(req_id: UUID, payload: JobRequisitionReject, db: Session 
 @router.post("/{req_id}/convert")
 def convert_to_job(req_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))):
     req = db.query(JobRequisition).filter(JobRequisition.id == req_id).first()
-    if not req or req.status != RequisitionStatus.OPEN:
-        raise HTTPException(status_code=400, detail="Requisition must be OPEN to convert")
+    if not req or req.status not in [RequisitionStatus.OPEN, RequisitionStatus.APPROVED]:
+        raise HTTPException(status_code=400, detail="Requisition must be Approved to convert")
 
     # Generate the safe public-facing job
     new_job = Job(
