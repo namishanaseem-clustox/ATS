@@ -139,6 +139,9 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         {/* Recruitment group */}
                         <div className="pt-2">
                             <NavGroup label="Recruitment" icon={Briefcase} defaultOpen={true}>
+                                {!isInterviewer && (
+                                    <NavItem to="/requisitions" icon={UsersRound} label="Requisitions" />
+                                )}
                                 <NavItem to="/jobs" icon={Briefcase} label="Jobs" />
                                 {!isInterviewer && !isAdminOrHR && (
                                     <NavItem to="/candidates" icon={Users} label="Candidates" />

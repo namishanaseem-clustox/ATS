@@ -1,57 +1,79 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getRecentActivities } from '../api/dashboard';
 import { Bell, Briefcase, UserPlus, FileText, CheckCircle } from 'lucide-react';
-
-// Mock data
-const MOCK_NOTIFICATIONS = [
-    { id: 1, type: 'candidate', message: 'Jane added a note to candidate Shawn', time: '2 hours ago', user: 'Jane' },
-    { id: 2, type: 'job', message: 'Job "Senior React Developer" was published by Josh', time: '5 hours ago', user: 'Josh' },
-    { id: 3, type: 'user', message: 'Ben approved the offer for Shawn', time: '1 day ago', user: 'Ben' },
-    { id: 4, type: 'candidate', message: 'Interview scheduled with Jerry', time: '1 day ago', user: 'System' },
-    { id: 5, type: 'department', message: 'Kale updated department Professional Services', time: '2 days ago', user: 'Kale' },
-    { id: 6, type: 'system', message: 'System maintenance scheduled for Saturday', time: '3 days ago', user: 'Admin' },
-    { id: 7, type: 'candidate', message: 'Resume parsing completed for 5 new applicants', time: '3 days ago', user: 'System' },
-];
+import { Link } from 'react-router-dom';
 
 const NotificationsWidget = () => {
     const [showAll, setShowAll] = useState(false);
 
-    // Display 5 items by default, or all if expanded
-    const visibleNotifications = showAll ? MOCK_NOTIFICATIONS : MOCK_NOTIFICATIONS.slice(0, 5);
+    const { data: activities, isLoading, isError } = useQuery({
+        queryKey: ['recent-activities'],
+        queryFn: getRecentActivities,
+    });
+
+    if (isLoading) return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">Loading notifications...</div>;
+    if (isError) return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-red-500">Failed to load notifications.</div>;
+
+    const notifications = activities || [];
+    const visibleNotifications = showAll ? notifications : notifications.slice(0, 5);
 
     const getIcon = (type) => {
         switch (type) {
-            case 'candidate': return <div className="p-2 rounded-full bg-green-100 text-green-600"><FileText size={16} /></div>;
-            case 'user': return <div className="p-2 rounded-full bg-blue-100 text-blue-600"><UserPlus size={16} /></div>;
-            case 'department': return <div className="p-2 rounded-full bg-gray-100 text-gray-600"><Briefcase size={16} /></div>;
-            case 'job': return <div className="p-2 rounded-full bg-purple-100 text-purple-600"><Briefcase size={16} /></div>;
+            case 'candidate_created': return <div className="p-2 rounded-full bg-green-100 text-green-600"><FileText size={16} /></div>;
+            case 'user_created': return <div className="p-2 rounded-full bg-blue-100 text-blue-600"><UserPlus size={16} /></div>;
+            case 'requisition_pending': return <div className="p-2 rounded-full bg-yellow-100 text-yellow-600"><CheckCircle size={16} /></div>;
+            case 'job_created': return <div className="p-2 rounded-full bg-purple-100 text-purple-600"><Briefcase size={16} /></div>;
             default: return <div className="p-2 rounded-full bg-gray-100 text-gray-400"><Bell size={16} /></div>;
         }
+    };
+
+    const getLink = (type, id) => {
+        switch (type) {
+            case 'candidate_created': return `/candidates/${id}`;
+            case 'requisition_pending': return `/requisitions/${id}`;
+            case 'job_created': return `/jobs/${id}`;
+            default: return '#';
+        }
+    };
+
+    const formatTime = (isoString) => {
+        if (!isoString) return 'Just now';
+        const date = new Date(isoString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-0 h-full flex flex-col">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="font-bold text-gray-800 text-lg">NOTIFICATIONS</h3>
-                <button
-                    onClick={() => setShowAll(!showAll)}
-                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                    {showAll ? 'Show Less' : 'View more'}
-                </button>
+                {notifications.length > 5 && (
+                    <button
+                        onClick={() => setShowAll(!showAll)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                        {showAll ? 'Show Less' : 'View more'}
+                    </button>
+                )}
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {visibleNotifications.map(notif => (
-                    <div key={notif.id} className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0">
-                        <div className="flex-shrink-0 mr-3">
-                            {getIcon(notif.type)}
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-800">{notif.message}</p>
-                            <span className="text-xs text-gray-400 mt-1 block">{notif.time}</span>
-                        </div>
-                    </div>
-                ))}
+                {notifications.length === 0 ? (
+                    <div className="text-sm text-gray-500 text-center py-4">No recent activities</div>
+                ) : (
+                    visibleNotifications.map(notif => (
+                        <Link key={notif.id} to={getLink(notif.type, notif.id)} className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 transition-colors p-2 rounded -mx-2">
+                            <div className="flex-shrink-0 mr-3">
+                                {getIcon(notif.type)}
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-800 hover:text-blue-600">{notif.title}</p>
+                                {notif.description && <p className="text-xs text-gray-600 mt-0.5">{notif.description}</p>}
+                                <span className="text-xs text-gray-400 mt-1 block">{formatTime(notif.timestamp)}</span>
+                            </div>
+                        </Link>
+                    ))
+                )}
             </div>
         </div>
     );

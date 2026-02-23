@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, Users, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote } from 'lucide-react';
 import { getJobActivities, getCandidateActivities, deleteActivity } from '../api/activities';
 import ActivityModal from './ActivityModal';
+import { useAuth } from '../context/AuthContext';
 
 const ActivityList = ({ jobId, candidateId }) => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState(null);
+    const { user } = useAuth();
+    const isInterviewer = user?.role === 'interviewer';
 
     useEffect(() => {
         fetchActivities();
@@ -157,9 +160,11 @@ const ActivityList = ({ jobId, candidateId }) => {
                                         <button onClick={() => handleEdit(activity)} className="text-indigo-600 hover:text-indigo-900">
                                             <Edit2 className="h-4 w-4" />
                                         </button>
-                                        <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900">
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
+                                        {!isInterviewer && (
+                                            <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900">
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </li>

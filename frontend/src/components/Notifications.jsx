@@ -1,16 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { getRecentActivities } from '../api/dashboard';
 import { Bell, Check } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Notifications = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Mock notifications for Phase B demo
-    const [notifications, setNotifications] = useState([
-        { id: 1, title: "New Candidate", text: "Alex Johnson applied for Frontend Developer", time: "10m ago", unread: true, type: 'candidate' },
-        { id: 2, title: "Interview Reminder", text: "Interview with Sarah Smith in 30 mins", time: "30m ago", unread: true, type: 'interview' },
-        { id: 3, title: "Team Activity", text: "Mike moved Brian to Technical Interface", time: "2h ago", unread: false, type: 'activity' },
-    ]);
+    const { data: activities, isLoading } = useQuery({
+        queryKey: ['recent-activities'],
+        queryFn: getRecentActivities,
+    });
+
+    const [readNotifs, setReadNotifs] = useState(new Set());
+
+    const notifications = (activities || []).map(a => ({
+        ...a,
+        unread: !readNotifs.has(a.id)
+    }));
 
     const unreadCount = notifications.filter(n => n.unread).length;
 
@@ -26,11 +34,30 @@ const Notifications = () => {
     }, []);
 
     const markAllRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+        const newReadSet = new Set(readNotifs);
+        notifications.forEach(n => newReadSet.add(n.id));
+        setReadNotifs(newReadSet);
     };
 
     const markAsRead = (id) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+        const newReadSet = new Set(readNotifs);
+        newReadSet.add(id);
+        setReadNotifs(newReadSet);
+    };
+
+    const formatTime = (isoString) => {
+        if (!isoString) return 'Just now';
+        const date = new Date(isoString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const getLink = (type, id) => {
+        switch (type) {
+            case 'candidate_created': return `/candidates/${id}`;
+            case 'requisition_pending': return `/requisitions/${id}`;
+            case 'job_created': return `/jobs/${id}`;
+            default: return '#';
+        }
     };
 
     return (
@@ -60,7 +87,9 @@ const Notifications = () => {
                         )}
                     </div>
                     <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                        {notifications.length === 0 ? (
+                        {isLoading ? (
+                            <div className="p-8 text-center text-gray-500 text-sm">Loading...</div>
+                        ) : notifications.length === 0 ? (
                             <div className="p-8 text-center text-gray-500 text-sm">
                                 <Bell size={32} className="mx-auto text-gray-200 mb-2" />
                                 <p>No notifications yet</p>
@@ -68,19 +97,20 @@ const Notifications = () => {
                         ) : (
                             <div className="divide-y divide-gray-50">
                                 {notifications.map(n => (
-                                    <div
+                                    <Link
                                         key={n.id}
-                                        onClick={() => markAsRead(n.id)}
-                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer group ${n.unread ? 'bg-blue-50/30' : ''}`}
+                                        to={getLink(n.type, n.id)}
+                                        onClick={() => { markAsRead(n.id); setIsOpen(false); }}
+                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer group block ${n.unread ? 'bg-blue-50/30' : ''}`}
                                     >
                                         <div className="flex justify-between items-start mb-1">
-                                            <h4 className={`text-sm ${n.unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                            <h4 className={`text-sm ${n.unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700 group-hover:text-blue-600 transition-colors'}`}>
                                                 {n.title}
                                             </h4>
-                                            <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">{n.time}</span>
+                                            <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">{formatTime(n.timestamp)}</span>
                                         </div>
-                                        <p className="text-xs text-gray-500 leading-relaxed">{n.text}</p>
-                                    </div>
+                                        <p className="text-xs text-gray-500 leading-relaxed">{n.description}</p>
+                                    </Link>
                                 ))}
                             </div>
                         )}

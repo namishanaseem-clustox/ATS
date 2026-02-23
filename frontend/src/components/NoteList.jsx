@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { StickyNote, Plus, User, Briefcase } from 'lucide-react';
 import { getJobActivities, getCandidateActivities, deleteActivity } from '../api/activities';
 import NoteModal from './NoteModal';
+import { useAuth } from '../context/AuthContext';
+import 'react-quill-new/dist/quill.snow.css';
 
 const NoteList = ({ jobId, candidateId }) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedNote, setSelectedNote] = useState(null);
+    const { user } = useAuth();
+    const isInterviewer = user?.role === 'interviewer';
 
     useEffect(() => {
         fetchNotes();
@@ -78,30 +82,34 @@ const NoteList = ({ jobId, candidateId }) => {
                             <div className="px-4 py-3 border-b border-yellow-200 bg-yellow-100 flex justify-between items-start">
                                 <div>
                                     <div className="flex items-center gap-2">
-                                        <h4 className="text-sm font-medium text-yellow-900">{note.title}</h4>
-                                        {note.details?.note_type && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-yellow-800 border border-yellow-300">
-                                                {note.details.note_type}
-                                            </span>
-                                        )}
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-white text-yellow-800 border border-yellow-300">
+                                            {note.details?.note_type || 'General'}
+                                        </span>
                                     </div>
                                     <p className="text-xs text-yellow-700 mt-0.5">
                                         {new Date(note.created_at).toLocaleDateString()}
+                                        {note.creator && (
+                                            <span className="ml-2 text-yellow-600">· by {note.creator.full_name || note.creator.email}</span>
+                                        )}
                                     </p>
                                 </div>
                                 <div className="flex space-x-1">
-                                    <button
-                                        onClick={() => { setSelectedNote(note); setIsModalOpen(true); }}
-                                        className="text-yellow-600 hover:text-yellow-800 p-1"
-                                    >
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(note.id)}
-                                        className="text-red-400 hover:text-red-600 p-1"
-                                    >
-                                        ×
-                                    </button>
+                                    {(!isInterviewer || note.creator?.id === user?.id) && (
+                                        <button
+                                            onClick={() => { setSelectedNote(note); setIsModalOpen(true); }}
+                                            className="text-yellow-600 hover:text-yellow-800 p-1"
+                                        >
+                                            Edit
+                                        </button>
+                                    )}
+                                    {(!isInterviewer || note.creator?.id === user?.id) && (
+                                        <button
+                                            onClick={() => handleDelete(note.id)}
+                                            className="text-red-400 hover:text-red-600 p-1"
+                                        >
+                                            ×
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             <div className="px-4 py-3">
@@ -120,8 +128,11 @@ const NoteList = ({ jobId, candidateId }) => {
                                         </span>
                                     )}
                                 </div>
-                                <div className="text-sm text-gray-800 whitespace-pre-wrap max-h-60 overflow-y-auto">
-                                    {note.description}
+                                <div className="ql-snow">
+                                    <div
+                                        className="text-sm text-gray-800 max-h-60 overflow-y-auto ql-editor p-0"
+                                        dangerouslySetInnerHTML={{ __html: note.description }}
+                                    />
                                 </div>
                             </div>
                         </div>

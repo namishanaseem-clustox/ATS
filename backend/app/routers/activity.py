@@ -80,45 +80,53 @@ def create_activity(activity: ActivityCreate, db: Session = Depends(get_db), cur
 
 @router.get("/job/{job_id}", response_model=List[ActivityResponse])
 def get_activities_by_job(job_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    # For interviewers, only return activities assigned to them
-    if current_user.role == UserRole.INTERVIEWER:
-        return db.query(ScheduledActivity).options(
-            joinedload(ScheduledActivity.candidate),
-            joinedload(ScheduledActivity.job),
-            joinedload(ScheduledActivity.assignees),
-        joinedload(ScheduledActivity.creator)
-        ).join(ScheduledActivity.assignees).filter(
-            ScheduledActivity.job_id == job_id,
-            User.id == current_user.id
-        ).all()
-    
-    return db.query(ScheduledActivity).options(
+    opts = [
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
         joinedload(ScheduledActivity.assignees),
-        joinedload(ScheduledActivity.creator)
-    ).filter(ScheduledActivity.job_id == job_id).all()
+        joinedload(ScheduledActivity.creator),
+    ]
+    if current_user.role == UserRole.INTERVIEWER:
+        # Notes are shared context — return all. For other types, only return assigned ones.
+        notes = db.query(ScheduledActivity).options(*opts).filter(
+            ScheduledActivity.job_id == job_id,
+            ScheduledActivity.activity_type == "Note"
+        ).all()
+        assigned = db.query(ScheduledActivity).options(*opts).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.job_id == job_id,
+            ScheduledActivity.activity_type != "Note",
+            User.id == current_user.id
+        ).all()
+        return notes + assigned
+
+    return db.query(ScheduledActivity).options(*opts).filter(
+        ScheduledActivity.job_id == job_id
+    ).all()
 
 @router.get("/candidate/{candidate_id}", response_model=List[ActivityResponse])
 def get_activities_by_candidate(candidate_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    # For interviewers, only return activities assigned to them
-    if current_user.role == UserRole.INTERVIEWER:
-        return db.query(ScheduledActivity).options(
-            joinedload(ScheduledActivity.candidate),
-            joinedload(ScheduledActivity.job),
-            joinedload(ScheduledActivity.assignees),
-        joinedload(ScheduledActivity.creator)
-        ).join(ScheduledActivity.assignees).filter(
-            ScheduledActivity.candidate_id == candidate_id,
-            User.id == current_user.id
-        ).all()
-    
-    return db.query(ScheduledActivity).options(
+    opts = [
         joinedload(ScheduledActivity.candidate),
         joinedload(ScheduledActivity.job),
         joinedload(ScheduledActivity.assignees),
-        joinedload(ScheduledActivity.creator)
-    ).filter(ScheduledActivity.candidate_id == candidate_id).all()
+        joinedload(ScheduledActivity.creator),
+    ]
+    if current_user.role == UserRole.INTERVIEWER:
+        # Notes are shared context — return all. For other types, only return assigned ones.
+        notes = db.query(ScheduledActivity).options(*opts).filter(
+            ScheduledActivity.candidate_id == candidate_id,
+            ScheduledActivity.activity_type == "Note"
+        ).all()
+        assigned = db.query(ScheduledActivity).options(*opts).join(ScheduledActivity.assignees).filter(
+            ScheduledActivity.candidate_id == candidate_id,
+            ScheduledActivity.activity_type != "Note",
+            User.id == current_user.id
+        ).all()
+        return notes + assigned
+
+    return db.query(ScheduledActivity).options(*opts).filter(
+        ScheduledActivity.candidate_id == candidate_id
+    ).all()
 
 @router.get("/{activity_id}", response_model=ActivityResponse)
 def get_activity(activity_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
@@ -158,10 +166,15 @@ def update_activity(activity_id: UUID, activity: ActivityUpdate, db: Session = D
     return db_activity
 
 @router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_activity(activity_id: UUID, db: Session = Depends(get_db)):
+def delete_activity(activity_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     db_activity = db.query(ScheduledActivity).filter(ScheduledActivity.id == activity_id).first()
     if db_activity is None:
         raise HTTPException(status_code=404, detail="Activity not found")
-    
+
+    # Interviewers can only delete notes they personally created
+    if current_user.role == UserRole.INTERVIEWER:
+        if db_activity.activity_type != "Note" or db_activity.created_by != current_user.id:
+            raise HTTPException(status_code=403, detail="You can only delete notes you created")
+
     db.delete(db_activity)
     db.commit()

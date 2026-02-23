@@ -85,17 +85,29 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setLoading(true);
 
+        if (!formData.description?.trim()) {
+            alert('Please enter note content.');
+            return;
+        }
+
+        setLoading(true);
         try {
+            // Auto-generate title from note type so backend required field is satisfied
+            const noteType = formData.details?.note_type || 'General';
+            const autoTitle = `${noteType} Note`;
+
             const payload = {
-                ...formData,
-                activity_type: 'Note', // Ensure it's always Note
+                activity_type: 'Note',
+                title: autoTitle,
+                status: 'Pending',
+                description: formData.description.trim(),
                 candidate_id: formData.candidate_id || null,
                 job_id: formData.job_id || null,
-                participants: [], // Ensure participants is present as empty list
-                scheduled_at: null, // Notes don't have a schedule
-                details: formData.details || { note_type: 'General' }
+                participants: [],
+                scheduled_at: null,
+                details: formData.details || { note_type: 'General' },
+                assignee_ids: [],
             };
 
             let savedNote;
@@ -108,8 +120,8 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
             onSave(savedNote);
             onClose();
         } catch (error) {
-            console.error("Failed to save note", error);
-            alert("Failed to save note");
+            console.error('Failed to save note:', error?.response?.data || error);
+            alert(`Failed to save note: ${error?.response?.data?.detail || error.message}`);
         } finally {
             setLoading(false);
         }
@@ -148,19 +160,7 @@ const NoteModal = ({ isOpen, onClose, note = null, jobId, candidateId = null, on
                                 className="mb-0"
                             />
 
-                            {/* Title */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">Title</label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    required
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    placeholder="e.g. Screening Notes"
-                                />
-                            </div>
+
 
                             {/* Context Selection (Candidate or Job) */}
                             {jobId ? (

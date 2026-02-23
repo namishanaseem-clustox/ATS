@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, or_
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from uuid import UUID
@@ -76,16 +76,19 @@ def get_dashboard_overview(db: Session = Depends(get_db), current_user: User = D
 @router.get("/recent-activities")
 def get_recent_activities(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     """Get recent activities for dashboard"""
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+    if current_user.role not in [UserRole.OWNER, UserRole.HR, UserRole.HIRING_MANAGER, UserRole.INTERVIEWER]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to access dashboard"
         )
     
+    is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
+    
     # Get recent job activities
-    recent_job_activities = db.query(Job).filter(
-        Job.created_at >= datetime.utcnow() - timedelta(days=7)
-    ).order_by(desc(Job.created_at)).limit(10).all()
+    job_query = db.query(Job).filter(Job.created_at >= datetime.utcnow() - timedelta(days=7))
+    if not is_admin:
+        job_query = job_query.filter(Job.department_id == current_user.department_id)
+    recent_job_activities = job_query.order_by(desc(Job.created_at)).limit(10).all()
     
     activities = []
     for job in recent_job_activities:
@@ -99,9 +102,11 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
         })
     
     # Get recent candidate activities
-    recent_candidate_activities = db.query(Candidate).filter(
-        Candidate.created_at >= datetime.utcnow() - timedelta(days=7)
-    ).order_by(desc(Candidate.created_at)).limit(10).all()
+    candidate_query = db.query(Candidate).filter(Candidate.created_at >= datetime.utcnow() - timedelta(days=7))
+    if not is_admin:
+        from app.models.candidate import JobApplication
+        candidate_query = candidate_query.join(JobApplication).join(Job).filter(Job.department_id == current_user.department_id)
+    recent_candidate_activities = candidate_query.order_by(desc(Candidate.created_at)).limit(10).all()
     
     for candidate in recent_candidate_activities:
         activities.append({
@@ -113,6 +118,53 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
             "user": "Unknown"
         })
     
+    recent_reqs = []
+    if current_user.role != UserRole.INTERVIEWER:
+        # Get recent pending requisitions
+        from app.models.requisition import JobRequisition, RequisitionStatus
+        
+        req_query = db.query(JobRequisition).filter(
+            or_(
+                JobRequisition.updated_at >= datetime.utcnow() - timedelta(days=7),
+                JobRequisition.created_at >= datetime.utcnow() - timedelta(days=7)
+            )
+        )
+        
+        if is_admin:
+            req_query = req_query.filter(
+                JobRequisition.status.in_([
+                    RequisitionStatus.PENDING_HR, 
+                    RequisitionStatus.PENDING_OWNER,
+                    RequisitionStatus.OPEN,
+                    RequisitionStatus.DRAFT,
+                    RequisitionStatus.CANCELLED,
+                    RequisitionStatus.FILLED
+                ])
+            )
+        else:
+            req_query = req_query.filter(
+                JobRequisition.hiring_manager_id == current_user.id
+            )
+
+        recent_reqs = req_query.order_by(desc(func.coalesce(JobRequisition.updated_at, JobRequisition.created_at))).limit(10).all()
+        
+        for req in recent_reqs:
+            status_label = "Pending Approval" if req.status in [RequisitionStatus.PENDING_HR, RequisitionStatus.PENDING_OWNER] else req.status.value
+            desc_text = f"Status: {status_label}"
+            
+            if req.status == RequisitionStatus.DRAFT and req.rejection_reason:
+                desc_text += f" - Reason: {req.rejection_reason[:50]}..." if len(req.rejection_reason) > 50 else f" - Reason: {req.rejection_reason}"
+
+            timestamp = req.updated_at if req.updated_at else req.created_at
+            activities.append({
+                "id": str(req.id),
+                "type": "requisition_pending",
+                "title": f"Requisition update: {req.job_title}",
+                "description": desc_text,
+                "timestamp": timestamp.isoformat() if timestamp else None,
+                "user": req.hiring_manager_id or "Unknown"
+            })
+
     # Sort by timestamp
     activities.sort(key=lambda x: x["timestamp"] or "", reverse=True)
     

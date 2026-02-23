@@ -24,7 +24,9 @@ import SettingsPage from './pages/Settings/SettingsPage';
 import ProfileSettings from './pages/Settings/ProfileSettings';
 import NotificationsSettings from './pages/Settings/NotificationsSettings';
 import AppearanceSettings from './pages/Settings/AppearanceSettings';
-
+import RequisitionsPage from './pages/Requisitions/RequisitionsPage';
+import RequisitionForm from './pages/Requisitions/RequisitionForm';
+import RequisitionDetail from './pages/Requisitions/RequisitionDetail';
 const queryClient = new QueryClient();
 
 // Layout component for authenticated users — sidebar-based
@@ -144,6 +146,7 @@ function App() {
                   <Candidates />
                 </ProtectedRoute>
               } />
+
               <Route path="/admin/pipeline" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <PipelineSettingsPage />
@@ -152,6 +155,28 @@ function App() {
               <Route path="/admin/permissions" element={
                 <ProtectedRoute allowedRoles={['owner', 'hr']}>
                   <PermissionsPage />
+                </ProtectedRoute>
+              } />
+
+              {/* Job Requisitions */}
+              <Route path="/requisitions" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <RequisitionsPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/requisitions/new" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <RequisitionForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/requisitions/:id/edit" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <RequisitionForm />
+                </ProtectedRoute>
+              } />
+              <Route path="/requisitions/:id" element={
+                <ProtectedRoute allowedRoles={['owner', 'hr', 'hiring_manager']}>
+                  <RequisitionDetail />
                 </ProtectedRoute>
               } />
 

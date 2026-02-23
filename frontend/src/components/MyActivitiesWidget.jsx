@@ -63,7 +63,7 @@ const MyActivitiesWidget = () => {
                     {activities.map(activity => (
                         <div
                             key={activity.id}
-                            onClick={() => navigate('/my-interviews')}
+                            onClick={() => navigate(activity.candidate?.id ? `/candidates/${activity.candidate.id}?tab=activities` : '/tasks')}
                             className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0 cursor-pointer group"
                         >
                             <div className={`mt-0.5 p-1.5 rounded-full flex-shrink-0 ${activity.activity_type === 'Interview' ? 'bg-purple-100' :
