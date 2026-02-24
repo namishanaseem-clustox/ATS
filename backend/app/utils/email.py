@@ -1,5 +1,6 @@
 import smtplib
 from email.message import EmailMessage
+from email.utils import make_msgid
 import os
 from dotenv import load_dotenv
 import logging
@@ -23,6 +24,8 @@ def send_invitation_email(to_email: str, role: str, invite_url: str):
     msg['Subject'] = 'You have been invited to join Clustox ATS'
     msg['From'] = f"Clustox ATS <{SMTP_EMAIL}>"
     msg['To'] = to_email
+
+    logo_cid = make_msgid()
     
     html_content = f"""
     <html>
@@ -36,11 +39,28 @@ def send_invitation_email(to_email: str, role: str, invite_url: str):
                     Accept Invitation
                 </a>
             </div>
+
             <p style="font-size: 0.9em; color: #666;">
                 If the button doesn't work, copy and paste this link into your browser:<br>
                 <a href="{invite_url}">{invite_url}</a>
             </p>
             <p>This invitation link will expire in 7 days.</p>
+
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 40px 0 20px 0;">
+            
+            <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td>
+                        <img src="cid:{logo_cid[1:-1]}" alt="Clustox Logo" style="width: 120px; height: auto; display: block;">
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding-top: 10px; font-size: 12px; color: #888;">
+                        © 2024 Clustox. All rights reserved.<br>
+                        This is an automated message, please do not reply.
+                    </td>
+                </tr>
+            </table>
         </div>
       </body>
     </html>
