@@ -38,3 +38,12 @@ class User(Base):
     # managed_jobs = relationship("Job", back_populates="hiring_manager") # To be added to Job model
 
     preferences = relationship("UserPreferences", uselist=False, back_populates="user", cascade="all, delete-orphan")
+
+class DismissedActivity(Base):
+    __tablename__ = "dismissed_activities"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    notification_key = Column(String, index=True, nullable=False)
+    
+    user = relationship("User", backref="dismissed_activities")

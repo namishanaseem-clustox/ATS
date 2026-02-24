@@ -184,7 +184,41 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
     # Sort by timestamp
     activities.sort(key=lambda x: x["timestamp"] or "", reverse=True)
     
-    return activities[:20]  # Return top 20 activities
+    # Filter out dismissed activities
+    from app.models.user import DismissedActivity
+    dismissed_keys = db.query(DismissedActivity.notification_key).filter(
+        DismissedActivity.user_id == current_user.id
+    ).all()
+    dismissed_keys_set = {key[0] for key in dismissed_keys}
+    
+    filtered_activities = []
+    for activity in activities:
+        notification_key = f"{activity['type']}_{activity['id']}"
+        if notification_key not in dismissed_keys_set:
+            activity['notification_key'] = notification_key
+            filtered_activities.append(activity)
+            
+    return filtered_activities[:20]  # Return top 20 activities
+
+@router.post("/recent-activities/{notification_key}/dismiss")
+def dismiss_activity(
+    notification_key: str, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_active_user)
+):
+    from app.models.user import DismissedActivity
+    # Check if already dismissed
+    exists = db.query(DismissedActivity).filter(
+        DismissedActivity.user_id == current_user.id,
+        DismissedActivity.notification_key == notification_key
+    ).first()
+    
+    if not exists:
+        dismissed = DismissedActivity(user_id=current_user.id, notification_key=notification_key)
+        db.add(dismissed)
+        db.commit()
+        
+    return {"message": "Notification dismissed"}
 
 @router.get("/top-performers")
 def get_top_performers(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):

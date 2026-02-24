@@ -24,3 +24,8 @@ export const getMyPerformance = async () => {
   const { data } = await client.get('/dashboard/my-performance');
   return data;
 };
+
+export const dismissActivity = async (notificationKey) => {
+  const { data } = await client.post(`/dashboard/recent-activities/${notificationKey}/dismiss`);
+  return data;
+};

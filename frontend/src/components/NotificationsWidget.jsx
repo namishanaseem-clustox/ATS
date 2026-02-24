@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRecentActivities } from '../api/dashboard';
-import { Bell, Briefcase, UserPlus, FileText, CheckCircle } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getRecentActivities, dismissActivity } from '../api/dashboard';
+import { Bell, Briefcase, UserPlus, FileText, CheckCircle, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const NotificationsWidget = () => {
     const [showAll, setShowAll] = useState(false);
+    const queryClient = useQueryClient();
 
     const { data: activities, isLoading, isError } = useQuery({
         queryKey: ['recent-activities'],
         queryFn: getRecentActivities,
+    });
+
+    const dismissMut = useMutation({
+        mutationFn: dismissActivity,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+        }
     });
 
     if (isLoading) return <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">Loading notifications...</div>;
@@ -43,6 +51,12 @@ const NotificationsWidget = () => {
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
+    const handleDismiss = (e, key) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (key) dismissMut.mutate(key);
+    };
+
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-0 h-full flex flex-col">
             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
@@ -61,16 +75,23 @@ const NotificationsWidget = () => {
                 {notifications.length === 0 ? (
                     <div className="text-sm text-gray-500 text-center py-4">No recent activities</div>
                 ) : (
-                    visibleNotifications.map(notif => (
-                        <Link key={notif.id} to={getLink(notif.type, notif.id)} className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 transition-colors p-2 rounded -mx-2">
+                    visibleNotifications.map((notif, idx) => (
+                        <Link key={idx} to={getLink(notif.type, notif.id)} className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 transition-colors p-2 rounded -mx-2 relative group">
                             <div className="flex-shrink-0 mr-3">
                                 {getIcon(notif.type)}
                             </div>
-                            <div>
-                                <p className="text-sm text-gray-800 hover:text-blue-600">{notif.title}</p>
-                                {notif.description && <p className="text-xs text-gray-600 mt-0.5">{notif.description}</p>}
+                            <div className="flex-1 min-w-0 mr-6">
+                                <p className="text-sm text-gray-800 hover:text-blue-600 truncate">{notif.title}</p>
+                                {notif.description && <p className="text-xs text-gray-600 mt-0.5 truncate">{notif.description}</p>}
                                 <span className="text-xs text-gray-400 mt-1 block">{formatTime(notif.timestamp)}</span>
                             </div>
+                            <button
+                                onClick={(e) => handleDismiss(e, notif.notification_key)}
+                                className="absolute right-2 top-2 p-1 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-200"
+                                title="Dismiss notification"
+                            >
+                                <X size={14} />
+                            </button>
                         </Link>
                     ))
                 )}

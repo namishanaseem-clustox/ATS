@@ -1,16 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getRecentActivities } from '../api/dashboard';
-import { Bell, Check } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getRecentActivities, dismissActivity } from '../api/dashboard';
+import { Bell, Check, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Notifications = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
+    const queryClient = useQueryClient();
 
     const { data: activities, isLoading } = useQuery({
         queryKey: ['recent-activities'],
         queryFn: getRecentActivities,
+    });
+
+    const dismissMut = useMutation({
+        mutationFn: dismissActivity,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['recent-activities'] });
+        }
     });
 
     const [readNotifs, setReadNotifs] = useState(new Set());
@@ -101,15 +109,29 @@ const Notifications = () => {
                                         key={n.id}
                                         to={getLink(n.type, n.id)}
                                         onClick={() => { markAsRead(n.id); setIsOpen(false); }}
-                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer group block ${n.unread ? 'bg-blue-50/30' : ''}`}
+                                        className={`p-4 hover:bg-gray-50 transition-colors cursor-pointer group block relative ${n.unread ? 'bg-blue-50/30' : ''}`}
                                     >
-                                        <div className="flex justify-between items-start mb-1">
+                                        <div className="flex justify-between items-start mb-1 pr-6">
                                             <h4 className={`text-sm ${n.unread ? 'font-semibold text-gray-900' : 'font-medium text-gray-700 group-hover:text-blue-600 transition-colors'}`}>
                                                 {n.title}
                                             </h4>
                                             <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">{formatTime(n.timestamp)}</span>
                                         </div>
-                                        <p className="text-xs text-gray-500 leading-relaxed">{n.description}</p>
+                                        <p className="text-xs text-gray-500 leading-relaxed pr-6">{n.description}</p>
+
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                if (n.notification_key) {
+                                                    dismissMut.mutate(n.notification_key);
+                                                }
+                                            }}
+                                            className="absolute right-3 top-3.5 p-1 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-gray-200"
+                                            title="Dismiss notification"
+                                        >
+                                            <X size={14} />
+                                        </button>
                                     </Link>
                                 ))}
                             </div>
