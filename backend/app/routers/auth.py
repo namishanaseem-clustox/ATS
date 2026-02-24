@@ -207,3 +207,109 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db), current_user: User
     db.commit()
     
     return None
+
+import secrets
+from datetime import datetime, timezone
+from app.models.invitation import UserInvitation
+from app.schemas.user import UserInvitationCreate, UserRegisterInvited
+from app.utils.email import send_invitation_email
+
+@router.post("/invitations", response_model=dict)
+def create_invitation(
+    invite_data: UserInvitationCreate, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_active_user)
+):
+    # Only Owner and HR can invite users
+    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
+        raise HTTPException(status_code=403, detail="Not authorized to invite users")
+
+    # Check if email is already registered
+    existing_user = db.query(User).filter(User.email == invite_data.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this email already exists")
+
+    # Generate a secure random token
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    # Save to database
+    invitation = UserInvitation(
+        email=invite_data.email,
+        role=invite_data.role,
+        department_id=invite_data.department_id,
+        token=token,
+        expires_at=expires_at,
+        created_by_id=current_user.id
+    )
+    db.add(invitation)
+    db.commit()
+
+    # Send Email
+    # Construct the frontend URL where the user will land to accept the invite
+    # Assuming the frontend is running on localhost:5173 for local dev, or the production URL
+    # In a real app, this base URL would come from an environment variable.
+    import os
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    invite_url = f"{frontend_url}/invite/{token}"
+    
+    email_sent = send_invitation_email(invite_data.email, invite_data.role.value, invite_url)
+    if not email_sent:
+        # We might want to handle this differently in production, e.g., queue it or show a warning
+        pass
+
+    return {"message": "Invitation sent successfully", "email": invite_data.email}
+
+@router.get("/invitations/{token}", response_model=dict)
+def validate_invitation(token: str, db: Session = Depends(get_db)):
+    """Public endpoint to validate an invitation token when the user clicks the email link."""
+    invitation = db.query(UserInvitation).filter(UserInvitation.token == token).first()
+    
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invalid invitation token.")
+        
+    if invitation.is_used:
+        raise HTTPException(status_code=400, detail="This invitation has already been used.")
+        
+    if invitation.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="This invitation has expired.")
+        
+    return {
+        "email": invitation.email,
+        "role": invitation.role,
+        "department_id": invitation.department_id,
+        "valid": True
+    }
+
+@router.post("/register-invited", response_model=UserResponse)
+def register_invited_user(data: UserRegisterInvited, db: Session = Depends(get_db)):
+    """Public endpoint to consume the token and create the user account."""
+    invitation = db.query(UserInvitation).filter(UserInvitation.token == data.token).first()
+    
+    if not invitation or invitation.is_used or invitation.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Invalid, expired, or already used invitation token.")
+        
+    # Check if a user with this email unexpectedly signed up in the meantime
+    existing_user = db.query(User).filter(User.email == invitation.email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="A user with this email already exists.")
+
+    hashed_password = get_password_hash(data.password)
+    
+    new_user = User(
+        email=invitation.email,
+        full_name=data.full_name,
+        hashed_password=hashed_password,
+        role=invitation.role,
+        department_id=invitation.department_id,
+        is_active=True
+    )
+    
+    db.add(new_user)
+    
+    # Mark invitation as used
+    invitation.is_used = True
+    
+    db.commit()
+    db.refresh(new_user)
+    return new_user

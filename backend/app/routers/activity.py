@@ -32,8 +32,34 @@ def get_all_activities(db: Session = Depends(get_db), current_user: User = Depen
         joinedload(ScheduledActivity.creator)
     )
     
-    if current_user.role == UserRole.INTERVIEWER:
-        query = query.join(ScheduledActivity.assignees).filter(User.id == current_user.id)
+    if current_user.role in [UserRole.OWNER, UserRole.HR]:
+        pass # Can see all activities
+    elif current_user.role == UserRole.HIRING_MANAGER:
+        from app.models.job import Job
+        if current_user.department_id:
+            query = query.outerjoin(Job, ScheduledActivity.job_id == Job.id)
+            query = query.filter(
+                or_(
+                    ScheduledActivity.assignees.any(User.id == current_user.id),
+                    ScheduledActivity.created_by == current_user.id,
+                    Job.department_id == current_user.department_id
+                )
+            )
+        else:
+            query = query.filter(
+                or_(
+                    ScheduledActivity.assignees.any(User.id == current_user.id),
+                    ScheduledActivity.created_by == current_user.id
+                )
+            )
+    else:
+        # INTERVIEWER or others
+        query = query.filter(
+            or_(
+                ScheduledActivity.assignees.any(User.id == current_user.id),
+                ScheduledActivity.created_by == current_user.id
+            )
+        )
     
     # Filter: Show all PENDING, or COMPLETED/CANCELLED within last 30 days
     query = query.filter(

@@ -27,6 +27,8 @@ import AppearanceSettings from './pages/Settings/AppearanceSettings';
 import RequisitionsPage from './pages/Requisitions/RequisitionsPage';
 import RequisitionForm from './pages/Requisitions/RequisitionForm';
 import RequisitionDetail from './pages/Requisitions/RequisitionDetail';
+import AcceptInvitation from './pages/AcceptInvitation';
+
 const queryClient = new QueryClient();
 
 // Layout component for authenticated users — sidebar-based
@@ -82,6 +84,7 @@ function App() {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/invite/:token" element={<AcceptInvitation />} />
 
             {/* Protected Routes */}
             <Route element={<Layout />}>

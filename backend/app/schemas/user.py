@@ -41,3 +41,13 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     is_active: Optional[bool] = None
     department_id: Optional[UUID] = None
+
+class UserInvitationCreate(BaseModel):
+    email: EmailStr
+    role: UserRole
+    department_id: Optional[UUID] = None
+
+class UserRegisterInvited(BaseModel):
+    token: str
+    full_name: str
+    password: str

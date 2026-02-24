@@ -18,3 +18,18 @@ export const updateUser = async (userId, userData) => {
 export const deleteUser = async (userId) => {
     await client.delete(`/users/${userId}`);
 };
+
+export const inviteUser = async (inviteData) => {
+    const { data } = await client.post('/invitations', inviteData);
+    return data;
+};
+
+export const validateInvite = async (token) => {
+    const { data } = await client.get(`/invitations/${token}`);
+    return data;
+};
+
+export const registerInvitedUser = async (registerData) => {
+    const { data } = await client.post('/register-invited', registerData);
+    return data;
+};

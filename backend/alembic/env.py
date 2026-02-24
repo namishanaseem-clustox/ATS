@@ -31,6 +31,7 @@ from app.models.pipeline_template import PipelineTemplate
 from app.models.pipeline_stage import PipelineStage
 from app.models.user_preferences import UserPreferences
 from app.models.requisition import JobRequisition, RequisitionLog
+from app.models.invitation import UserInvitation
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

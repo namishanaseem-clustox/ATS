@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2, MoreVertical } from 'lucide-react';
-import { getUsers, createUser, updateUser, deleteUser } from '../api/users';
+import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2, MoreVertical, Send } from 'lucide-react';
+import { getUsers, createUser, updateUser, deleteUser, inviteUser } from '../api/users';
 import { getDepartments } from '../api/departments';
 import RoleGuard from '../components/RoleGuard';
 import CustomSelect from '../components/CustomSelect';
@@ -69,6 +69,7 @@ const Team = () => {
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [currentUserId, setCurrentUserId] = useState(null);
     const [formData, setFormData] = useState({
@@ -79,7 +80,13 @@ const Team = () => {
         is_active: 'true',
         department_id: '',
     });
+    const [inviteFormData, setInviteFormData] = useState({
+        email: '',
+        role: 'interviewer',
+        department_id: '',
+    });
     const [error, setError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -114,6 +121,11 @@ const Team = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleInviteInputChange = (e) => {
+        const { name, value } = e.target;
+        setInviteFormData(prev => ({ ...prev, [name]: value }));
+    };
+
     const openCreateModal = () => {
         setError(null);
         setIsEditing(false);
@@ -127,6 +139,17 @@ const Team = () => {
             department_id: '',
         });
         setIsModalOpen(true);
+    };
+
+    const openInviteModal = () => {
+        setError(null);
+        setSuccessMessage(null);
+        setInviteFormData({
+            email: '',
+            role: 'interviewer',
+            department_id: '',
+        });
+        setIsInviteModalOpen(true);
     };
 
     const openEditModal = (user) => {
@@ -177,6 +200,26 @@ const Team = () => {
         }
     };
 
+    const handleInviteSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        setSuccessMessage(null);
+        try {
+            const dataToSend = { ...inviteFormData };
+            if (dataToSend.department_id === '') dataToSend.department_id = null;
+
+            await inviteUser(dataToSend);
+            setSuccessMessage(`Invitation successfully sent to ${inviteFormData.email}`);
+            setTimeout(() => {
+                setIsInviteModalOpen(false);
+                setSuccessMessage(null);
+            }, 2500);
+        } catch (err) {
+            console.error("Failed to send invitation", err);
+            setError(err.response?.data?.detail || "Failed to send invitation");
+        }
+    };
+
     const handleDelete = async (user) => {
         if (window.confirm(`Are you sure you want to delete ${user.full_name}? This action cannot be undone.`)) {
             try {
@@ -209,13 +252,22 @@ const Team = () => {
                     <p className="text-gray-500 mt-1">Manage your team members and their roles.</p>
                 </div>
                 <RoleGuard allowedRoles={['owner', 'hr']}>
-                    <button
-                        onClick={openCreateModal}
-                        className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                    >
-                        <Plus size={20} className="mr-2" />
-                        Add Member
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={openCreateModal}
+                            className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm font-medium"
+                        >
+                            <Plus size={20} className="mr-2" />
+                            Direct Add
+                        </button>
+                        <button
+                            onClick={openInviteModal}
+                            className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
+                        >
+                            <Send size={18} className="mr-2" />
+                            Invite User
+                        </button>
+                    </div>
                 </RoleGuard>
             </div>
 
@@ -289,7 +341,89 @@ const Team = () => {
                 </table>
             </div>
 
-            {/* Add/Edit Member Modal */}
+            {/* Invite Member Modal */}
+            {isInviteModalOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+                            <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setIsInviteModalOpen(false)}></div>
+                        </div>
+
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
+                            <form onSubmit={handleInviteSubmit}>
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-2">Invite New User</h3>
+                                    <p className="text-sm text-gray-500 mb-4">Send an email invitation allowing a new member to set their own password and join the platform.</p>
+
+                                    {error && (
+                                        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+                                            <span className="block sm:inline">{error}</span>
+                                        </div>
+                                    )}
+
+                                    {successMessage && (
+                                        <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded relative" role="alert">
+                                            <span className="block sm:inline">{successMessage}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                required
+                                                value={inviteFormData.email}
+                                                onChange={handleInviteInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                                placeholder="colleague@clustox.com"
+                                            />
+                                        </div>
+
+                                        <CustomSelect
+                                            label="Role"
+                                            name="role"
+                                            options={ROLE_OPTIONS}
+                                            value={inviteFormData.role}
+                                            onChange={handleInviteInputChange}
+                                        />
+
+                                        <CustomSelect
+                                            label="Department"
+                                            name="department_id"
+                                            options={departmentOptions}
+                                            value={inviteFormData.department_id}
+                                            onChange={handleInviteInputChange}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
+                                    <button
+                                        type="submit"
+                                        disabled={!!successMessage}
+                                        className="w-full inline-flex justify-center items-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#00C853] text-base font-medium text-white hover:bg-green-700 focus:outline-none disabled:bg-green-300 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        <Send size={16} className="mr-2" />
+                                        Send Invite
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsInviteModalOpen(false)}
+                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Existing Add/Edit Member Modal (Direct Add) */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
@@ -302,7 +436,7 @@ const Team = () => {
                         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
                             <form onSubmit={handleSubmit}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{isEditing ? 'Edit Member' : 'Add Member'}</h3>
+                                    <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">{isEditing ? 'Edit Member' : 'Direct Add Member'}</h3>
 
                                     {error && (
                                         <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -376,7 +510,7 @@ const Team = () => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-lg">
                                     <button
                                         type="submit"
                                         className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#00C853] text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm"
