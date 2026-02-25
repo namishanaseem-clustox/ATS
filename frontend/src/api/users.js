@@ -33,3 +33,19 @@ export const registerInvitedUser = async (registerData) => {
     const { data } = await client.post('/register-invited', registerData);
     return data;
 };
+
+export const uploadAvatar = async (userId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await client.post(`/users/${userId}/avatar`, formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+    return data;
+};
+
+export const removeAvatar = async (userId) => {
+    const { data } = await client.delete(`/users/${userId}/avatar`);
+    return data;
+};

@@ -109,6 +109,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db), current_user: U
         email=user.email,
         hashed_password=hashed_password,
         full_name=user.full_name,
+        phone=user.phone,
+        location=user.location,
         role=user.role,
         is_active=True,
         department_id=user.department_id
@@ -170,6 +172,95 @@ def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(ge
     db.refresh(db_user)
     return db_user
 
+import os
+import shutil
+from fastapi import File, UploadFile
+
+@router.post("/users/{user_id}/avatar", response_model=UserResponse)
+async def upload_avatar(
+    user_id: UUID,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    # Only self or admin can update the avatar
+    is_self_update = current_user.id == user_id
+    is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
+
+    if not is_self_update and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this user's avatar"
+        )
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Validate file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # Ensure uploads/avatars directory exists
+    UPLOAD_DIR = "uploads/avatars"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+    # Generate unique filename
+    extension = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{user_id}.{extension}"
+    file_path = os.path.join(UPLOAD_DIR, filename)
+
+    # Save file
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save image: {str(e)}")
+
+    # Update DB
+    db_user.avatar_url = f"/static/avatars/{filename}"
+    db.commit()
+    db.refresh(db_user)
+
+    return db_user
+
+@router.delete("/users/{user_id}/avatar", response_model=UserResponse)
+async def remove_avatar(
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    # Only self or admin can update the avatar
+    is_self_update = current_user.id == user_id
+    is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
+
+    if not is_self_update and not is_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this user's avatar"
+        )
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if db_user.avatar_url:
+        # Try to delete the physical file
+        try:
+            filename = db_user.avatar_url.split("/")[-1]
+            file_path = os.path.join("uploads/avatars", filename)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            # Log error but continue with DB update
+            print(f"Error deleting avatar file: {e}")
+
+        db_user.avatar_url = None
+        db.commit()
+        db.refresh(db_user)
+
+    return db_user
+
 @router.get("/users/me", response_model=UserResponse)
 async def read_users_me(current_user: User = Depends(get_current_active_user)):
     return current_user
@@ -224,8 +315,8 @@ def create_invitation(
     if current_user.role not in [UserRole.OWNER, UserRole.HR]:
         raise HTTPException(status_code=403, detail="Not authorized to invite users")
 
-    # Check if email is already registered
-    existing_user = db.query(User).filter(User.email == invite_data.email).first()
+    # Check if a non-deleted user with this email is already registered
+    existing_user = db.query(User).filter(User.email == invite_data.email, User.is_deleted.isnot(True)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="User with this email already exists")
 
@@ -236,6 +327,9 @@ def create_invitation(
     # Save to database
     invitation = UserInvitation(
         email=invite_data.email,
+        full_name=invite_data.full_name,
+        phone=invite_data.phone,
+        location=invite_data.location,
         role=invite_data.role,
         department_id=invite_data.department_id,
         token=token,
@@ -289,23 +383,40 @@ def register_invited_user(data: UserRegisterInvited, db: Session = Depends(get_d
     if not invitation or invitation.is_used or invitation.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Invalid, expired, or already used invitation token.")
         
-    # Check if a user with this email unexpectedly signed up in the meantime
+    # Check if a non-deleted user with this email unexpectedly signed up in the meantime
     existing_user = db.query(User).filter(User.email == invitation.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="A user with this email already exists.")
-
+    
     hashed_password = get_password_hash(data.password)
     
-    new_user = User(
-        email=invitation.email,
-        full_name=data.full_name,
-        hashed_password=hashed_password,
-        role=invitation.role,
-        department_id=invitation.department_id,
-        is_active=True
-    )
-    
-    db.add(new_user)
+    if existing_user:
+        if not existing_user.is_deleted:
+            raise HTTPException(status_code=400, detail="A user with this email already exists.")
+        else:
+            # Reactivate soft-deleted user
+            existing_user.full_name = data.full_name
+            if data.phone:
+                existing_user.phone = data.phone
+            if data.location:
+                existing_user.location = data.location
+            existing_user.hashed_password = hashed_password
+            existing_user.role = invitation.role
+            existing_user.department_id = invitation.department_id
+            existing_user.is_active = True
+            existing_user.is_deleted = False
+            new_user = existing_user
+    else:
+        # Create a new user
+        new_user = User(
+            email=invitation.email,
+            full_name=data.full_name or invitation.full_name,
+            phone=data.phone or invitation.phone,
+            location=data.location or invitation.location,
+            hashed_password=hashed_password,
+            role=invitation.role,
+            department_id=invitation.department_id,
+            is_active=True
+        )
+        db.add(new_user)
     
     # Mark invitation as used
     invitation.is_used = True

@@ -8,6 +8,12 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
     const [sessionMessage, setSessionMessage] = useState(null);
+    const [avatarCacheBust, setAvatarCacheBust] = useState(Date.now());
+
+    const setUserAndBust = (updatedUser) => {
+        setUser(updatedUser);
+        setAvatarCacheBust(Date.now());
+    };
 
     // Set default auth header for all requests
     if (token) {
@@ -81,6 +87,8 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
+        setUser: setUserAndBust,
+        avatarCacheBust,
         login,
         logout,
         loading,

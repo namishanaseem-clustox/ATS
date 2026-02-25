@@ -75,13 +75,18 @@ const Team = () => {
     const [formData, setFormData] = useState({
         full_name: '',
         email: '',
+        phone: '',
+        location: '',
         password: '',
         role: 'interviewer',
         is_active: 'true',
         department_id: '',
     });
     const [inviteFormData, setInviteFormData] = useState({
+        full_name: '',
         email: '',
+        phone: '',
+        location: '',
         role: 'interviewer',
         department_id: '',
     });
@@ -133,6 +138,8 @@ const Team = () => {
         setFormData({
             full_name: '',
             email: '',
+            phone: '',
+            location: '',
             password: '',
             role: 'interviewer',
             is_active: 'true',
@@ -145,7 +152,10 @@ const Team = () => {
         setError(null);
         setSuccessMessage(null);
         setInviteFormData({
+            full_name: '',
             email: '',
+            phone: '',
+            location: '',
             role: 'interviewer',
             department_id: '',
         });
@@ -159,6 +169,8 @@ const Team = () => {
         setFormData({
             full_name: user.full_name,
             email: user.email,
+            phone: user.phone || '',
+            location: user.location || '',
             password: '', // Password empty on edit unless changing
             role: user.role,
             is_active: user.is_active ? 'true' : 'false',
@@ -371,6 +383,18 @@ const Team = () => {
 
                                     <div className="space-y-4">
                                         <div>
+                                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                                            <input
+                                                type="text"
+                                                name="full_name"
+                                                value={inviteFormData.full_name}
+                                                onChange={handleInviteInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                                placeholder="John Doe"
+                                            />
+                                        </div>
+
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700">Email Address</label>
                                             <input
                                                 type="email"
@@ -380,6 +404,30 @@ const Team = () => {
                                                 onChange={handleInviteInputChange}
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
                                                 placeholder="colleague@clustox.com"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                            <input
+                                                type="text"
+                                                name="phone"
+                                                value={inviteFormData.phone}
+                                                onChange={handleInviteInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                                placeholder="+1234567890"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                                            <input
+                                                type="text"
+                                                name="location"
+                                                value={inviteFormData.location}
+                                                onChange={handleInviteInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                                placeholder="City, Country"
                                             />
                                         </div>
 
@@ -464,6 +512,28 @@ const Team = () => {
                                                 name="email"
                                                 required
                                                 value={formData.email}
+                                                onChange={handleInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                            <input
+                                                type="text"
+                                                name="phone"
+                                                value={formData.phone}
+                                                onChange={handleInputChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                                            <input
+                                                type="text"
+                                                name="location"
+                                                value={formData.location}
                                                 onChange={handleInputChange}
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
                                             />

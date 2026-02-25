@@ -31,6 +31,8 @@ import AcceptInvitation from './pages/AcceptInvitation';
 
 const queryClient = new QueryClient();
 
+import UserProfileDropdown from './components/UserProfileDropdown';
+
 // Layout component for authenticated users — sidebar-based
 const Layout = () => {
   const { user } = useAuth();
@@ -48,13 +50,13 @@ const Layout = () => {
       />
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0 z-10">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0 z-10 w-full relative">
           <Notifications />
-          {/* User profile could go here too if we wanted duplicates, but it's in sidebar footer */}
+          <UserProfileDropdown />
         </header>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 overflow-auto bg-gray-50 relative">
           <Outlet />
         </div>
       </main>

@@ -13,6 +13,9 @@ class UserInvitation(Base):
     email = Column(String, index=True, nullable=False)
     role = Column(SAEnum(UserRole), nullable=False)
     department_id = Column(UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True)
+    full_name = Column(String, nullable=True)
+    phone = Column(String, nullable=True)
+    location = Column(String, nullable=True)
     
     token = Column(String, unique=True, index=True, nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)

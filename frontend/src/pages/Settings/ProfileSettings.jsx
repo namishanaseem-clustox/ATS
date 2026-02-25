@@ -1,23 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { updateUser } from '../../api/users';
+import { updateUser, uploadAvatar, removeAvatar } from '../../api/users';
 import Breadcrumb from '../../components/Breadcrumb';
-import { Save, ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { Save, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X, Camera, Trash2 } from 'lucide-react';
 
 const ProfileSettings = () => {
-    const { user, setUser } = useAuth();
+    const { user, setUser, avatarCacheBust } = useAuth();
     const navigate = useNavigate();
 
+    // Field-level edit state
+    const [editingField, setEditingField] = useState(null);
+
+    // Form data
     const [formData, setFormData] = useState({
         full_name: user?.full_name || '',
+        display_name: user?.display_name || '',
         email: user?.email || '',
+        phone: user?.phone || '',
+        location: user?.location || '',
         current_password: '',
         new_password: '',
         confirm_password: '',
     });
+
     const [showCurrentPw, setShowCurrentPw] = useState(false);
     const [showNewPw, setShowNewPw] = useState(false);
+
+    const fileInputRef = useRef(null);
+
+    const handleAvatarClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setSaving(true);
+        setMessage(null);
+        try {
+            const updated = await uploadAvatar(user.id, file);
+            if (setUser) setUser(updated);
+            setMessage({ type: 'success', text: 'Profile picture updated successfully.' });
+            setTimeout(() => setMessage(null), 3000);
+        } catch (err) {
+            setMessage({ type: 'error', text: err?.response?.data?.detail || 'Failed to update profile picture.' });
+        } finally {
+            setSaving(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleRemoveAvatar = async () => {
+        setSaving(true);
+        setMessage(null);
+        try {
+            const updated = await removeAvatar(user.id);
+            if (setUser) setUser(updated);
+            setMessage({ type: 'success', text: 'Profile picture removed successfully.' });
+            setTimeout(() => setMessage(null), 3000);
+        } catch (err) {
+            setMessage({ type: 'error', text: err?.response?.data?.detail || 'Failed to remove profile picture.' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Status
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null); // { type: 'success'|'error', text }
 
@@ -26,28 +78,16 @@ const ProfileSettings = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (formData.new_password && formData.new_password !== formData.confirm_password) {
-            setMessage({ type: 'error', text: 'New passwords do not match.' });
-            return;
-        }
-
+    const handleSaveField = async (field) => {
         setSaving(true);
         setMessage(null);
         try {
-            const payload = {
-                full_name: formData.full_name,
-                email: formData.email,
-            };
-            if (formData.new_password) {
-                payload.password = formData.new_password;
-            }
+            const payload = { [field]: formData[field] };
             const updated = await updateUser(user.id, payload);
             if (setUser) setUser(updated);
+            setEditingField(null);
             setMessage({ type: 'success', text: 'Profile updated successfully.' });
-            setFormData(prev => ({ ...prev, current_password: '', new_password: '', confirm_password: '' }));
+            setTimeout(() => setMessage(null), 3000);
         } catch (err) {
             setMessage({ type: 'error', text: err?.response?.data?.detail || 'Failed to save changes.' });
         } finally {
@@ -55,90 +95,270 @@ const ProfileSettings = () => {
         }
     };
 
-    return (
-        <div className="p-8 max-w-2xl mx-auto">
-            <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'My Profile' }]} />
-            <div className="mb-6 flex items-center gap-3">
-                <button onClick={() => navigate('/settings')} className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <ArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
-                    <p className="text-gray-500 text-sm mt-0.5">Update your personal information and password.</p>
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+
+        if (formData.new_password && formData.new_password !== formData.confirm_password) {
+            setMessage({ type: 'error', text: 'New passwords do not match.' });
+            return;
+        }
+        if (!formData.new_password) return;
+
+        setSaving(true);
+        setMessage(null);
+        try {
+            const payload = { password: formData.new_password };
+            await updateUser(user.id, payload);
+            setMessage({ type: 'success', text: 'Password updated successfully.' });
+            setFormData(prev => ({ ...prev, current_password: '', new_password: '', confirm_password: '' }));
+            setEditingField(null);
+            setTimeout(() => setMessage(null), 3000);
+        } catch (err) {
+            setMessage({ type: 'error', text: err?.response?.data?.detail || 'Failed to update password.' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const getInitials = (name) => {
+        if (!name) return 'U';
+        return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    };
+
+    // Reusable row component
+    const ProfileRow = ({ label, value, fieldName, isEditable = true, type = "text", customValue = null }) => {
+        const isEditing = editingField === fieldName;
+
+        return (
+            <div className={`flex items-center justify-between py-5 border-b border-gray-100 last:border-0 ${isEditable && !isEditing ? 'cursor-pointer hover:bg-gray-50/50 transition-colors group' : ''}`}
+                onClick={() => { if (isEditable && !isEditing) setEditingField(fieldName); }}>
+
+                <div className="w-1/3 text-sm font-medium text-gray-500">{label}</div>
+
+                <div className="flex-1 flex items-center justify-between pr-4">
+                    {isEditing ? (
+                        <div className="flex-1 flex gap-2 items-center mr-4">
+                            <input
+                                name={fieldName}
+                                type={type}
+                                value={formData[fieldName]}
+                                onChange={handleChange}
+                                autoFocus
+                                className="w-full px-3 py-1.5 border border-[#00C853] rounded text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveField(fieldName);
+                                    if (e.key === 'Escape') {
+                                        setEditingField(null);
+                                        setFormData(prev => ({ ...prev, [fieldName]: user[fieldName] }));
+                                    }
+                                }}
+                            />
+                            <button
+                                onClick={(e) => { e.stopPropagation(); handleSaveField(fieldName); }}
+                                disabled={saving}
+                                className="p-1.5 bg-[#00C853] text-white rounded hover:bg-green-700 transition"
+                            >
+                                <Check size={16} />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingField(null);
+                                    setFormData(prev => ({ ...prev, [fieldName]: user[fieldName] }));
+                                }}
+                                disabled={saving}
+                                className="p-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="text-sm text-gray-900 font-medium">
+                            {customValue || value}
+                        </div>
+                    )}
+
+                    {isEditable && !isEditing && (
+                        <ChevronRight size={18} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    )}
                 </div>
             </div>
+        );
+    };
 
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 space-y-5">
-                {/* Personal Info */}
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                    <input
-                        name="full_name"
-                        type="text"
-                        value={formData.full_name}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
-                    />
+    return (
+        <div className="p-8 max-w-[1000px] mx-auto min-h-full bg-gray-50/30">
+            <Breadcrumb items={[{ label: 'Settings', to: '/settings' }, { label: 'Profile' }]} />
+
+            {message && (
+                <div className={`mb-6 p-4 rounded-md flex items-center gap-3 shadow-sm border ${message.type === 'success' ? 'bg-green-50/80 border-green-100 text-green-700' : 'bg-red-50/80 border-red-100 text-red-700'}`}>
+                    {message.type === 'success' ? <Check size={20} className="text-[#00C853]" /> : <X size={20} className="text-red-500" />}
+                    <span className="text-sm font-medium">{message.text}</span>
                 </div>
+            )}
 
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                    <input
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
-                    />
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* Password Change */}
-                <p className="text-sm font-semibold text-gray-700">Change Password <span className="font-normal text-gray-400">(leave blank to keep current)</span></p>
-
-                <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                    <input
-                        name="new_password"
-                        type={showNewPw ? 'text' : 'password'}
-                        value={formData.new_password}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
-                    />
-                    <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-8 text-gray-400 hover:text-gray-600">
-                        {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-                    <input
-                        name="confirm_password"
-                        type="password"
-                        value={formData.confirm_password}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853]"
-                    />
-                </div>
-
-                {message && (
-                    <div className={`text-sm px-3 py-2 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                        {message.text}
+            <div className="space-y-6">
+                {/* Profile Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100">
+                        <h2 className="text-[19px] font-bold text-gray-900 tracking-tight">Profile</h2>
+                        <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed max-w-2xl">
+                            Manage your user profile and contact details within Clustox ATS here.
+                        </p>
                     </div>
-                )}
 
-                <div className="flex justify-end">
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="flex items-center gap-2 px-4 py-2 bg-[#00C853] text-white rounded-md text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
-                    >
-                        <Save size={16} />
-                        {saving ? 'Saving…' : 'Save Changes'}
-                    </button>
+                    <div className="px-6 flex flex-col">
+
+                        {/* Profile Picture Section */}
+                        <div className="py-6 border-b border-gray-100 flex items-center gap-6">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#00C853] to-emerald-400 text-white flex items-center justify-center font-bold text-2xl shadow-sm border-2 border-white ring-1 ring-gray-100 object-cover overflow-hidden flex-shrink-0">
+                                {user?.avatar_url ? (
+                                    <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
+                                ) : (
+                                    getInitials(user?.full_name)
+                                )}
+                            </div>
+                            <div className="flex flex-col">
+                                <h3 className="text-sm font-semibold text-gray-900">Profile Picture</h3>
+                                <p className="text-sm text-gray-500 mb-3">We support PNGs, JPEGs under 10MB</p>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleAvatarClick}
+                                        disabled={saving}
+                                        className="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00C853] transition-colors"
+                                    >
+                                        <Camera size={16} className="mr-2 text-gray-400" />
+                                        Upload Picture
+                                    </button>
+                                    {user?.avatar_url && (
+                                        <button
+                                            onClick={handleRemoveAvatar}
+                                            disabled={saving}
+                                            className="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-red-600 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50"
+                                        >
+                                            <Trash2 size={16} className="mr-2" />
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                            />
+                        </div>
+
+                        <ProfileRow
+                            label="Full Name"
+                            fieldName="full_name"
+                            value={user?.full_name || '-'}
+                        />
+                        <ProfileRow
+                            label="Display Name"
+                            fieldName="display_name"
+                            value={user?.display_name || '-'}
+                        />
+                        <ProfileRow
+                            label="Role"
+                            fieldName="role"
+                            value={(user?.role || '').replace('_', ' ')}
+                            isEditable={false} // Users usually can't change their own role here
+                            customValue={<span className="capitalize">{user?.role?.replace('_', ' ')}</span>}
+                        />
+                        <ProfileRow
+                            label="Email Address"
+                            fieldName="email"
+                            value={user?.email || '-'}
+                            type="email"
+                        />
+                        <ProfileRow
+                            label="Phone Number"
+                            fieldName="phone"
+                            value={user?.phone || '-'}
+                            type="tel"
+                        />
+                        <ProfileRow
+                            label="Location"
+                            fieldName="location"
+                            value={user?.location || '-'}
+                        />
+                    </div>
                 </div>
-            </form>
+
+                {/* Password Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-6">
+                        <h2 className="text-[19px] font-bold text-gray-900 tracking-tight">Change Password</h2>
+                        <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed max-w-2xl">
+                            Change your account's current password
+                        </p>
+                    </div>
+
+                    <div className="px-6 pb-6 pt-2 border-t border-gray-100 bg-gray-50/30">
+                        {editingField === 'password' ? (
+                            <form onSubmit={handlePasswordSubmit} className="pt-4 max-w-sm space-y-4">
+                                <div className="space-y-3">
+                                    <div className="relative">
+                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">New Password</label>
+                                        <input
+                                            name="new_password"
+                                            type={showNewPw ? 'text' : 'password'}
+                                            value={formData.new_password}
+                                            onChange={handleChange}
+                                            autoFocus
+                                            className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853] bg-white shadow-sm"
+                                        />
+                                        <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-[26px] text-gray-400 hover:text-gray-600">
+                                            {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Confirm New Password</label>
+                                        <input
+                                            name="confirm_password"
+                                            type="password"
+                                            value={formData.confirm_password}
+                                            onChange={handleChange}
+                                            className="w-full px-3 py-2 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853] bg-white shadow-sm"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 pt-2">
+                                    <button
+                                        type="submit"
+                                        disabled={saving || !formData.new_password}
+                                        className="px-4 py-2 bg-[#00C853] text-white rounded-md text-sm font-medium hover:bg-green-700 transition shadow-sm disabled:opacity-50"
+                                    >
+                                        {saving ? 'Updating…' : 'Update Password'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setEditingField(null); setFormData(prev => ({ ...prev, new_password: '', confirm_password: '' })); }}
+                                        disabled={saving}
+                                        className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-md text-sm font-medium hover:bg-gray-50 transition shadow-sm"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div className="pt-4">
+                                <button
+                                    onClick={() => setEditingField('password')}
+                                    className="text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors"
+                                >
+                                    Change your password
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

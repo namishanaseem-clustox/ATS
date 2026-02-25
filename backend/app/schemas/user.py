@@ -7,6 +7,10 @@ from app.models.user import UserRole
 class UserBase(BaseModel):
     email: EmailStr
     full_name: Optional[str] = None
+    display_name: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    avatar_url: Optional[str] = None
     role: UserRole = UserRole.INTERVIEWER
     is_active: bool = True
     department_id: Optional[UUID] = None
@@ -36,6 +40,10 @@ class Token(BaseModel):
 
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
+    display_name: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
+    avatar_url: Optional[str] = None
     role: Optional[UserRole] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
@@ -44,10 +52,15 @@ class UserUpdate(BaseModel):
 
 class UserInvitationCreate(BaseModel):
     email: EmailStr
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    location: Optional[str] = None
     role: UserRole
     department_id: Optional[UUID] = None
 
 class UserRegisterInvited(BaseModel):
     token: str
     full_name: str
+    phone: Optional[str] = None
+    location: Optional[str] = None
     password: str
