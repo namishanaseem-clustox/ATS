@@ -43,12 +43,12 @@ const UserProfileDropdown = () => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-[#00C853] to-emerald-400 text-white font-semibold text-sm shadow-sm hover:shadow transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00C853] overflow-hidden"
-                title={user?.full_name || 'User Profile'}
+                title={user?.display_name || user?.full_name || 'User Profile'}
             >
                 {user?.avatar_url ? (
                     <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
-                    getInitials(user?.full_name)
+                    getInitials(user?.display_name || user?.full_name)
                 )}
             </button>
 
@@ -62,12 +62,12 @@ const UserProfileDropdown = () => {
                                 {user?.avatar_url ? (
                                     <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
-                                    getInitials(user?.full_name)
+                                    getInitials(user?.display_name || user?.full_name)
                                 )}
                             </div>
                             <div className="flex-1 min-w-0 flex flex-col justify-center">
                                 <p className="text-sm font-semibold text-gray-900 truncate leading-tight">
-                                    {user?.full_name || 'Current User'}
+                                    {user?.display_name || user?.full_name || 'Current User'}
                                 </p>
                                 <Link
                                     to="/settings"

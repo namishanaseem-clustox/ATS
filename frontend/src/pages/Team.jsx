@@ -77,7 +77,6 @@ const Team = () => {
         email: '',
         phone: '',
         location: '',
-        password: '',
         role: 'interviewer',
         is_active: 'true',
         department_id: '',
@@ -140,7 +139,6 @@ const Team = () => {
             email: '',
             phone: '',
             location: '',
-            password: '',
             role: 'interviewer',
             is_active: 'true',
             department_id: '',
@@ -171,7 +169,6 @@ const Team = () => {
             email: user.email,
             phone: user.phone || '',
             location: user.location || '',
-            password: '', // Password empty on edit unless changing
             role: user.role,
             is_active: user.is_active ? 'true' : 'false',
             department_id: user.department_id || '',
@@ -184,9 +181,7 @@ const Team = () => {
         setError(null);
         try {
             if (isEditing) {
-                // Remove password if empty to avoid resetting it
                 const dataToSend = { ...formData };
-                if (!dataToSend.password) delete dataToSend.password;
 
                 // Convert is_active string to boolean
                 dataToSend.is_active = dataToSend.is_active === 'true';
@@ -539,19 +534,6 @@ const Team = () => {
                                             />
                                         </div>
 
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700">
-                                                {isEditing ? 'Password (leave blank to keep current)' : 'Password'}
-                                            </label>
-                                            <input
-                                                type="password"
-                                                name="password"
-                                                required={!isEditing}
-                                                value={formData.password}
-                                                onChange={handleInputChange}
-                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
-                                            />
-                                        </div>
 
                                         <CustomSelect
                                             label="Role"

@@ -181,7 +181,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                 ) : (
                     <div className="flex items-center justify-between">
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-900 truncate">{user?.full_name}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{user?.display_name || user?.full_name}</p>
                             <p className="text-xs text-gray-500 capitalize truncate">{user?.role?.replace('_', ' ')}</p>
                         </div>
                         <button

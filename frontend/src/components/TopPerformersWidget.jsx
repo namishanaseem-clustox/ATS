@@ -10,13 +10,7 @@ const TopPerformersWidget = () => {
     const [expandCandidates, setExpandCandidates] = useState(false);
     const [expandActions, setExpandActions] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-
-    // Mock Colleagues Data
-    const colleagues = [
-        { name: 'Jane Doe', hires: 2, candidates: 5, actions: 10, bg: 'bg-green-100', text: 'text-green-700' },
-        { name: 'Josh Smith', hires: 1, candidates: 8, actions: 22, bg: 'bg-purple-100', text: 'text-purple-700' },
-        { name: 'Ben Stokes', hires: 0, candidates: 3, actions: 5, bg: 'bg-orange-100', text: 'text-orange-700' }
-    ];
+    const [timeframe, setTimeframe] = useState('this_month');
 
     const handleRefresh = () => {
         setIsRefreshing(true);
@@ -24,6 +18,31 @@ const TopPerformersWidget = () => {
         setTimeout(() => {
             setIsRefreshing(false);
         }, 1000);
+    };
+
+    const getMultiplier = () => {
+        switch (timeframe) {
+            case 'today': return 0.1;
+            case 'this_week': return 0.25;
+            case 'this_year': return 12;
+            case 'this_month':
+            default: return 1;
+        }
+    };
+
+    const m = getMultiplier();
+
+    // Mock Colleagues Data
+    const colleagues = [
+        { name: 'Jane Doe', hires: Math.ceil(2 * m), candidates: Math.ceil(5 * m), actions: Math.ceil(10 * m), bg: 'bg-green-100', text: 'text-green-700' },
+        { name: 'Josh Smith', hires: Math.ceil(1 * m), candidates: Math.ceil(8 * m), actions: Math.ceil(22 * m), bg: 'bg-purple-100', text: 'text-purple-700' },
+        { name: 'Ben Stokes', hires: 0, candidates: Math.ceil(3 * m), actions: Math.ceil(5 * m), bg: 'bg-orange-100', text: 'text-orange-700' }
+    ];
+
+    const myStats = {
+        hires: Math.ceil(0 * m), // always 0 based on original mock
+        candidates: Math.ceil(12 * m),
+        actions: Math.ceil(16 * m)
     };
 
     const MyRow = ({ label, count, rank }) => (
@@ -68,7 +87,16 @@ const TopPerformersWidget = () => {
                     >
                         {isRefreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
-                    <span className="text-xs text-blue-600 border border-blue-200 px-2 py-1 rounded bg-blue-50">This Month</span>
+                    <select
+                        value={timeframe}
+                        onChange={(e) => setTimeframe(e.target.value)}
+                        className="text-xs text-blue-600 border border-blue-200 px-2 py-1 rounded bg-blue-50 focus:outline-none cursor-pointer"
+                    >
+                        <option value="today">Today</option>
+                        <option value="this_week">This Week</option>
+                        <option value="this_month">This Month</option>
+                        <option value="this_year">This Year</option>
+                    </select>
                 </div>
             </div>
 
@@ -88,7 +116,7 @@ const TopPerformersWidget = () => {
                         </button>
                     </div>
                     <div>
-                        <MyRow label="Hires" count={0} rank="3rd" />
+                        <MyRow label="Hires" count={myStats.hires} rank="3rd" />
                         {expandHires && colleagues.map((c, i) => (
                             <ColleagueRow key={i} name={c.name} count={c.hires} label="Hires" bg={c.bg} text={c.text} rank={`${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : 'rd'}`} />
                         ))}
@@ -109,7 +137,7 @@ const TopPerformersWidget = () => {
                         </button>
                     </div>
                     <div>
-                        <MyRow label="Candidates" count={12} rank="1st" />
+                        <MyRow label="Candidates" count={myStats.candidates} rank="1st" />
                         {expandCandidates && colleagues.map((c, i) => (
                             <ColleagueRow key={i} name={c.name} count={c.candidates} label="Candidates" bg={c.bg} text={c.text} rank={`${i + 2}th`} />
                         ))}
@@ -130,7 +158,7 @@ const TopPerformersWidget = () => {
                         </button>
                     </div>
                     <div>
-                        <MyRow label="Actions" count={16} rank="2nd" />
+                        <MyRow label="Actions" count={myStats.actions} rank="2nd" />
                         {expandActions && colleagues.map((c, i) => (
                             <ColleagueRow key={i} name={c.name} count={c.actions} label="Actions" bg={c.bg} text={c.text} rank={`${i === 1 ? 1 : i === 0 ? 3 : 4}th`} />
                         ))}

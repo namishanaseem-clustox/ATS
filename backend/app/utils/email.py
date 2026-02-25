@@ -2,6 +2,7 @@ import smtplib
 from email.message import EmailMessage
 from email.utils import make_msgid
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import logging
 
@@ -68,6 +69,13 @@ def send_invitation_email(to_email: str, role: str, invite_url: str):
     
     msg.set_content("Please enable HTML to view this message.")
     msg.add_alternative(html_content, subtype='html')
+    
+    logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
+    if logo_path.exists():
+        with open(logo_path, "rb") as f:
+            msg.get_payload()[1].add_related(f.read(), maintype='image', subtype='png', cid=logo_cid, filename='clustox_logo.png')
+    else:
+        logger.warning(f"Logo not found at {logo_path}")
     
     try:
         with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
