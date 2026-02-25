@@ -111,7 +111,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                                 <Building2 size={18} />
                             </NavLink>
                         )}
-                        <NavLink to="/tasks" title="My Tasks"
+                        <NavLink to="/tasks" title="Activities"
                             className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
                             <CalendarCheck size={18} />
                         </NavLink>
@@ -133,7 +133,7 @@ const Sidebar = ({ collapsed, onToggle }) => {
                         <div className="pt-1">
                             <NavGroup label="My Work" icon={LayoutDashboard} defaultOpen={true}>
                                 <NavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
-                                <NavItem to="/tasks" icon={CalendarCheck} label="My Tasks" />
+                                <NavItem to="/tasks" icon={CalendarCheck} label="Activities" />
                             </NavGroup>
                         </div>
                         {/* Recruitment group */}

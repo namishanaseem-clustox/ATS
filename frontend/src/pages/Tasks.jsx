@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, User, Briefcase, MapPin, Search, ChevronRight, Star, List, LayoutGrid, CheckSquare, FileText, Video, Phone, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, User, Briefcase, MapPin, Search, ChevronRight, Star, List, LayoutGrid, CheckSquare, FileText, Video, Phone, Users, Filter, Edit2, Trash2, Eye, MoreVertical } from 'lucide-react';
 import { getAllActivities } from '../api/activities';
 import ScorecardModal from '../components/ScorecardModal';
 import ActivityModal from '../components/ActivityModal';
@@ -13,7 +13,12 @@ const Tasks = () => {
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    // Filters
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('All');
+    const [typeFilter, setTypeFilter] = useState('All');
+    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
     useEffect(() => {
         fetchActivities();
@@ -41,116 +46,159 @@ const Tasks = () => {
         setIsEditModalOpen(true);
     };
 
-    const filteredActivities = activities.filter(activity =>
-        (activity.title?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (activity.candidate?.first_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (activity.candidate?.last_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (activity.activity_type?.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredActivities = activities.filter(activity => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+            (activity.title?.toLowerCase().includes(query)) ||
+            (activity.candidate?.first_name?.toLowerCase().includes(query)) ||
+            (activity.candidate?.last_name?.toLowerCase().includes(query)) ||
+            (activity.activity_type?.toLowerCase().includes(query)) ||
+            (activity.job?.title?.toLowerCase().includes(query));
 
-    const pendingActivities = filteredActivities.filter(a => a.status === 'Pending');
-    const completedActivities = filteredActivities.filter(a => a.status === 'Completed' || a.status === 'Cancelled');
+        const matchesStatus = statusFilter === 'All' ||
+            (statusFilter === 'Pending' && activity.status === 'Pending') ||
+            (statusFilter === 'Completed' && (activity.status === 'Completed' || activity.status === 'Cancelled'));
+
+        const matchesType = typeFilter === 'All' || activity.activity_type === typeFilter;
+
+        return matchesSearch && matchesStatus && matchesType;
+    });
+
+    const activeFilterCount = (statusFilter !== 'All' ? 1 : 0) + (typeFilter !== 'All' ? 1 : 0) + (searchQuery ? 1 : 0);
 
     if (loading) {
-        return <div className="p-8 text-center text-gray-500">Loading your tasks...</div>;
+        return <div className="p-8 text-center text-gray-500">Loading your activities...</div>;
     }
 
     return (
-        <div className="p-8 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">My Tasks</h1>
-                    <p className="text-gray-500">Manage your interviews, meetings, and to-dos</p>
+        <div className="p-8 max-w-[1400px] mx-auto">
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center space-x-3">
+                    <h1 className="text-3xl font-bold text-gray-900">Activities</h1>
+                    <div className="flex space-x-1 mt-1">
+                        <button className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition">
+                            <ChevronRight className="w-3 h-3" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex items-center space-x-4">
-                    {/* View Toggle */}
-                    <div className="bg-gray-100 p-1 rounded-lg flex">
+                    {viewMode === 'list' && (
+                        <div className="flex items-center space-x-3">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by Name, Job, Email or Department"
+                                    className="pl-9 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm transition-all w-80 shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="relative">
+                                <button
+                                    onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                                    className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                                >
+                                    <Filter size={16} /> Filters
+                                    {activeFilterCount > 0 && (
+                                        <span className="bg-[#4caf50] text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </button>
+
+                                {isFiltersOpen && (
+                                    <div className="absolute top-12 right-0 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 shrink-0">
+                                        <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                            <h4 className="font-semibold text-gray-800 text-sm">Filter Activities</h4>
+                                            <button
+                                                onClick={() => { setStatusFilter('All'); setTypeFilter('All'); }}
+                                                className="text-xs text-blue-600 hover:text-blue-800"
+                                            >
+                                                Reset
+                                            </button>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Status</label>
+                                                <select
+                                                    value={statusFilter}
+                                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                                    className="w-full border border-gray-300 bg-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500 text-gray-700 shadow-sm"
+                                                >
+                                                    <option value="All">All Statuses</option>
+                                                    <option value="Pending">Pending</option>
+                                                    <option value="Completed">Completed</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Type</label>
+                                                <select
+                                                    value={typeFilter}
+                                                    onChange={(e) => setTypeFilter(e.target.value)}
+                                                    className="w-full border border-gray-300 bg-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500 text-gray-700 shadow-sm"
+                                                >
+                                                    <option value="All">All Types</option>
+                                                    <option value="Task">Task</option>
+                                                    <option value="Interview">Interview</option>
+                                                    <option value="Call">Call</option>
+                                                    <option value="Meeting">Meeting</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex border border-gray-300 rounded overflow-hidden shadow-sm">
                         <button
                             onClick={() => setViewMode('list')}
-                            className={`p-2 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                            title="List View"
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors ${viewMode === 'list' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                         >
-                            <List size={20} />
+                            <List size={14} /> LIST
                         </button>
                         <button
                             onClick={() => setViewMode('calendar')}
-                            className={`p-2 rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}
-                            title="Calendar View"
+                            className={`px-4 py-2 text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-colors border-l border-gray-300 ${viewMode === 'calendar' ? 'bg-gray-100 text-gray-800' : 'bg-white text-gray-500 hover:bg-gray-50'}`}
                         >
-                            <LayoutGrid size={20} />
+                            <CalendarIcon size={14} /> MONTH
                         </button>
                     </div>
-
-                    {/* Search (only for list view, though could work for calendar too potentially) */}
-                    {viewMode === 'list' && (
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search tasks..."
-                                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-green-500 focus:border-green-500 outline-none w-64 text-sm transition-all"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                            />
-                        </div>
-                    )}
                 </div>
             </div>
 
             {viewMode === 'calendar' ? (
-                <CalendarView activities={filteredActivities} onRefresh={fetchActivities} />
+                <div className="bg-white rounded border border-gray-200 shadow-sm p-4">
+                    <CalendarView activities={filteredActivities} onRefresh={fetchActivities} />
+                </div>
             ) : (
-                <>
-                    {/* Pending Section */}
-                    <div className="mb-12">
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <Clock className="h-5 w-5 mr-2 text-orange-500" />
-                            Upcoming / Pending
-                            <span className="ml-3 px-2 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full font-medium">
-                                {pendingActivities.length}
-                            </span>
-                        </h2>
-
-                        {pendingActivities.length === 0 ? (
-                            <div className="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center text-gray-500">
-                                No pending tasks found.
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {pendingActivities.map((activity) => (
-                                    <ActivityCard
-                                        key={activity.id}
-                                        activity={activity}
-                                        onRate={() => handleRate(activity)}
-                                        onEdit={() => handleEdit(activity)}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Completed Section */}
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <Star className="h-5 w-5 mr-2 text-green-500" />
-                            Recently Completed
-                            <span className="ml-3 px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full font-medium">
-                                {completedActivities.length}
-                            </span>
-                        </h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {completedActivities.map((activity) => (
-                                <ActivityCard
-                                    key={activity.id}
-                                    activity={activity}
-                                    completed
-                                    onEdit={() => handleEdit(activity)}
-                                />
-                            ))}
+                <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/80">
+                        <button
+                            onClick={() => {
+                                setSelectedActivity(null);
+                                setIsEditModalOpen(true);
+                            }}
+                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+                        >
+                            + Create activity
+                        </button>
+                        <div className="text-sm text-gray-500">
+                            Results: <span className="font-semibold text-gray-700">{filteredActivities.length}</span>
                         </div>
                     </div>
-                </>
+                    <ActivitiesTable
+                        activities={filteredActivities}
+                        onEdit={handleEdit}
+                        onRate={handleRate}
+                    />
+                </div>
             )}
 
             {/* Modals */}
@@ -166,13 +214,13 @@ const Tasks = () => {
                 />
             )}
 
-            {selectedActivity && (
+            {isEditModalOpen && (
                 <ActivityModal
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     activity={selectedActivity}
-                    jobId={selectedActivity.job_id}
-                    candidateId={selectedActivity.candidate_id}
+                    jobId={selectedActivity?.job_id}
+                    candidateId={selectedActivity?.candidate_id}
                     onSave={() => {
                         fetchActivities();
                         setIsEditModalOpen(false);
@@ -183,94 +231,132 @@ const Tasks = () => {
     );
 };
 
-const ActivityCard = ({ activity, onRate, onEdit, completed = false }) => {
-    let typeConfig = { bg: 'bg-gray-100', text: 'text-gray-700', icon: CalendarIcon };
-
-    switch (activity.activity_type) {
-        case 'Interview': typeConfig = { bg: 'bg-purple-100', text: 'text-purple-700', icon: Video }; break;
-        case 'Call': typeConfig = { bg: 'bg-blue-100', text: 'text-blue-700', icon: Phone }; break;
-        case 'Meeting': typeConfig = { bg: 'bg-orange-100', text: 'text-orange-700', icon: Users }; break;
-        case 'Task': typeConfig = { bg: 'bg-green-100', text: 'text-green-700', icon: CheckSquare }; break;
-        case 'Note': typeConfig = { bg: 'bg-gray-100', text: 'text-gray-700', icon: FileText }; break;
+const ActivitiesTable = ({ activities, onEdit, onRate }) => {
+    if (activities.length === 0) {
+        return <div className="p-16 text-center text-gray-500 bg-white">No activities found matching your criteria.</div>;
     }
 
-    const TypeIcon = typeConfig.icon;
+    const calculateDuration = (start, end) => {
+        if (!start || !end) return '45 Minutes'; // default fallback for mock
+        const diff = new Date(end) - new Date(start);
+        const mins = Math.floor(diff / 60000);
+        if (mins <= 0) return '0 Minutes';
+        if (mins < 60) return `${mins} Minutes`;
+        const hrs = Math.floor(mins / 60);
+        return `${hrs} Hour${hrs > 1 ? 's' : ''}`;
+    }
+
+    const getAvatarColor = (name) => {
+        const colors = ['bg-[#fbc02d]', 'bg-[#43a047]', 'bg-[#00acc1]', 'bg-[#1e88e5]', 'bg-[#8e24aa]', 'bg-[#f4511e]', 'bg-[#d81b60]'];
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
+    };
 
     return (
-        <div
-            onClick={onEdit}
-            className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all overflow-hidden cursor-pointer group"
-        >
-            <div className="p-5">
-                <div className="flex justify-between items-start mb-4">
-                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 ${typeConfig.bg} ${typeConfig.text}`}>
-                        <TypeIcon size={10} />
-                        {activity.activity_type}
-                    </span>
-                    {activity.scheduled_at && (
-                        <span className="text-xs text-gray-500 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {new Date(activity.scheduled_at).toLocaleDateString()}
-                        </span>
-                    )}
-                </div>
+        <div className="overflow-x-auto min-h-[500px]">
+            <table className="w-full text-left border-collapse whitespace-nowrap">
+                <thead>
+                    <tr className="bg-white border-b border-gray-200 text-xs text-black font-bold uppercase tracking-wide">
+                        <th className="px-4 py-4 w-12 text-center text-gray-400">
+                            <input type="checkbox" className="rounded border-gray-300 w-3.5 h-3.5 cursor-pointer accent-blue-600" />
+                        </th>
+                        <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center gap-1.5 group">
+                                Title <span className="text-gray-300 group-hover:text-gray-500">↕</span>
+                            </div>
+                        </th>
+                        <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center gap-1.5 group">
+                                Type <span className="text-gray-300 group-hover:text-gray-500">↕</span>
+                            </div>
+                        </th>
+                        <th className="px-4 py-4">Related To</th>
+                        <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center gap-1.5 group">
+                                Date <span className="text-gray-300 group-hover:text-gray-500">↕</span>
+                            </div>
+                        </th>
+                        <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
+                            <div className="flex items-center gap-1.5 group">
+                                Time <span className="text-gray-300 group-hover:text-gray-500">↕</span>
+                            </div>
+                        </th>
+                        <th className="px-4 py-4">Duration</th>
+                        <th className="px-4 py-4">Assignees</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 bg-white text-[13px]">
+                    {activities.map((activity, index) => {
+                        const dateObj = new Date(activity.scheduled_at);
+                        const dateStr = activity.scheduled_at ? dateObj.toLocaleDateString() : '-';
+                        const timeStr = activity.scheduled_at ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-';
+                        const durationStr = calculateDuration(activity.scheduled_at, activity.end_time);
 
-                <h3 className="font-bold text-gray-900 mb-1 group-hover:text-green-600 transition-colors">{activity.title}</h3>
+                        const creatorName = activity.creator?.full_name || activity.creator?.first_name || 'System';
+                        const initials = creatorName.substring(0, 2).toUpperCase();
+                        const colorClass = getAvatarColor(creatorName);
 
-                {activity.candidate ? (
-                    <div className="flex items-center text-sm text-gray-600 mb-4">
-                        <User className="h-3.5 w-3.5 mr-1.5" />
-                        <span>{activity.candidate.first_name} {activity.candidate.last_name}</span>
-                    </div>
-                ) : (
-                    <div className="h-9 mb-4"></div> // Spacer to keep card alignment if no candidate
-                )}
+                        // Alternate row backgrounds slightly like Manatal
+                        const isEven = index % 2 === 0;
 
-                <div className="space-y-2 text-sm text-gray-500 mb-6 min-h-[40px]">
-                    <div className="flex items-center">
-                        <Briefcase className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
-                        <span className="truncate">{activity.job?.title || 'General Task'}</span>
-                    </div>
-                    {activity.location && (
-                        <div className="flex items-center">
-                            <MapPin className="h-3.5 w-3.5 mr-2 flex-shrink-0" />
-                            <span className="truncate">{activity.location}</span>
-                        </div>
-                    )}
-                    {activity.creator && (
-                        <div className="flex items-center pt-2 mt-2 border-t border-gray-50">
-                            <span className="text-xs text-gray-400">Added by {activity.creator.full_name || activity.creator.email}</span>
-                        </div>
-                    )}
-                </div>
+                        return (
+                            <tr key={activity.id} className={`hover:bg-gray-50 transition-colors group ${isEven ? 'bg-white' : 'bg-[#fafafa]'}`}>
+                                <td className="px-4 py-3.5 text-center text-gray-400">
+                                    <input type="checkbox" className="rounded border-gray-300 w-3.5 h-3.5 cursor-pointer accent-green-600" />
+                                </td>
 
-                <div className="pt-4 border-t flex justify-between items-center h-10">
-                    {activity.candidate ? (
-                        <Link
-                            to={`/candidates/${activity.candidate_id}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-xs font-medium text-green-600 hover:text-green-700 flex items-center"
-                        >
-                            View Profile <ChevronRight className="h-3 w-3 ml-0.5" />
-                        </Link>
-                    ) : (
-                        <div></div>
-                    )}
+                                <td className="px-4 py-3.5">
+                                    <div className="flex items-center">
+                                        <div className="flex-1 truncate max-w-[200px] text-gray-800">
+                                            {activity.title}
+                                        </div>
+                                        <div className="flex items-center space-x-2 text-gray-400 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button className="hover:text-red-500 transition-colors" title="Delete"><Trash2 size={13} /></button>
+                                            <button className="hover:text-green-500 transition-colors" title="View"><Eye size={14} /></button>
+                                            <button onClick={() => onEdit(activity)} className="hover:text-gray-700 transition-colors" title="Options"><MoreVertical size={14} /></button>
+                                        </div>
+                                    </div>
+                                </td>
 
-                    {!completed && ['Interview', 'Call', 'Meeting'].includes(activity.activity_type) && (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onRate(); }}
-                            className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-green-700 transition-colors shadow-sm"
-                        >
-                            Submit Feedback
-                        </button>
-                    )}
+                                <td className="px-4 py-3.5 text-gray-600 capitalize">
+                                    {activity.activity_type}
+                                </td>
 
-                    {completed && <span className="text-xs font-medium text-gray-400 italic">Completed</span>}
-                </div>
-            </div>
-        </div >
+                                <td className="px-4 py-3.5">
+                                    {activity.candidate ? (
+                                        <div className="flex flex-col">
+                                            <span className="text-gray-700">
+                                                {activity.candidate.first_name} {activity.candidate.last_name}
+                                            </span>
+                                            {activity.job && <span className="text-[11px] text-gray-400 mt-0.5">{activity.job.title}</span>}
+                                        </div>
+                                    ) : (
+                                        <span className="text-gray-400">-</span>
+                                    )}
+                                </td>
+
+                                <td className="px-4 py-3.5 text-gray-700">{dateStr}</td>
+
+                                <td className="px-4 py-3.5 text-gray-700">{timeStr}</td>
+
+                                <td className="px-4 py-3.5 text-gray-700">{durationStr}</td>
+
+                                <td className="px-4 py-3.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold ${colorClass}`}>
+                                            {initials}
+                                        </div>
+                                        <span className="text-xs text-gray-600">{creatorName}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        )
+                    })}
+                </tbody>
+            </table>
+        </div>
     );
-};
+}
 
 export default Tasks;
