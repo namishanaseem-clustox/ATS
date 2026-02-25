@@ -5,6 +5,7 @@ import ScorecardModal from '../components/ScorecardModal';
 import ActivityModal from '../components/ActivityModal';
 import CalendarView from '../components/CalendarView';
 import ColumnSelector from '../components/ColumnSelector';
+import FilterPanel from '../components/FilterPanel';
 import useColumnPersistence from '../hooks/useColumnPersistence';
 import Breadcrumb from '../components/Breadcrumb';
 import { Link } from 'react-router-dom';
@@ -30,9 +31,7 @@ const Tasks = () => {
 
     // Filters
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
-    const [typeFilter, setTypeFilter] = useState('All');
-    const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({});
 
     useEffect(() => {
         fetchActivities();
@@ -60,27 +59,122 @@ const Tasks = () => {
         setIsEditModalOpen(true);
     };
 
-    const filteredActivities = activities.filter(activity => {
-        if (activity.activity_type?.toLowerCase() === 'note') return false;
+    // Build base list (no notes)
+    const baseActivities = activities.filter(a => a.activity_type?.toLowerCase() !== 'note');
 
+    // --- helpers ---
+    const getDateBucket = (iso) => {
+        if (!iso) return null;
+        const d = new Date(iso);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const actDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const diff = Math.round((actDay - today) / 86400000);
+        if (diff === 0) return 'Today';
+        if (diff === 1) return 'Tomorrow';
+        if (diff === -1) return 'Yesterday';
+        if (diff > 0 && diff <= 7) return 'Next 7 Days';
+        if (diff < 0 && diff >= -7) return 'Last 7 Days';
+        if (diff > 7 && diff <= 30) return 'This Month';
+        return 'Older';
+    };
+
+    const getTimeBucket = (iso) => {
+        if (!iso) return null;
+        const h = new Date(iso).getHours();
+        if (h >= 6 && h < 12) return 'Morning (6am–12pm)';
+        if (h >= 12 && h < 17) return 'Afternoon (12pm–5pm)';
+        if (h >= 17 && h < 21) return 'Evening (5pm–9pm)';
+        return 'Night (9pm–6am)';
+    };
+
+    // Derive unique values for filter options
+    const allTypes = [...new Set(baseActivities.map(a => a.activity_type).filter(Boolean))];
+    const allStatuses = [...new Set(baseActivities.map(a => a.status).filter(Boolean))];
+
+    // All unique assignee names from the assignees array on each activity
+    const allAssignees = [...new Set(
+        baseActivities.flatMap(a => (a.assignees || []).map(u => u.full_name || u.email).filter(Boolean))
+    )].sort();
+
+    const dateBucketOrder = ['Today', 'Tomorrow', 'Yesterday', 'Next 7 Days', 'Last 7 Days', 'This Month', 'Older'];
+    const allDateBuckets = dateBucketOrder.filter(b => baseActivities.some(a => getDateBucket(a.scheduled_at) === b));
+
+    const timeBucketOrder = ['Morning (6am–12pm)', 'Afternoon (12pm–5pm)', 'Evening (5pm–9pm)', 'Night (9pm–6am)'];
+    const allTimeBuckets = timeBucketOrder.filter(b => baseActivities.some(a => getTimeBucket(a.scheduled_at) === b));
+
+    const filterConfig = [
+        {
+            key: 'type',
+            label: 'Type',
+            options: allTypes.map(t => ({
+                value: t,
+                label: t,
+                count: baseActivities.filter(a => a.activity_type === t).length
+            }))
+        },
+        {
+            key: 'status',
+            label: 'Status',
+            options: allStatuses.map(s => ({
+                value: s,
+                label: s,
+                count: baseActivities.filter(a => a.status === s).length
+            }))
+        },
+        {
+            key: 'date',
+            label: 'Date',
+            options: allDateBuckets.map(b => ({
+                value: b,
+                label: b,
+                count: baseActivities.filter(a => getDateBucket(a.scheduled_at) === b).length
+            }))
+        },
+        {
+            key: 'time',
+            label: 'Time of Day',
+            options: allTimeBuckets.map(b => ({
+                value: b,
+                label: b,
+                count: baseActivities.filter(a => getTimeBucket(a.scheduled_at) === b).length
+            }))
+        },
+        {
+            key: 'assignee',
+            label: 'Assignee',
+            options: allAssignees.map(name => ({
+                value: name,
+                label: name,
+                count: baseActivities.filter(a => (a.assignees || []).some(u => (u.full_name || u.email) === name)).length
+            }))
+        }
+    ];
+
+    const filteredActivities = baseActivities.filter(activity => {
         const query = searchQuery.toLowerCase();
-        const matchesSearch =
+        const matchesSearch = !query ||
             (activity.title?.toLowerCase().includes(query)) ||
             (activity.candidate?.first_name?.toLowerCase().includes(query)) ||
             (activity.candidate?.last_name?.toLowerCase().includes(query)) ||
             (activity.activity_type?.toLowerCase().includes(query)) ||
             (activity.job?.title?.toLowerCase().includes(query));
 
-        const matchesStatus = statusFilter === 'All' ||
-            (statusFilter === 'Pending' && activity.status === 'Pending') ||
-            (statusFilter === 'Completed' && (activity.status === 'Completed' || activity.status === 'Cancelled'));
+        const typeSelected = activeFilters.type || [];
+        const statusSelected = activeFilters.status || [];
+        const dateSelected = activeFilters.date || [];
+        const timeSelected = activeFilters.time || [];
+        const assigneeSelected = activeFilters.assignee || [];
 
-        const matchesType = typeFilter === 'All' || activity.activity_type === typeFilter;
+        const matchesType = typeSelected.length === 0 || typeSelected.includes(activity.activity_type);
+        const matchesStatus = statusSelected.length === 0 || statusSelected.includes(activity.status);
+        const matchesDate = dateSelected.length === 0 || dateSelected.includes(getDateBucket(activity.scheduled_at));
+        const matchesTime = timeSelected.length === 0 || timeSelected.includes(getTimeBucket(activity.scheduled_at));
+        const matchesAssignee = assigneeSelected.length === 0 ||
+            (activity.assignees || []).some(u => assigneeSelected.includes(u.full_name || u.email));
 
-        return matchesSearch && matchesStatus && matchesType;
+        return matchesSearch && matchesType && matchesStatus && matchesDate && matchesTime && matchesAssignee;
     });
-
-    const activeFilterCount = (statusFilter !== 'All' ? 1 : 0) + (typeFilter !== 'All' ? 1 : 0) + (searchQuery ? 1 : 0);
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500">Loading your activities...</div>;
@@ -142,63 +236,12 @@ const Tasks = () => {
 
                         {viewMode === 'list' && (
                             <>
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                                    >
-                                        <Filter size={16} /> Filters
-                                        {activeFilterCount > 0 && (
-                                            <span className="bg-[#4caf50] text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                                                {activeFilterCount}
-                                            </span>
-                                        )}
-                                    </button>
-
-                                    {isFiltersOpen && (
-                                        <div className="absolute top-12 left-0 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 shrink-0">
-                                            <div className="flex justify-between items-center mb-4 border-b pb-2">
-                                                <h4 className="font-semibold text-gray-800 text-sm">Filter Activities</h4>
-                                                <button
-                                                    onClick={() => { setStatusFilter('All'); setTypeFilter('All'); }}
-                                                    className="text-xs text-blue-600 hover:text-blue-800"
-                                                >
-                                                    Reset
-                                                </button>
-                                            </div>
-
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Status</label>
-                                                    <select
-                                                        value={statusFilter}
-                                                        onChange={(e) => setStatusFilter(e.target.value)}
-                                                        className="w-full border border-gray-300 bg-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500 text-gray-700 shadow-sm"
-                                                    >
-                                                        <option value="All">All Statuses</option>
-                                                        <option value="Pending">Pending</option>
-                                                        <option value="Completed">Completed</option>
-                                                    </select>
-                                                </div>
-
-                                                <div>
-                                                    <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Type</label>
-                                                    <select
-                                                        value={typeFilter}
-                                                        onChange={(e) => setTypeFilter(e.target.value)}
-                                                        className="w-full border border-gray-300 bg-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500 text-gray-700 shadow-sm"
-                                                    >
-                                                        <option value="All">All Types</option>
-                                                        <option value="Task">Task</option>
-                                                        <option value="Interview">Interview</option>
-                                                        <option value="Call">Call</option>
-                                                        <option value="Meeting">Meeting</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                <FilterPanel
+                                    filters={filterConfig}
+                                    activeFilters={activeFilters}
+                                    onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
+                                    onClear={() => setActiveFilters({})}
+                                />
 
                                 <ColumnSelector
                                     columns={ACTIVITY_COLUMNS}
@@ -295,35 +338,19 @@ const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate }) => {
                             <input type="checkbox" className="rounded border-gray-300 w-3.5 h-3.5 cursor-pointer accent-blue-600" />
                         </th>
                         {visibleColumns.includes('title') && (
-                            <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
-                                <div className="flex items-center gap-1.5 group">
-                                    Title <span className="text-gray-300 group-hover:text-gray-500">↕</span>
-                                </div>
-                            </th>
+                            <th className="px-4 py-4">Title</th>
                         )}
                         {visibleColumns.includes('type') && (
-                            <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
-                                <div className="flex items-center gap-1.5 group">
-                                    Type <span className="text-gray-300 group-hover:text-gray-500">↕</span>
-                                </div>
-                            </th>
+                            <th className="px-4 py-4">Type</th>
                         )}
                         {visibleColumns.includes('relatedTo') && (
                             <th className="px-4 py-4">Related To</th>
                         )}
                         {visibleColumns.includes('date') && (
-                            <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
-                                <div className="flex items-center gap-1.5 group">
-                                    Date <span className="text-gray-300 group-hover:text-gray-500">↕</span>
-                                </div>
-                            </th>
+                            <th className="px-4 py-4">Date</th>
                         )}
                         {visibleColumns.includes('time') && (
-                            <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">
-                                <div className="flex items-center gap-1.5 group">
-                                    Time <span className="text-gray-300 group-hover:text-gray-500">↕</span>
-                                </div>
-                            </th>
+                            <th className="px-4 py-4">Time</th>
                         )}
                         {visibleColumns.includes('duration') && (
                             <th className="px-4 py-4">Duration</th>

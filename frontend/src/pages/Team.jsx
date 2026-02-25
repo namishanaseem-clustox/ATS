@@ -4,6 +4,7 @@ import { getUsers, createUser, updateUser, deleteUser, inviteUser } from '../api
 import { getDepartments } from '../api/departments';
 import RoleGuard from '../components/RoleGuard';
 import CustomSelect from '../components/CustomSelect';
+import Breadcrumb from '../components/Breadcrumb';
 
 const ROLE_OPTIONS = [
     { value: 'interviewer', label: 'Interviewer' },
@@ -260,6 +261,7 @@ const Team = () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
+            <Breadcrumb items={[{ label: 'Administration', to: '/admin' }, { label: 'Team Management' }]} />
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>

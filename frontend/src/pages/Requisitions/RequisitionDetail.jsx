@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getRequisition, submitRequisition, approveRequisition, rejectRequisition, convertRequisitionToJob } from '../../api/requisitions';
 import { useAuth } from '../../context/AuthContext';
 import { CheckCircle, XCircle, FileText, Send, User, ChevronLeft } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const RequisitionDetail = () => {
     const { id } = useParams();
@@ -54,9 +55,7 @@ const RequisitionDetail = () => {
 
     return (
         <div className="p-8 max-w-5xl mx-auto flex flex-col gap-6 relative">
-            <button onClick={() => navigate('/requisitions')} className="flex items-center text-sm text-gray-500 hover:text-gray-900 mb-2 w-max">
-                <ChevronLeft size={16} className="mr-1" /> Back to Requisitions
-            </button>
+            <Breadcrumb items={[{ label: 'Requisitions', to: '/requisitions' }, { label: req.job_title || 'Detail' }]} />
 
             {isRejectModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-start justify-center pt-24 z-50">

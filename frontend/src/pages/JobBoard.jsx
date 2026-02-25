@@ -8,6 +8,7 @@ import { getDepartments } from '../api/departments';
 import PermanentDeleteModal from '../components/PermanentDeleteModal';
 import Breadcrumb from '../components/Breadcrumb';
 import ColumnSelector from '../components/ColumnSelector';
+import FilterPanel from '../components/FilterPanel';
 import useColumnPersistence from '../hooks/useColumnPersistence';
 
 const JOB_COLUMNS = [
@@ -21,7 +22,6 @@ const JOB_COLUMNS = [
 
 const JobBoard = ({ embeddedDepartmentId }) => {
     const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_jobs_columns', JOB_COLUMNS.map(c => c.id));
-    const [showFilters, setShowFilters] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -30,6 +30,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [jobToDelete, setJobToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [activeFilters, setActiveFilters] = useState({});
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -56,21 +57,58 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     const departmentId = embeddedDepartmentId || searchParams.get('dept');
     const statusFilter = searchParams.get('status');
 
-    // Filter jobs by status and search query
-    const filteredJobs = jobs.filter(job => {
-        // Status filter
-        if (statusFilter && job.status !== statusFilter) return false;
+    // Derive filter options from loaded jobs
+    const allDepartments = [...new Set(jobs.map(j => j.department?.name).filter(Boolean))];
+    const allLocations = [...new Set(jobs.map(j => j.location).filter(Boolean))];
+    const allStatuses = [...new Set(jobs.map(j => j.status).filter(Boolean))];
 
-        // Search filter
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            const title = (job.title || '').toLowerCase();
-            const department = (job.department?.name || '').toLowerCase();
-            const location = (job.location || '').toLowerCase();
-            return title.includes(query) || department.includes(query) || location.includes(query);
+    const filterConfig = [
+        {
+            key: 'status',
+            label: 'Status',
+            options: allStatuses.map(s => ({
+                value: s,
+                label: s,
+                count: jobs.filter(j => j.status === s).length
+            }))
+        },
+        {
+            key: 'department',
+            label: 'Department',
+            options: allDepartments.map(d => ({
+                value: d,
+                label: d,
+                count: jobs.filter(j => j.department?.name === d).length
+            }))
+        },
+        {
+            key: 'location',
+            label: 'Location',
+            options: allLocations.map(l => ({
+                value: l,
+                label: l,
+                count: jobs.filter(j => j.location === l).length
+            }))
         }
+    ];
 
-        return true;
+    // Filter jobs by search + checkboxes
+    const filteredJobs = jobs.filter(job => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = !query ||
+            (job.title || '').toLowerCase().includes(query) ||
+            (job.department?.name || '').toLowerCase().includes(query) ||
+            (job.location || '').toLowerCase().includes(query);
+
+        const statusSel = activeFilters.status || [];
+        const deptSel = activeFilters.department || [];
+        const locSel = activeFilters.location || [];
+
+        const matchesStatus = statusSel.length === 0 || statusSel.includes(job.status);
+        const matchesDept = deptSel.length === 0 || deptSel.includes(job.department?.name);
+        const matchesLoc = locSel.length === 0 || locSel.includes(job.location);
+
+        return matchesSearch && matchesStatus && matchesDept && matchesLoc;
     });
 
     useEffect(() => {
@@ -146,52 +184,12 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                         />
                     </div>
 
-                    <div className="relative">
-                        <button
-                            onClick={() => setShowFilters(f => !f)}
-                            className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                        >
-                            <Filter size={16} /> Filters
-                            {statusFilter === 'Archived' && (
-                                <span className="bg-[#4caf50] text-white text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-bold">1</span>
-                            )}
-                        </button>
-
-                        {showFilters && (
-                            <div className="absolute top-12 right-0 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-20 p-4 shrink-0">
-                                <div className="flex justify-between items-center mb-4 border-b pb-2">
-                                    <h4 className="font-semibold text-gray-800 text-sm">Filter Jobs</h4>
-                                    {statusFilter && (
-                                        <button
-                                            onClick={() => { const p = new URLSearchParams(searchParams); p.delete('status'); setSearchParams(p); }}
-                                            className="text-xs text-blue-600 hover:text-blue-800"
-                                        >
-                                            Reset
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-500 mb-1 tracking-wider uppercase">Status</label>
-                                        <select
-                                            value={statusFilter || 'All'}
-                                            onChange={(e) => {
-                                                const newStatus = e.target.value === 'All' ? null : e.target.value;
-                                                const newParams = new URLSearchParams(searchParams);
-                                                if (newStatus) newParams.set('status', newStatus);
-                                                else newParams.delete('status');
-                                                setSearchParams(newParams);
-                                            }}
-                                            className="w-full border border-gray-300 bg-white rounded px-3 py-2 text-sm focus:outline-none focus:border-green-500 text-gray-700 shadow-sm"
-                                        >
-                                            <option value="All">All Jobs</option>
-                                            <option value="Archived">Archived</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    <FilterPanel
+                        filters={filterConfig}
+                        activeFilters={activeFilters}
+                        onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
+                        onClear={() => setActiveFilters({})}
+                    />
 
                     <div className="flex-shrink-0">
                         <ColumnSelector

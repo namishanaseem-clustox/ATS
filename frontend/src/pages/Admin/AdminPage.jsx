@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
     UsersRound, FileText, Building2, KanbanSquare, ShieldCheck, ChevronRight, Users
 } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const AdminCard = ({ to, icon: Icon, title, description }) => (
     <Link to={to} className="bg-white p-6 rounded-lg border border-gray-200 hover:border-[#00C853] hover:shadow-md transition-all group">
@@ -20,6 +21,7 @@ const AdminCard = ({ to, icon: Icon, title, description }) => (
 const AdminPage = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Breadcrumb items={[{ label: 'Administration' }]} />
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">Administration</h1>
                 <p className="mt-1 text-sm text-gray-500">Manage your organization settings, users, and hiring process.</p>

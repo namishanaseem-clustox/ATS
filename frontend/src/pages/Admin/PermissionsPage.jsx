@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, X, Shield } from 'lucide-react';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const PermissionRow = ({ feature, owner, hr, manager, interviewer }) => (
     <tr className="hover:bg-gray-50 transition-colors group bg-white border-b border-gray-100 last:border-0">
@@ -14,6 +15,7 @@ const PermissionRow = ({ feature, owner, hr, manager, interviewer }) => (
 const PermissionsPage = () => {
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Breadcrumb items={[{ label: 'Administration', to: '/admin' }, { label: 'Roles & Permissions' }]} />
             <div className="mb-8 flex items-center gap-3">
                 <div className="p-2 bg-blue-50 rounded-lg">
                     <Shield className="text-blue-600" size={24} />

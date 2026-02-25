@@ -13,6 +13,7 @@ import { getDepartments, createDepartment, updateDepartment, deleteDepartment } 
 import { useAuth } from '../../context/AuthContext';
 import Breadcrumb from '../../components/Breadcrumb';
 import ColumnSelector from '../../components/ColumnSelector';
+import FilterPanel from '../../components/FilterPanel';
 import useColumnPersistence from '../../hooks/useColumnPersistence';
 
 const DEPARTMENT_COLUMNS = [
@@ -21,7 +22,6 @@ const DEPARTMENT_COLUMNS = [
     { id: 'location', label: 'Department Location' },
     { id: 'status', label: 'Department Status' },
     { id: 'owner', label: 'Department Owner' },
-    { id: 'type', label: 'Department Type' },
     { id: 'created_at', label: 'Department Created' },
     { id: 'actions', label: 'Actions', required: true }
 ];
@@ -44,19 +44,79 @@ const DepartmentsPage = ({ readOnly = false }) => {
 
     const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_departments_columns', DEPARTMENT_COLUMNS.map(c => c.id));
 
+    // FilterPanel state
+    const [activeFilters, setActiveFilters] = useState({});
+
     const { data: departments, isLoading, isError } = useQuery({
         queryKey: ['departments'],
         queryFn: getDepartments,
     });
 
-    // Filter departments based on search query
-    const filteredDepartments = (departments || []).filter(dept => {
-        if (!searchQuery) return true;
+    // Derive filter options from data
+    const deptList = departments || [];
+    const allStatuses = [...new Set(deptList.map(d => d.status).filter(Boolean))];
+    const allOwners = [...new Set(deptList.map(d => d.owner?.full_name).filter(Boolean))].sort();
+
+    const getCreatedBucket = (iso) => {
+        if (!iso) return null;
+        const diffDays = Math.floor((new Date() - new Date(iso)) / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays === 2) return '2 Days Ago';
+        if (diffDays === 3) return '3 Days Ago';
+        if (diffDays <= 7) return 'This Week';
+        if (diffDays <= 30) return 'Last Month';
+        return 'Older';
+    };
+    const createdBucketOrder = ['Today', 'Yesterday', '2 Days Ago', '3 Days Ago', 'This Week', 'Last Month', 'Older'];
+
+    const filterConfig = [
+        {
+            key: 'status',
+            label: 'Status',
+            options: allStatuses.map(s => ({
+                value: s,
+                label: s,
+                count: deptList.filter(d => d.status === s).length
+            }))
+        },
+        {
+            key: 'owner',
+            label: 'Owner',
+            options: allOwners.map(name => ({
+                value: name,
+                label: name,
+                count: deptList.filter(d => d.owner?.full_name === name).length
+            }))
+        },
+        {
+            key: 'created',
+            label: 'Created',
+            options: createdBucketOrder.map(b => ({
+                value: b,
+                label: b,
+                count: deptList.filter(d => getCreatedBucket(d.created_at) === b).length
+            }))
+        }
+    ];
+
+    // Filter departments based on search + checkboxes
+    const filteredDepartments = deptList.filter(dept => {
         const query = searchQuery.toLowerCase();
         const name = (dept.name || '').toLowerCase();
         const location = (dept.location || '').toLowerCase();
         const owner = (dept.owner?.full_name || '').toLowerCase();
-        return name.includes(query) || location.includes(query) || owner.includes(query);
+        const matchesSearch = !query || name.includes(query) || location.includes(query) || owner.includes(query);
+
+        const statusSelected = activeFilters.status || [];
+        const ownerSelected = activeFilters.owner || [];
+        const createdSelected = activeFilters.created || [];
+
+        const matchesStatus = statusSelected.length === 0 || statusSelected.includes(dept.status);
+        const matchesOwner = ownerSelected.length === 0 || ownerSelected.includes(dept.owner?.full_name);
+        const matchesCreated = createdSelected.length === 0 || createdSelected.includes(getCreatedBucket(dept.created_at));
+
+        return matchesSearch && matchesStatus && matchesOwner && matchesCreated;
     });
 
 
@@ -132,6 +192,15 @@ const DepartmentsPage = ({ readOnly = false }) => {
                         </div>
 
                         <div className="flex-shrink-0">
+                            <FilterPanel
+                                filters={filterConfig}
+                                activeFilters={activeFilters}
+                                onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
+                                onClear={() => setActiveFilters({})}
+                            />
+                        </div>
+
+                        <div className="flex-shrink-0">
                             <ColumnSelector
                                 columns={DEPARTMENT_COLUMNS}
                                 visibleColumns={visibleColumns}
@@ -176,7 +245,6 @@ const DepartmentsPage = ({ readOnly = false }) => {
                                         {visibleColumns.includes('location') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Department Location</th>}
                                         {visibleColumns.includes('status') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Department Status</th>}
                                         {visibleColumns.includes('owner') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Department Owner</th>}
-                                        {visibleColumns.includes('type') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Department Type</th>}
                                         {visibleColumns.includes('created_at') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Department Created</th>}
                                         {canManageDepartments && (
                                             <th className="px-4 py-4 w-10"></th>
@@ -239,11 +307,6 @@ const DepartmentsPage = ({ readOnly = false }) => {
                                                                 </>
                                                             )}
                                                         </div>
-                                                    </td>
-                                                )}
-                                                {visibleColumns.includes('type') && (
-                                                    <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-600">
-                                                        Department
                                                     </td>
                                                 )}
                                                 {visibleColumns.includes('created_at') && (

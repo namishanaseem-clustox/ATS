@@ -4,6 +4,7 @@ import { getRequisitions } from '../../api/requisitions';
 import { useAuth } from '../../context/AuthContext';
 import { PlusCircle, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const RequisitionsPage = () => {
     const { user } = useAuth();
@@ -19,6 +20,7 @@ const RequisitionsPage = () => {
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
+            <Breadcrumb items={[{ label: 'Requisitions' }]} />
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Job Requisitions</h1>

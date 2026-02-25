@@ -6,6 +6,7 @@ import { ArrowLeft, Users, Briefcase, User, X, Trash2 } from 'lucide-react';
 import JobBoard from '../JobBoard';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmationModal from '../../components/ConfirmationModal';
+import Breadcrumb from '../../components/Breadcrumb';
 
 const DepartmentDetail = () => {
     const { id } = useParams();
@@ -88,12 +89,7 @@ const DepartmentDetail = () => {
         <div className="flex flex-col h-full bg-gray-50">
             {/* Header */}
             <div className="bg-white border-b border-gray-200 px-8 py-6">
-                <button
-                    onClick={() => navigate('/departments')}
-                    className="flex items-center text-gray-500 hover:text-gray-900 transition-colors mb-4"
-                >
-                    <ArrowLeft size={18} className="mr-2" /> Back to Departments
-                </button>
+                <Breadcrumb items={[{ label: 'Departments', to: '/departments' }, { label: department.name }]} />
 
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>

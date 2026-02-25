@@ -43,7 +43,7 @@ const MyActivitiesWidget = () => {
             <div className="p-4 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="font-bold text-gray-800 text-lg">MY ACTIVITIES</h3>
                 <button
-                    onClick={() => navigate('/my-interviews')}
+                    onClick={() => navigate('/tasks')}
                     className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
                     View more

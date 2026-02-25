@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Plus, Trash2, Edit2, Save, X, Star, ChevronDown, ChevronUp, GripVertical, Check } from 'lucide-react';
 import { getScorecardTemplates, createScorecardTemplate, updateScorecardTemplate, deleteScorecardTemplate } from '../api/scorecards';
+import Breadcrumb from '../components/Breadcrumb';
 
 const DEFAULT_SECTIONS = [
     { key: 'technical_score', label: 'Technical Skills', weight: 1 },
@@ -301,6 +302,7 @@ const ScorecardTemplatesPage = () => {
 
     return (
         <div className="max-w-3xl mx-auto px-4 py-8">
+            <Breadcrumb items={[{ label: 'Administration', to: '/admin' }, { label: 'Scorecard Templates' }]} />
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Scorecard Templates</h1>

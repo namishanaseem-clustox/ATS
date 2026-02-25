@@ -9,6 +9,7 @@ import CandidateForm from '../components/CandidateForm';
 import ResumeUpload from '../components/ResumeUpload';
 import Breadcrumb from '../components/Breadcrumb';
 import ColumnSelector from '../components/ColumnSelector';
+import FilterPanel from '../components/FilterPanel';
 import useColumnPersistence from '../hooks/useColumnPersistence';
 
 const CANDIDATE_COLUMNS = [
@@ -33,14 +34,56 @@ const Candidates = ({ readOnly = false }) => {
 
     const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_candidates_columns', CANDIDATE_COLUMNS.map(c => c.id));
 
-    // Filter candidates based on search query
+    // FilterPanel state
+    const [activeFilters, setActiveFilters] = useState({});
+
+    // Derive filter options from data
+    const allNoticePeriods = [...new Set(candidates.map(c => c.notice_period).filter(Boolean))];
+    const expBuckets = ['0-2 yrs', '3-5 yrs', '6-10 yrs', '10+ yrs'];
+    const getExpBucket = (exp) => {
+        const n = parseFloat(exp) || 0;
+        if (n <= 2) return '0-2 yrs';
+        if (n <= 5) return '3-5 yrs';
+        if (n <= 10) return '6-10 yrs';
+        return '10+ yrs';
+    };
+
+    const filterConfig = [
+        {
+            key: 'notice',
+            label: 'Notice Period',
+            options: allNoticePeriods.map(n => ({
+                value: n,
+                label: n,
+                count: candidates.filter(c => c.notice_period === n).length
+            }))
+        },
+        {
+            key: 'experience',
+            label: 'Experience',
+            options: expBuckets.map(b => ({
+                value: b,
+                label: b,
+                count: candidates.filter(c => getExpBucket(c.years_of_experience) === b).length
+            })).filter(o => o.count > 0)
+        }
+    ];
+
+    // Filter candidates based on search + checkboxes
     const filteredCandidates = candidates.filter(candidate => {
-        if (!searchQuery) return true;
+        if (!searchQuery && Object.values(activeFilters).every(v => v.length === 0)) return true;
         const query = searchQuery.toLowerCase();
         const fullName = `${candidate.first_name} ${candidate.last_name}`.toLowerCase();
         const email = (candidate.email || '').toLowerCase();
         const skills = (candidate.skills || []).map(s => s.toLowerCase()).join(' ');
-        return fullName.includes(query) || email.includes(query) || skills.includes(query);
+        const matchesSearch = !query || fullName.includes(query) || email.includes(query) || skills.includes(query);
+
+        const noticeSelected = activeFilters.notice || [];
+        const expSelected = activeFilters.experience || [];
+        const matchesNotice = noticeSelected.length === 0 || noticeSelected.includes(candidate.notice_period);
+        const matchesExp = expSelected.length === 0 || expSelected.includes(getExpBucket(candidate.years_of_experience));
+
+        return matchesSearch && matchesNotice && matchesExp;
     });
 
     const fetchCandidates = async () => {
@@ -100,11 +143,12 @@ const Candidates = ({ readOnly = false }) => {
                         />
                     </div>
 
-                    <button
-                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
-                    >
-                        <Filter size={16} /> Filters
-                    </button>
+                    <FilterPanel
+                        filters={filterConfig}
+                        activeFilters={activeFilters}
+                        onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
+                        onClear={() => setActiveFilters({})}
+                    />
 
                     <div className="flex-shrink-0">
                         <ColumnSelector

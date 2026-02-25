@@ -1,55 +1,29 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-    LayoutDashboard, Briefcase, Users, Building2, UserCheck,
-    ChevronDown, ChevronRight, UsersRound, LogOut, Menu, X,
-    CalendarCheck, Calendar, Star, ShieldCheck, Settings
+    LayoutDashboard, Briefcase, Users, Building2,
+    UsersRound, LogOut, PanelLeftClose, PanelLeftOpen,
+    CalendarCheck, ShieldCheck, Settings
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
 
-const NavGroup = ({ label, icon: Icon, children, defaultOpen = false }) => {
-    const [open, setOpen] = useState(() => {
-        // Auto-open group if a child route is active
-        return defaultOpen;
-    });
-
-    return (
-        <div className="mb-1">
-            <button
-                onClick={() => setOpen(o => !o)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-colors rounded-md"
-            >
-                <span className="flex items-center gap-2">
-                    <Icon size={14} />
-                    {label}
-                </span>
-                {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            </button>
-            {open && (
-                <div className="ml-2 mt-0.5 space-y-0.5">
-                    {children}
-                </div>
-            )}
-        </div>
-    );
-};
-
-const NavItem = ({ to, icon: Icon, label, badge }) => (
+const NavItem = ({ to, icon: Icon, label, badge, collapsed }) => (
     <NavLink
         to={to}
+        title={collapsed ? label : undefined}
         className={({ isActive }) =>
-            `flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-all group ${isActive
+            `flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all group ${isActive
                 ? 'bg-[#00C853]/10 text-[#00C853]'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            }`
+            } ${collapsed ? 'justify-center' : ''}`
         }
     >
-        <span className="flex items-center gap-3">
-            <Icon size={16} />
-            {label}
-        </span>
-        {badge > 0 && (
+        <Icon size={16} className="flex-shrink-0" />
+        {!collapsed && (
+            <span className="flex-1 truncate">{label}</span>
+        )}
+        {!collapsed && badge > 0 && (
             <span className="bg-[#00C853] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                 {badge > 99 ? '99+' : badge}
             </span>
@@ -57,144 +31,101 @@ const NavItem = ({ to, icon: Icon, label, badge }) => (
     </NavLink>
 );
 
+const SectionLabel = ({ label, collapsed }) => {
+    if (collapsed) return <div className="my-2 border-t border-gray-100 mx-2" />;
+    return (
+        <p className="px-3 pt-5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-widest select-none">
+            {label}
+        </p>
+    );
+};
+
 const Sidebar = ({ collapsed, onToggle }) => {
     const { user, logout } = useAuth();
 
     const isInterviewer = user?.role === 'interviewer';
-    const isHiringManager = user?.role === 'hiring_manager';
     const isAdminOrHR = ['owner', 'hr'].includes(user?.role);
 
     return (
         <aside
-            className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 flex-shrink-0 ${collapsed ? 'w-16' : 'w-60'
+            className={`flex flex-col bg-white border-r border-gray-200 transition-all duration-300 flex-shrink-0 ${collapsed ? 'w-[60px]' : 'w-[220px]'
                 }`}
         >
-            {/* Logo + Toggle */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-                {!collapsed && (
-                    <div className="flex items-center gap-2 min-w-0">
-                        <img src={logo} alt="Clustox" className="h-7 w-auto flex-shrink-0" />
-                        <span className="font-bold text-gray-800 text-sm truncate">Clustox ATS</span>
-                    </div>
+            {/* Logo area */}
+            <div className={`flex items-center border-b border-gray-100 h-[56px] px-3 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+                {collapsed ? (
+                    <button
+                        onClick={onToggle}
+                        className="flex items-center justify-center w-8 h-8 bg-[#00C853] rounded-lg flex-shrink-0 hover:bg-[#00b34a] transition-colors"
+                        title="Expand sidebar"
+                    >
+                        <span className="text-white font-bold text-sm leading-none">C</span>
+                    </button>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-2 min-w-0">
+                            <img src={logo} alt="Clustox" className="h-6 w-auto flex-shrink-0" />
+                            <span className="font-semibold text-gray-700 text-xs tracking-wide uppercase">ATS</span>
+                        </div>
+                        <button
+                            onClick={onToggle}
+                            className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+                            title="Collapse sidebar"
+                        >
+                            <PanelLeftClose size={16} />
+                        </button>
+                    </>
                 )}
-                <button
-                    onClick={onToggle}
-                    className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
-                    title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                >
-                    {collapsed ? <Menu size={18} /> : <X size={18} />}
-                </button>
             </div>
 
-            {/* Nav Items */}
-            <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-                {collapsed ? (
-                    /* Collapsed: icon-only */
-                    <div className="space-y-1">
-                        <NavLink to="/dashboard" title="Dashboard"
-                            className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                            <LayoutDashboard size={18} />
-                        </NavLink>
-                        <NavLink to="/jobs" title="Jobs"
-                            className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                            <Briefcase size={18} />
-                        </NavLink>
-                        {!isInterviewer && !isAdminOrHR && (
-                            <NavLink to="/candidates" title="Candidates"
-                                className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <Users size={18} />
-                            </NavLink>
-                        )}
-                        {!isInterviewer && !isAdminOrHR && (
-                            <NavLink to="/departments" title="Departments"
-                                className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <Building2 size={18} />
-                            </NavLink>
-                        )}
-                        <NavLink to="/tasks" title="Activities"
-                            className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                            <CalendarCheck size={18} />
-                        </NavLink>
-                        {isAdminOrHR && (
-                            <NavLink to="/admin" title="Administration"
-                                className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                                <ShieldCheck size={18} />
-                            </NavLink>
-                        )}
-                        <NavLink to="/settings" title="Settings"
-                            className={({ isActive }) => `flex items-center justify-center p-2.5 rounded-md transition-colors ${isActive ? 'bg-[#00C853]/10 text-[#00C853]' : 'text-gray-500 hover:bg-gray-100'}`}>
-                            <Settings size={18} />
-                        </NavLink>
-                    </div>
-                ) : (
-                    /* Expanded: grouped submenus */
+            {/* Navigation */}
+            <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+                <SectionLabel label="My Work" collapsed={collapsed} />
+                <NavItem to="/dashboard" icon={LayoutDashboard} label="Home" collapsed={collapsed} />
+                <NavItem to="/tasks" icon={CalendarCheck} label="Activities" collapsed={collapsed} />
+
+                <SectionLabel label="Recruitment" collapsed={collapsed} />
+                {!isInterviewer && (
+                    <NavItem to="/requisitions" icon={UsersRound} label="Requisitions" collapsed={collapsed} />
+                )}
+                <NavItem to="/jobs" icon={Briefcase} label="Jobs" collapsed={collapsed} />
+                {!isInterviewer && !isAdminOrHR && (
+                    <NavItem to="/candidates" icon={Users} label="Candidates" collapsed={collapsed} />
+                )}
+
+                {!isInterviewer && !isAdminOrHR && (
                     <>
-                        {/* My Work */}
-                        <div className="pt-1">
-                            <NavGroup label="My Work" icon={LayoutDashboard} defaultOpen={true}>
-                                <NavItem to="/dashboard" icon={LayoutDashboard} label="Home" />
-                                <NavItem to="/tasks" icon={CalendarCheck} label="Activities" />
-                            </NavGroup>
-                        </div>
-                        {/* Recruitment group */}
-                        <div className="pt-2">
-                            <NavGroup label="Recruitment" icon={Briefcase} defaultOpen={true}>
-                                {!isInterviewer && (
-                                    <NavItem to="/requisitions" icon={UsersRound} label="Requisitions" />
-                                )}
-                                <NavItem to="/jobs" icon={Briefcase} label="Jobs" />
-                                {!isInterviewer && !isAdminOrHR && (
-                                    <NavItem to="/candidates" icon={Users} label="Candidates" />
-                                )}
-                            </NavGroup>
-                        </div>
-
-                        {/* Organization group — hidden for interviewers */}
-                        {!isInterviewer && !isAdminOrHR && (
-                            <div className="pt-1">
-                                <NavGroup label="Organization" icon={Building2} iconColor="text-gray-400" defaultOpen={true}>
-                                    <NavItem to="/departments" icon={Building2} label="Departments" />
-                                </NavGroup>
-                            </div>
-                        )}
-
-                        <div className="pt-2 mt-auto">
-                            {isAdminOrHR && (
-                                <NavItem to="/admin" icon={ShieldCheck} label="Administration" />
-                            )}
-                            <NavItem to="/settings" icon={Settings} label="Settings" />
-                        </div>
+                        <SectionLabel label="Organization" collapsed={collapsed} />
+                        <NavItem to="/departments" icon={Building2} label="Departments" collapsed={collapsed} />
                     </>
                 )}
             </nav>
 
-            {/* User footer */}
-            <div className="border-t border-gray-100 px-3 py-3">
-                {collapsed ? (
+            {/* Bottom actions */}
+            <div className="border-t border-gray-100 px-2 py-2 space-y-0.5">
+                {isAdminOrHR && (
+                    <NavItem to="/admin" icon={ShieldCheck} label="Administration" collapsed={collapsed} />
+                )}
+                <NavItem to="/settings" icon={Settings} label="Settings" collapsed={collapsed} />
+
+                {/* User row */}
+                <div className={`flex items-center mt-2 pt-2 border-t border-gray-50 ${collapsed ? 'justify-center' : 'justify-between px-1'}`}>
+                    {!collapsed && (
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium text-gray-900 truncate leading-tight">{user?.display_name || user?.full_name}</p>
+                            <p className="text-[11px] text-gray-400 capitalize truncate">{user?.role?.replace('_', ' ')}</p>
+                        </div>
+                    )}
                     <button
                         onClick={logout}
                         title="Logout"
-                        className="w-full flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
                     >
-                        <LogOut size={16} />
+                        <LogOut size={15} />
                     </button>
-                ) : (
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-gray-900 truncate">{user?.display_name || user?.full_name}</p>
-                            <p className="text-xs text-gray-500 capitalize truncate">{user?.role?.replace('_', ' ')}</p>
-                        </div>
-                        <button
-                            onClick={logout}
-                            title="Logout"
-                            className="ml-2 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                        >
-                            <LogOut size={15} />
-                        </button>
-                    </div>
-                )}
+                </div>
             </div>
-        </aside >
+        </aside>
     );
 };
 
