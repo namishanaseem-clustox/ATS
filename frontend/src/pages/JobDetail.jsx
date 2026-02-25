@@ -416,80 +416,80 @@ const JobDetail = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white border border-gray-200 rounded-lg flex-1 flex flex-col">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        {visibleColumns.includes('candidate') && (
-                                            <th scope="col" className="py-3 pl-4 pr-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sm:pl-6">Candidate</th>
-                                        )}
-                                        {visibleColumns.includes('status') && (
-                                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        )}
-                                        {visibleColumns.includes('stage') && (
-                                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stage</th>
-                                        )}
-                                        {visibleColumns.includes('location') && (
-                                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                                        )}
-                                        {visibleColumns.includes('experience') && (
-                                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Experience</th>
-                                        )}
-                                        {visibleColumns.includes('ai_score') && (
-                                            <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">AI Score</th>
-                                        )}
-                                        <th scope="col" className="relative py-3 pl-3 pr-4 sm:pr-6">
-                                            <span className="sr-only">Actions</span>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 bg-white">
-                                    {candidates.length > 0 ? (
-                                        (() => {
-                                            // Create map of stage ID to stage Name
-                                            const basePipeline = job?.pipeline_config || defaultPipeline;
-                                            const stageMap = basePipeline.reduce((acc, stage) => {
-                                                acc[stage.id] = stage.name;
-                                                return acc;
-                                            }, {});
-
-                                            return [...candidates]
-                                                .sort((a, b) => {
-                                                    // If both have AI scores, sort by score (descending)
-                                                    if (a.ai_score && b.ai_score) {
-                                                        return b.ai_score - a.ai_score;
-                                                    }
-                                                    // If only one has a score, prioritize it
-                                                    if (a.ai_score) return -1;
-                                                    if (b.ai_score) return 1;
-                                                    // Otherwise, sort alphabetically by name
-                                                    const nameA = `${a.candidate.first_name} ${a.candidate.last_name}`;
-                                                    const nameB = `${b.candidate.first_name} ${b.candidate.last_name}`;
-                                                    return nameA.localeCompare(nameB);
-                                                })
-                                                .map(app => (
-                                                    <CandidateRow
-                                                        key={app.id} // JobApplication ID
-                                                        candidate={{
-                                                            ...app.candidate,
-                                                            applications: [app] // Mock linking for row display
-                                                        }}
-                                                        visibleColumns={visibleColumns}
-                                                        stageMap={stageMap}
-                                                        onDelete={() => handleCandidateDelete(app.candidate.id)}
-                                                        onAIScreen={['hr', 'owner', 'hiring_manager'].includes(user?.role) ? () => handleAIScreenClick(app) : undefined}
-                                                    />
-                                                ));
-                                        })()
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="6" className="py-12 text-center text-gray-500 text-sm">
-                                                No candidates applied to this job yet.
-                                            </td>
+                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col">
+                            <div className="overflow-x-auto min-h-[500px]">
+                                <table className="w-full text-left border-collapse whitespace-nowrap">
+                                    <thead>
+                                        <tr className="bg-white border-b border-gray-200 text-xs text-black font-bold uppercase tracking-wide">
+                                            {visibleColumns.includes('candidate') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Candidate</th>
+                                            )}
+                                            {visibleColumns.includes('status') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Status</th>
+                                            )}
+                                            {visibleColumns.includes('stage') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Stage</th>
+                                            )}
+                                            {visibleColumns.includes('location') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Location</th>
+                                            )}
+                                            {visibleColumns.includes('experience') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Experience</th>
+                                            )}
+                                            {visibleColumns.includes('ai_score') && (
+                                                <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">AI Score</th>
+                                            )}
+                                            <th className="px-4 py-4 w-10"></th>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100 bg-white text-[13px]">
+                                        {candidates.length > 0 ? (
+                                            (() => {
+                                                // Create map of stage ID to stage Name
+                                                const basePipeline = job?.pipeline_config || defaultPipeline;
+                                                const stageMap = basePipeline.reduce((acc, stage) => {
+                                                    acc[stage.id] = stage.name;
+                                                    return acc;
+                                                }, {});
+
+                                                return [...candidates]
+                                                    .sort((a, b) => {
+                                                        // If both have AI scores, sort by score (descending)
+                                                        if (a.ai_score && b.ai_score) {
+                                                            return b.ai_score - a.ai_score;
+                                                        }
+                                                        // If only one has a score, prioritize it
+                                                        if (a.ai_score) return -1;
+                                                        if (b.ai_score) return 1;
+                                                        // Otherwise, sort alphabetically by name
+                                                        const nameA = `${a.candidate.first_name} ${a.candidate.last_name}`;
+                                                        const nameB = `${b.candidate.first_name} ${b.candidate.last_name}`;
+                                                        return nameA.localeCompare(nameB);
+                                                    })
+                                                    .map(app => (
+                                                        <CandidateRow
+                                                            key={app.id} // JobApplication ID
+                                                            candidate={{
+                                                                ...app.candidate,
+                                                                applications: [app] // Mock linking for row display
+                                                            }}
+                                                            visibleColumns={visibleColumns}
+                                                            stageMap={stageMap}
+                                                            onDelete={() => handleCandidateDelete(app.candidate.id)}
+                                                            onAIScreen={['hr', 'owner', 'hiring_manager'].includes(user?.role) ? () => handleAIScreenClick(app) : undefined}
+                                                        />
+                                                    ));
+                                            })()
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="7" className="py-12 text-center text-gray-500 text-sm">
+                                                    No candidates applied to this job yet.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 )}

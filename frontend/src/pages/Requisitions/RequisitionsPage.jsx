@@ -38,48 +38,54 @@ const RequisitionsPage = () => {
             </div>
 
             {/* Requisitions List */}
-            <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Req Code</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Job Title</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {requisitions?.map((req) => (
-                            <tr key={req.id} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {req.req_code}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    <div>{req.job_title}</div>
-                                    <div className="text-xs text-gray-400 capitalize">{req.employment_type} • {req.location}</div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                        ${req.status === 'Open' ? 'bg-green-100 text-green-800' :
-                                            req.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
-                                                req.status === 'Filled' ? 'bg-purple-100 text-purple-800' :
-                                                    'bg-yellow-100 text-yellow-800'}`}>
-                                        {req.status}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {new Date(req.created_at).toLocaleDateString()}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <Link to={`/requisitions/${req.id}`} className="text-[#00C853] hover:text-green-700">
-                                        View
-                                    </Link>
-                                </td>
+            {/* Requisitions List */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto min-h-[500px]">
+                    <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr className="bg-white border-b border-gray-200 text-xs text-black font-bold uppercase tracking-wide">
+                                <th className="px-4 py-4">Req Code</th>
+                                <th className="px-4 py-4">Job Title</th>
+                                <th className="px-4 py-4">Status</th>
+                                <th className="px-4 py-4">Created</th>
+                                <th className="px-4 py-4 text-right">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white text-[13px]">
+                            {requisitions?.map((req, index) => {
+                                const isEven = index % 2 === 0;
+                                return (
+                                    <tr key={req.id} className={`hover:bg-gray-50 transition-colors group ${isEven ? 'bg-white' : 'bg-[#fafafa]'}`}>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-[13px] font-medium text-gray-900">
+                                            {req.req_code}
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
+                                            <div className="text-blue-600 font-medium">{req.job_title}</div>
+                                            <div className="text-xs text-gray-400 capitalize">{req.employment_type} • {req.location}</div>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-[13px]">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                            ${req.status === 'Open' ? 'bg-green-100 text-green-800' :
+                                                    req.status === 'Draft' ? 'bg-gray-100 text-gray-800' :
+                                                        req.status === 'Filled' ? 'bg-purple-100 text-purple-800' :
+                                                            'bg-yellow-100 text-yellow-800'}`}>
+                                                {req.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
+                                            {new Date(req.created_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-right text-[13px] font-medium">
+                                            <Link to={`/requisitions/${req.id}`} className="text-[#00C853] hover:text-green-700 font-medium">
+                                                View
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

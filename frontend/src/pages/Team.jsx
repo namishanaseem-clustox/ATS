@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2, MoreVertical, Send } from 'lucide-react';
+import { Plus, User, Shield, Briefcase, Mail, Pencil, Building, Trash2, MoreVertical, Send, Search, Filter } from 'lucide-react';
 import { getUsers, createUser, updateUser, deleteUser, inviteUser } from '../api/users';
 import { getDepartments } from '../api/departments';
 import RoleGuard from '../components/RoleGuard';
@@ -66,6 +66,7 @@ const UserActions = ({ onEdit, onDelete }) => {
 
 const Team = () => {
     const [users, setUsers] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -251,101 +252,136 @@ const Team = () => {
         ...departments.map(dept => ({ value: dept.id, label: dept.name }))
     ];
 
+    const filteredUsers = users.filter((user) => {
+        if (!searchQuery) return true;
+        const query = searchQuery.toLowerCase();
+        return (user.full_name || '').toLowerCase().includes(query) || (user.email || '').toLowerCase().includes(query) || (user.role || '').toLowerCase().includes(query);
+    });
+
     return (
         <div className="p-8 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Team Management</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Team Management</h1>
                     <p className="text-gray-500 mt-1">Manage your team members and their roles.</p>
                 </div>
-                <RoleGuard allowedRoles={['owner', 'hr']}>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={openCreateModal}
-                            className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors shadow-sm font-medium"
-                        >
-                            <Plus size={20} className="mr-2" />
-                            Direct Add
-                        </button>
-                        <button
-                            onClick={openInviteModal}
-                            className="flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors shadow-sm font-medium"
-                        >
-                            <Send size={18} className="mr-2" />
-                            Invite User
-                        </button>
+
+                <div className="flex items-center space-x-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <input
+                            type="text"
+                            placeholder="Search team members..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm transition-all w-80 shadow-sm"
+                        />
                     </div>
-                </RoleGuard>
+
+                    <button
+                        className="flex items-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <Filter size={16} /> Filters
+                    </button>
+                </div>
             </div>
 
-            <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-                <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Member</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th scope="col" className="relative px-6 py-3"><span className="sr-only">Edit</span></th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                        {users.map((user) => (
-                            <tr key={user.id}>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                        <div className="flex-shrink-0 h-10 w-10">
-                                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                                                <User size={20} />
-                                            </div>
-                                        </div>
-                                        <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900">{user.full_name}</div>
-                                            <div className="text-sm text-gray-500">{user.email}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
-                                        {user.role.replace('_', ' ')}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex flex-col text-xs">
-                                        {user.managed_departments && user.managed_departments.length > 0 && (
-                                            <div className="flex items-center text-gray-700 font-medium" title="Manages">
-                                                <Shield size={12} className="mr-1" />
-                                                {user.managed_departments.map(d => d.name).join(", ")}
-                                            </div>
-                                        )}
-                                        {user.department_id && (!user.managed_departments || !user.managed_departments.some(d => d.id === user.department_id)) && (
-                                            <div className="flex items-center text-gray-500 mt-0.5" title="Member of">
-                                                <User size={12} className="mr-1" />
-                                                {getDepartmentName(user.department_id)}
-                                            </div>
-                                        )}
-                                        {(!user.managed_departments || user.managed_departments.length === 0) && !user.department_id && (
-                                            <span className="text-gray-400">-</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {user.is_active ? 'Active' : 'Inactive'}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <RoleGuard allowedRoles={['owner', 'hr']}>
-                                        <UserActions
-                                            onEdit={() => openEditModal(user)}
-                                            onDelete={() => handleDelete(user)}
-                                        />
-                                    </RoleGuard>
-                                </td>
+            <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
+                <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/80">
+                    <RoleGuard allowedRoles={['owner', 'hr']}>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={openCreateModal}
+                                className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm"
+                            >
+                                <Plus size={16} className="mr-2" />
+                                Direct Add
+                            </button>
+                            <button
+                                onClick={openInviteModal}
+                                className="flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors shadow-sm"
+                            >
+                                <Send size={16} className="mr-2" />
+                                Invite User
+                            </button>
+                        </div>
+                    </RoleGuard>
+                    <div className="text-sm text-gray-500">
+                        Results: <span className="font-semibold text-gray-700">{filteredUsers.length}</span>
+                    </div>
+                </div>
+                <div className="overflow-x-auto min-h-[500px]">
+                    <table className="w-full text-left border-collapse whitespace-nowrap">
+                        <thead>
+                            <tr className="bg-white border-b border-gray-200 text-xs text-black font-bold uppercase tracking-wide">
+                                <th className="px-4 py-4 w-1/3">Member</th>
+                                <th className="px-4 py-4">Role</th>
+                                <th className="px-4 py-4">Department</th>
+                                <th className="px-4 py-4">Status</th>
+                                <th className="px-4 py-4 w-10"></th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 bg-white text-[13px]">
+                            {filteredUsers.map((user, index) => {
+                                const isEven = index % 2 === 0;
+                                return (
+                                    <tr key={user.id} className={`hover:bg-gray-50 transition-colors group ${isEven ? 'bg-white' : 'bg-[#fafafa]'}`}>
+                                        <td className="px-4 py-3.5 whitespace-nowrap">
+                                            <div className="flex items-center">
+                                                <div className="flex-shrink-0 h-10 w-10">
+                                                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
+                                                        <User size={20} />
+                                                    </div>
+                                                </div>
+                                                <div className="ml-4">
+                                                    <div className="text-[13px] font-medium text-gray-900">{user.full_name}</div>
+                                                    <div className="text-[13px] text-gray-500">{user.email}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap">
+                                            <span className="px-2 inline-flex text-[10px] leading-5 font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
+                                                {user.role.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap">
+                                            <div className="flex flex-col text-[13px]">
+                                                {user.managed_departments && user.managed_departments.length > 0 && (
+                                                    <div className="flex items-center text-gray-700 font-medium" title="Manages">
+                                                        <Shield size={12} className="mr-1" />
+                                                        {user.managed_departments.map(d => d.name).join(", ")}
+                                                    </div>
+                                                )}
+                                                {user.department_id && (!user.managed_departments || !user.managed_departments.some(d => d.id === user.department_id)) && (
+                                                    <div className="flex items-center text-gray-500 mt-0.5" title="Member of">
+                                                        <User size={12} className="mr-1" />
+                                                        {getDepartmentName(user.department_id)}
+                                                    </div>
+                                                )}
+                                                {(!user.managed_departments || user.managed_departments.length === 0) && !user.department_id && (
+                                                    <span className="text-gray-400">-</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                {user.is_active ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3.5 whitespace-nowrap text-right text-sm font-medium">
+                                            <RoleGuard allowedRoles={['owner', 'hr']}>
+                                                <UserActions
+                                                    onEdit={() => openEditModal(user)}
+                                                    onDelete={() => handleDelete(user)}
+                                                />
+                                            </RoleGuard>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Invite Member Modal */}

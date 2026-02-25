@@ -23,9 +23,9 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
 
     return (
         <>
-            <tr className="hover:bg-gray-50 transition-colors border-b border-gray-200 last:border-0 relative">
+            <tr className="hover:bg-gray-50 transition-colors group bg-white border-b border-gray-100 last:border-0 relative">
                 {(visibleColumns?.includes('candidate') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
                         <div className="flex items-center">
                             <div className="h-8 w-8 rounded-full bg-green-100 flex-shrink-0 flex items-center justify-center text-[#00C853] font-bold text-xs mr-3">
                                 {first_name[0]}{last_name[0]}
@@ -38,7 +38,7 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
                     </td>
                 )}
                 {(visibleColumns?.includes('status') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
                         {latestApp ? (
                             <ApplicationStatusBadge status={latestApp.application_status} />
                         ) : (
@@ -47,7 +47,7 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
                     </td>
                 )}
                 {(visibleColumns?.includes('stage') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
                         {latestApp ? (
                             (stageMap?.[latestApp.current_stage] || latestApp.current_stage || '-')
                         ) : (
@@ -56,7 +56,7 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
                     </td>
                 )}
                 {(visibleColumns?.includes('location') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
                         <div className="flex items-center gap-1">
                             <MapPin size={14} className="text-gray-400" />
                             {location || 'Remote'}
@@ -64,12 +64,12 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
                     </td>
                 )}
                 {(visibleColumns?.includes('experience') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-3.5 whitespace-nowrap text-[13px] text-gray-500">
                         {experience_years} years
                     </td>
                 )}
                 {(visibleColumns?.includes('ai_score') ?? true) && (
-                    <td className="px-6 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3.5 whitespace-nowrap">
                         {latestApp?.ai_score ? (
                             <div className="flex items-center bg-purple-50 px-2 py-0.5 rounded w-fit" title="AI Match Score">
                                 <Brain size={14} className="text-purple-600 mr-1.5" />
@@ -80,7 +80,7 @@ const CandidateRow = ({ candidate, onDelete, onAIScreen, visibleColumns, stageMa
                         )}
                     </td>
                 )}
-                <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium relative">
+                <td className="px-4 py-3.5 whitespace-nowrap text-right text-sm font-medium relative">
                     <button
                         onClick={() => setShowMenu(!showMenu)}
                         className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100"
