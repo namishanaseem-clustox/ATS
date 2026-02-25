@@ -31,6 +31,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     const [jobToDelete, setJobToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const { user } = useAuth();
+    const navigate = useNavigate();
 
     const handlePermanentDelete = async () => {
         if (!jobToDelete) return;
