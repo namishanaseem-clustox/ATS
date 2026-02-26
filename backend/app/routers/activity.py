@@ -6,6 +6,7 @@ from uuid import UUID
 from app.database import get_db
 from app.models.scheduled_activity import ScheduledActivity
 from app.schemas.activity import ActivityCreate, ActivityUpdate, ActivityResponse
+from app.services.calendar_sync import sync_event_to_google, delete_event_from_google
 
 router = APIRouter(
     prefix="/activities",
@@ -102,6 +103,10 @@ def create_activity(activity: ActivityCreate, db: Session = Depends(get_db), cur
     db.add(db_activity)
     db.commit()
     db.refresh(db_activity)
+    
+    # Sync with Google Calendar if connected
+    sync_event_to_google(db_activity, current_user, db)
+    
     return db_activity
 
 @router.get("/job/{job_id}", response_model=List[ActivityResponse])
@@ -189,6 +194,13 @@ def update_activity(activity_id: UUID, activity: ActivityUpdate, db: Session = D
     
     db.commit()
     db.refresh(db_activity)
+    
+    # Update Google Calendar event
+    # Need to fetch the creator to use their credentials to update the event they created
+    creator = db.query(User).filter(User.id == db_activity.created_by).first()
+    if creator:
+        sync_event_to_google(db_activity, creator, db)
+        
     return db_activity
 
 @router.delete("/{activity_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -201,6 +213,11 @@ def delete_activity(activity_id: UUID, db: Session = Depends(get_db), current_us
     if current_user.role == UserRole.INTERVIEWER:
         if db_activity.activity_type != "Note" or db_activity.created_by != current_user.id:
             raise HTTPException(status_code=403, detail="You can only delete notes you created")
+
+    # Delete from Google Calendar if synced
+    creator = db.query(User).filter(User.id == db_activity.created_by).first()
+    if creator:
+        delete_event_from_google(db_activity, creator)
 
     db.delete(db_activity)
     db.commit()

@@ -31,6 +31,7 @@ class ScheduledActivity(Base):
     status = Column(String, default=ActivityStatus.PENDING.value)
     
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
+    end_time = Column(DateTime(timezone=True), nullable=True)
     location = Column(String, nullable=True)
     description = Column(Text, nullable=True)
     

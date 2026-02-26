@@ -8,6 +8,7 @@ from app.routers import departments, job, candidate, activity, auth, feedback, d
 from app.routers import scorecard as scorecard_router
 from app.routers import preferences as preferences_router
 from app.routers import requisitions as requisitions_router
+from app.routers import calendar as calendar_router
 from app.models import user_preferences  # ensure table is registered in metadata
 from app.database import Base, engine
 
@@ -48,6 +49,7 @@ app.include_router(scorecard_router.router)
 app.include_router(pipeline.router)
 app.include_router(preferences_router.router)
 app.include_router(requisitions_router.router)
+app.include_router(calendar_router.router, prefix="/api/calendar", tags=["Calendar Integration"])
 
 @app.get("/")
 def read_root():

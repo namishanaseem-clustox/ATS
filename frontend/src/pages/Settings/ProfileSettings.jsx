@@ -1,13 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { updateUser, uploadAvatar, removeAvatar } from '../../api/users';
 import Breadcrumb from '../../components/Breadcrumb';
 import { Save, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X, Camera, Trash2 } from 'lucide-react';
 
 const ProfileSettings = () => {
-    const { user, setUser, avatarCacheBust } = useAuth();
+    const { user, setUser, avatarCacheBust, fetchUser } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Field-level edit state
     const [editingField, setEditingField] = useState(null);
@@ -26,6 +27,21 @@ const ProfileSettings = () => {
 
     const [showCurrentPw, setShowCurrentPw] = useState(false);
     const [showNewPw, setShowNewPw] = useState(false);
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const calendarStatus = queryParams.get('calendar');
+        if (calendarStatus === 'connected') {
+            setMessage({ type: 'success', text: 'Google Calendar connected successfully.' });
+            // Re-fetch fresh user data so google_access_token updates in the UI
+            if (fetchUser) fetchUser();
+            // Clean up URL
+            navigate('/settings', { replace: true });
+        } else if (calendarStatus === 'error') {
+            setMessage({ type: 'error', text: 'Failed to connect Google Calendar. Please try again.' });
+            navigate('/settings', { replace: true });
+        }
+    }, [location.search, navigate, fetchUser]);
 
     const fileInputRef = useRef(null);
 
@@ -285,6 +301,74 @@ const ProfileSettings = () => {
                             fieldName="location"
                             value={user?.location || '-'}
                         />
+                    </div>
+                </div>
+
+                {/* Calendar Integration Section */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+                        <div>
+                            <h2 className="text-[19px] font-bold text-gray-900 tracking-tight">Calendar Integration</h2>
+                            <p className="text-[13px] text-gray-500 mt-1.5 leading-relaxed max-w-2xl">
+                                Connect your Google Calendar to sync scheduled activities and check availability.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="p-6 bg-gray-50/30 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${user?.google_access_token ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}>
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20a2 2 0 002 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-semibold text-gray-900">Google Calendar</h3>
+                                <p className="text-xs text-gray-500">
+                                    {user?.google_access_token ? 'Connected and syncing' : 'Not connected'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div>
+                            {user?.google_access_token ? (
+                                <button
+                                    onClick={async () => {
+                                        setSaving(true);
+                                        try {
+                                            // The backend endpoint isn't wired to frontend api/users.js yet, so we'll do a direct fetch or axios call here
+                                            const token = localStorage.getItem('token');
+                                            const res = await fetch('http://localhost:8000/api/calendar/disconnect', {
+                                                method: 'DELETE',
+                                                headers: { 'Authorization': `Bearer ${token}` }
+                                            });
+                                            if (res.ok) {
+                                                setUser({ ...user, google_access_token: null });
+                                                setMessage({ type: 'success', text: 'Google Calendar disconnected.' });
+                                            }
+                                        } catch (err) {
+                                            setMessage({ type: 'error', text: 'Failed to disconnect calendar.' });
+                                        } finally {
+                                            setSaving(false);
+                                        }
+                                    }}
+                                    className="px-4 py-2 bg-white border border-gray-200 text-red-600 rounded-md text-sm font-medium hover:bg-red-50 transition shadow-sm"
+                                >
+                                    Disconnect
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => {
+                                        const token = localStorage.getItem('token');
+                                        // Store token or state if needed, but the backend handles it via JWT cookie or current_user
+                                        // The backend requires current_user, so we should actually hit an endpoint that returns the URL
+                                        window.location.href = `http://localhost:8000/api/calendar/authorize?token=${token}`;
+                                    }}
+                                    className="px-4 py-2 bg-[#00C853] text-white rounded-md text-sm font-medium hover:bg-green-700 transition shadow-sm"
+                                >
+                                    Connect
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase, ClipboardList } from 'lucide-react';
+import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase, ClipboardList, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getJobCandidates } from '../api/candidates';
 import { getJobs } from '../api/jobs';
@@ -41,6 +41,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         candidate_id: candidateId || '',
         job_id: jobId || '',
         scheduled_at: '',
+        end_time: '',
         location: '',
         participants: '',
         description: '',
@@ -56,6 +57,10 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
     const [users, setUsers] = useState([]);
     const [scorecardTemplates, setScorecardTemplates] = useState([]);
 
+    // Calendar Availability State
+    const [availabilityChecking, setAvailabilityChecking] = useState(false);
+    const [availabilityResult, setAvailabilityResult] = useState(null); // { status: "success"|"conflict"|"error", matchInfo: [] }
+
     // Pre-fill form when editing
     useEffect(() => {
         if (activity) {
@@ -65,6 +70,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 candidate_id: activity.candidate_id || candidateId || '',
                 job_id: activity.job_id || jobId || '',
                 scheduled_at: toDatetimeLocal(activity.scheduled_at),
+                end_time: toDatetimeLocal(activity.end_time),
                 location: activity.location || '',
                 participants: activity.participants || '',
                 description: activity.description || '',
@@ -79,6 +85,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 candidate_id: candidateId || '',
                 job_id: jobId || '',
                 scheduled_at: '',
+                end_time: '',
                 location: '',
                 participants: '',
                 description: '',
@@ -115,6 +122,78 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         fetchData();
     }, [isOpen, jobId]);
 
+    const checkAvailability = async () => {
+        if (!formData.scheduled_at || !formData.end_time || !formData.assignee_ids.length) {
+            setAvailabilityResult({ status: 'error', message: 'Please select start time, end time, and at least one interviewer.' });
+            return;
+        }
+        setAvailabilityChecking(true);
+        setAvailabilityResult(null);
+
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8000/api/calendar/availability', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    user_ids: formData.assignee_ids,
+                    timeMin: new Date(formData.scheduled_at).toISOString(),
+                    timeMax: new Date(formData.end_time).toISOString(),
+                })
+            });
+
+            if (!res.ok) throw new Error('Failed to fetch availability');
+            const data = await res.json();
+
+            let conflictInfo = [];
+
+            // data is { "uuid": [ {start, end} ], ... }
+            for (const uid of formData.assignee_ids) {
+                const userObj = users.find(u => u.id === uid);
+                const userName = userObj ? (userObj.full_name || userObj.email) : uid;
+
+                const slots = data[uid];
+                if (slots === null || slots === undefined) {
+                    // Null means backend couldn't check (e.g. no Google token)
+                    conflictInfo.push({ name: userName, status: 'unconnected' });
+                } else if (slots.length === 0) {
+                    conflictInfo.push({ name: userName, status: 'free' });
+                } else {
+                    conflictInfo.push({ name: userName, status: 'busy' });
+                }
+            }
+
+            const hasConflict = conflictInfo.some(i => i.status === 'busy');
+            const hasUnconnected = conflictInfo.some(i => i.status === 'unconnected');
+
+            let finalStatus = 'success';
+            let finalMessage = 'All selected participants are available';
+
+            if (hasConflict) {
+                finalStatus = 'conflict';
+                finalMessage = 'Scheduling conflict detected';
+            } else if (hasUnconnected) {
+                finalStatus = 'unconnected';
+                finalMessage = 'Could not verify all participants';
+            }
+
+            setAvailabilityResult({
+                status: finalStatus,
+                message: finalMessage,
+                info: conflictInfo
+            });
+
+        } catch (err) {
+            console.error('Availability check failed:', err);
+            setAvailabilityResult({ status: 'error', message: 'Could not check availability.' });
+        } finally {
+            setAvailabilityChecking(false);
+        }
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -131,6 +210,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 candidate_id: formData.candidate_id || candidateId || null,
                 scorecard_template_id: formData.scorecard_template_id || null,
                 scheduled_at: formData.scheduled_at ? new Date(formData.scheduled_at).toISOString() : null,
+                end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
                 participants: formData.participants && typeof formData.participants === 'string'
                     ? formData.participants.split(',').map(p => p.trim()).filter(p => p)
                     : (Array.isArray(formData.participants) ? formData.participants : []),
@@ -259,18 +339,32 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             )}
 
                             {/* Date & Time (ALLOWED) */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                    <Clock className="h-4 w-4 mr-2" />
-                                    Date &amp; Time
-                                </label>
-                                <input
-                                    type="datetime-local"
-                                    name="scheduled_at"
-                                    value={formData.scheduled_at}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
+                                        <Clock className="h-4 w-4 mr-2" />
+                                        Start Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        name="scheduled_at"
+                                        value={formData.scheduled_at}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
+                                        End Time
+                                    </label>
+                                    <input
+                                        type="datetime-local"
+                                        name="end_time"
+                                        value={formData.end_time}
+                                        onChange={handleChange}
+                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    />
+                                </div>
                             </div>
 
                             {/* Location (ALLOWED) */}
@@ -308,13 +402,36 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
 
                             {/* Assignees (RESTRICTED) */}
                             <div>
+                                <div className="flex justify-between items-center mb-1">
+                                    <label className="text-sm font-medium text-gray-700 flex items-center">
+                                        <Users className="h-4 w-4 mr-2" />
+                                        Assign Interviewers
+                                    </label>
+
+                                    {/* Check Availability Inline Link */}
+                                    <button
+                                        type="button"
+                                        onClick={checkAvailability}
+                                        disabled={availabilityChecking || isRestricted || !formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time}
+                                        title={(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? "Please select Interviewers, Start Time, and End Time first" : "Check Google Calendar availability"}
+                                        className={`text-xs font-semibold flex items-center gap-1 transition-colors ${(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? 'text-gray-400 cursor-not-allowed' : 'text-[#00C853] hover:text-green-700 disabled:opacity-50'}`}
+                                    >
+                                        {availabilityChecking ? (
+                                            <span className="flex items-center gap-1 text-[#00C853]">
+                                                <div className="w-3 h-3 border-2 border-green-500 border-t-white rounded-full animate-spin"></div>
+                                                Checking...
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1">
+                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                Check Availability
+                                            </span>
+                                        )}
+                                    </button>
+                                </div>
                                 <MultiSelect
-                                    label={
-                                        <span className="flex items-center">
-                                            <User className="h-4 w-4 mr-2" />
-                                            Assign Interviewers
-                                        </span>
-                                    }
                                     name="assignee_ids"
                                     value={formData.assignee_ids}
                                     onChange={handleChange}
@@ -323,6 +440,51 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     className="mb-0"
                                     disabled={isRestricted}
                                 />
+
+                                {/* Availability Results */}
+                                {availabilityResult && (
+                                    <div className="mt-2 text-xs">
+                                        {availabilityResult.status === 'success' ? (
+                                            <div className="flex items-center gap-1 text-green-700 font-medium">
+                                                <Check className="w-4 h-4" /> All selected participants are available
+                                            </div>
+                                        ) : availabilityResult.status === 'conflict' ? (
+                                            <div>
+                                                <div className="flex items-center gap-1 text-red-600 font-medium mb-1.5">
+                                                    <X className="w-4 h-4" /> Scheduling conflict detected
+                                                </div>
+                                                <div className="bg-red-50/50 border border-red-100 rounded-md p-2 flex flex-col gap-1.5">
+                                                    {availabilityResult.info.map((i, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-gray-700">
+                                                            <span className="font-medium">{i.name}</span>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${i.status === 'busy' ? 'bg-red-100 text-red-700' : (i.status === 'unconnected' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700')}`}>
+                                                                {i.status}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : availabilityResult.status === 'unconnected' ? (
+                                            <div>
+                                                <div className="flex items-center gap-1 text-orange-600 font-medium mb-1.5">
+                                                    <AlertTriangle className="w-4 h-4" /> Could not verify all participants
+                                                </div>
+                                                <div className="bg-orange-50 border border-orange-100 rounded-md p-2 flex flex-col gap-1.5">
+                                                    {availabilityResult.info.map((i, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center text-gray-700">
+                                                            <span className="font-medium">{i.name}</span>
+                                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wide ${i.status === 'unconnected' ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>
+                                                                {i.status === 'unconnected' ? 'Unlinked' : i.status}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="text-red-500">{availabilityResult.message}</div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Description (ALLOWED) */}

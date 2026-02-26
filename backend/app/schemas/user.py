@@ -29,6 +29,7 @@ class DepartmentSummary(BaseModel):
 class UserResponse(UserBase):
     id: UUID
     managed_departments: List[DepartmentSummary] = []
+    google_access_token: Optional[str] = None
 
     class Config:
         orm_mode = True

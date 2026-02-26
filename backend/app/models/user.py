@@ -30,6 +30,11 @@ class User(Base):
     is_deleted = Column(Boolean, default=False)
     role = Column(Enum(UserRole), default=UserRole.INTERVIEWER, nullable=False)
     
+    # Calendar Integration
+    google_access_token = Column(String, nullable=True)
+    google_refresh_token = Column(String, nullable=True)
+    google_token_expiry = Column(String, nullable=True) # Storing as ISO string or timestamp
+    
     # Link to a specific department (for Hiring Managers/Owners)
     department_id = Column(UUID(as_uuid=True), ForeignKey("departments.id"), nullable=True)
     

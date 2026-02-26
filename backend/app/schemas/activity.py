@@ -24,6 +24,7 @@ class ActivityBase(BaseModel):
     title: str
     status: ActivityStatus = ActivityStatus.PENDING
     scheduled_at: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     location: Optional[str] = None
     description: Optional[str] = None
     participants: List[str] = [] # List of names/emails
@@ -37,6 +38,7 @@ class ActivityUpdate(BaseModel):
     activity_type: Optional[ActivityType] = None
     status: Optional[ActivityStatus] = None
     scheduled_at: Optional[datetime] = None
+    end_time: Optional[datetime] = None
     location: Optional[str] = None
     description: Optional[str] = None
     participants: Optional[List[str]] = None

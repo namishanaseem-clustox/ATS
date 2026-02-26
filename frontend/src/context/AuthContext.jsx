@@ -96,6 +96,7 @@ export const AuthProvider = ({ children }) => {
         sessionMessage,
         clearSessionMessage,
         client,
+        fetchUser, // Expose so components can manually re-fetch user from server
     };
 
     return (
