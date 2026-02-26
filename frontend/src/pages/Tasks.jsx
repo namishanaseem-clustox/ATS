@@ -192,32 +192,35 @@ const Tasks = () => {
 
                     <div className="flex items-center gap-4">
                         {viewMode === 'list' && (
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by Name, Job, Email or Department"
-                                    className="pl-9 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm transition-all w-80 shadow-sm"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
+                            <>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-300" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by Name, Job, Email or Department"
+                                        className="pl-9 pr-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm transition-all w-80 shadow-sm"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </div>
+                                <FilterPanel
+                                    align="right"
+                                    filters={filterConfig}
+                                    activeFilters={activeFilters}
+                                    onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
+                                    onClear={() => setActiveFilters({})}
                                 />
-                            </div>
+                                <ColumnSelector
+                                    columns={ACTIVITY_COLUMNS}
+                                    visibleColumns={visibleColumns}
+                                    onToggle={(id) => {
+                                        const col = ACTIVITY_COLUMNS.find(c => c.id === id);
+                                        if (col && col.required) return;
+                                        toggleColumn(id);
+                                    }}
+                                />
+                            </>
                         )}
-
-                        <div className="bg-white border text-sm border-gray-200 rounded p-1 flex items-center">
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`flex items-center px-3 py-1.5 rounded-sm transition-colors ${viewMode === 'list' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                <List size={14} className="mr-2" /> List
-                            </button>
-                            <button
-                                onClick={() => setViewMode('calendar')}
-                                className={`flex items-center px-3 py-1.5 rounded-sm transition-colors ${viewMode === 'calendar' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-                            >
-                                <LayoutGrid size={14} className="mr-2" /> Board
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -233,31 +236,26 @@ const Tasks = () => {
                         >
                             + Create activity
                         </button>
-
-                        {viewMode === 'list' && (
-                            <>
-                                <FilterPanel
-                                    filters={filterConfig}
-                                    activeFilters={activeFilters}
-                                    onChange={(key, values) => setActiveFilters(prev => ({ ...prev, [key]: values }))}
-                                    onClear={() => setActiveFilters({})}
-                                />
-
-                                <ColumnSelector
-                                    columns={ACTIVITY_COLUMNS}
-                                    visibleColumns={visibleColumns}
-                                    onToggle={(id) => {
-                                        const col = ACTIVITY_COLUMNS.find(c => c.id === id);
-                                        if (col && col.required) return;
-                                        toggleColumn(id);
-                                    }}
-                                />
-                            </>
-                        )}
                     </div>
 
-                    <div className="text-sm text-gray-500">
-                        Results: <span className="font-semibold text-gray-700">{filteredActivities.length}</span>
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white border text-sm border-gray-200 rounded p-1 flex items-center">
+                            <button
+                                onClick={() => setViewMode('list')}
+                                className={`flex items-center px-3 py-1.5 rounded-sm transition-colors ${viewMode === 'list' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                            >
+                                <List size={14} className="mr-2" /> List
+                            </button>
+                            <button
+                                onClick={() => setViewMode('calendar')}
+                                className={`flex items-center px-3 py-1.5 rounded-sm transition-colors ${viewMode === 'calendar' ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
+                            >
+                                <LayoutGrid size={14} className="mr-2" /> Board
+                            </button>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                            Results: <span className="font-semibold text-gray-700">{filteredActivities.length}</span>
+                        </div>
                     </div>
                 </div>
 

@@ -31,6 +31,16 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     const [jobToDelete, setJobToDelete] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
     const [activeFilters, setActiveFilters] = useState({});
+
+    // Read initial filters from URL on mount
+    useEffect(() => {
+        const initialFilters = {};
+        const urlStatus = searchParams.get('status');
+        if (urlStatus) {
+            initialFilters.status = [urlStatus];
+        }
+        setActiveFilters(initialFilters);
+    }, [searchParams]);
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -40,9 +50,12 @@ const JobBoard = ({ embeddedDepartmentId }) => {
         setDeleteLoading(true);
         try {
             await permanentlyDeleteJob(jobToDelete.id);
-            // Refresh list
-            const data = await getJobs(departmentId, statusFilter);
-            setJobs(data);
+            // Refresh list by re-fetching both active and archived jobs
+            const [activeData, archivedData] = await Promise.all([
+                getJobs(departmentId),
+                getJobs(departmentId, 'Archived')
+            ]);
+            setJobs([...activeData, ...archivedData]);
             setIsDeleteModalOpen(false);
             setJobToDelete(null);
         } catch (error) {
@@ -55,7 +68,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
 
     // Use embedded ID if provided, otherwise check URL params
     const departmentId = embeddedDepartmentId || searchParams.get('dept');
-    const statusFilter = searchParams.get('status');
+    const initialStatus = searchParams.get('status');
 
     // Derive filter options from loaded jobs
     const allDepartments = [...new Set(jobs.map(j => j.department?.name).filter(Boolean))];
@@ -114,8 +127,13 @@ const JobBoard = ({ embeddedDepartmentId }) => {
     useEffect(() => {
         const fetchJobs = async () => {
             try {
-                const data = await getJobs(departmentId, statusFilter);
-                setJobs(data);
+                // Fetch both active and archived jobs concurrently
+                const [activeData, archivedData] = await Promise.all([
+                    getJobs(departmentId),
+                    getJobs(departmentId, 'Archived')
+                ]);
+                // Combine them for local filtering
+                setJobs([...activeData, ...archivedData]);
             } catch (error) {
                 console.error("Failed to fetch jobs", error);
             } finally {
@@ -123,7 +141,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
             }
         };
         fetchJobs();
-    }, [departmentId, statusFilter]);
+    }, [departmentId]);
 
     useEffect(() => {
         const fetchDepartmentDetails = async () => {
@@ -214,15 +232,15 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                             </div>
                         </div>
                         <h3 className="text-base font-semibold text-gray-700 mb-1">
-                            {statusFilter === 'Archived' ? 'No archived jobs' : 'No jobs yet'}
+                            {activeFilters.status?.includes('Archived') && activeFilters.status?.length === 1 ? 'No archived jobs' : 'No jobs yet'}
                         </h3>
                         <p className="text-sm text-gray-400 mb-5">
-                            {statusFilter === 'Archived'
+                            {activeFilters.status?.includes('Archived') && activeFilters.status?.length === 1
                                 ? 'Archived jobs will appear here.'
                                 : (departmentId ? `Start hiring for ${selectedDepartment?.name || 'this department'}.` : 'Post your first open position to start hiring.')
                             }
                         </p>
-                        {statusFilter !== 'Archived' && (
+                        {(!activeFilters.status?.includes('Archived') || activeFilters.status?.length > 1 || !activeFilters.status) && (
                             <button
                                 onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
                                 className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
@@ -256,7 +274,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                         {visibleColumns.includes('headcount') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Headcount</th>}
                                         {visibleColumns.includes('stage') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Job Stage</th>}
                                         {visibleColumns.includes('salary') && <th className="px-4 py-4 cursor-pointer hover:bg-gray-50">Salary Range</th>}
-                                        {statusFilter === 'Archived' && (
+                                        {activeFilters.status?.includes('Archived') && (
                                             <th className="px-4 py-4 cursor-pointer hover:bg-gray-50 text-right">Actions</th>
                                         )}
                                     </tr>
@@ -313,7 +331,7 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                                             : 'Negotiable'}
                                                     </td>
                                                 )}
-                                                {statusFilter === 'Archived' && (
+                                                {activeFilters.status?.includes('Archived') && job.status === 'Archived' && (
                                                     <td className="px-4 py-3.5 whitespace-nowrap text-right text-sm font-medium">
                                                         <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
                                                             <button
@@ -323,8 +341,11 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                                                         try {
                                                                             await updateJob(job.id, { status: 'Draft' });
                                                                             // Refresh list
-                                                                            const data = await getJobs(departmentId, statusFilter); // Pass correct filter
-                                                                            setJobs(data);
+                                                                            const [activeData, archivedData] = await Promise.all([
+                                                                                getJobs(departmentId),
+                                                                                getJobs(departmentId, 'Archived')
+                                                                            ]);
+                                                                            setJobs([...activeData, ...archivedData]);
                                                                         } catch (error) {
                                                                             console.error("Failed to unarchive", error);
                                                                             alert("Failed to unarchive job");
@@ -348,6 +369,11 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                                                                 Delete
                                                             </button>
                                                         )}
+                                                    </td>
+                                                )}
+                                                {activeFilters.status?.includes('Archived') && job.status !== 'Archived' && (
+                                                    <td className="px-4 py-3.5 whitespace-nowrap text-right">
+                                                        <span className="text-gray-400 text-xs">-</span>
                                                     </td>
                                                 )}
                                             </tr>

@@ -10,7 +10,7 @@ import { Filter, X, Check } from 'lucide-react';
  *   onChange:      (key, newValues: string[]) => void
  *   onClear:       () => void
  */
-const FilterPanel = ({ filters = [], activeFilters = {}, onChange, onClear }) => {
+const FilterPanel = ({ filters = [], activeFilters = {}, onChange, onClear, align = 'right' }) => {
     const [open, setOpen] = useState(false);
     const [activeGroup, setActiveGroup] = useState(filters[0]?.key ?? null);
     const ref = useRef(null);
@@ -64,7 +64,7 @@ const FilterPanel = ({ filters = [], activeFilters = {}, onChange, onClear }) =>
 
             {/* Two-pane dropdown */}
             {open && filters.length > 0 && (
-                <div className="absolute top-full right-0 mt-1.5 z-30 bg-white border border-gray-200 rounded-xl shadow-xl flex overflow-hidden"
+                <div className={`absolute top-full ${align === 'right' ? 'right-0' : 'left-0'} mt-1.5 z-30 bg-white border border-gray-200 rounded-xl shadow-xl flex overflow-hidden`}
                     style={{ minWidth: 380 }}>
 
                     {/* Left pane — category list */}
