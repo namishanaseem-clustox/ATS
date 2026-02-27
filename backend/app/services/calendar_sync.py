@@ -109,6 +109,25 @@ def sync_event_to_google(activity: ScheduledActivity, creator: User, db):
         except Exception as e:
             print(f"Failed to sync GC for user {uid} on activity {activity.id}: {e}")
 
+    # Clean up events for anyone removed from the activity
+    removed_uid_strs = set(google_event_ids.keys()) - set(str(uid) for uid in involved_users.keys())
+    for uid_str in list(removed_uid_strs):
+        try:
+            u = db.query(User).filter(User.id == uid_str).first()
+            if not u:
+                continue
+            service = _get_service(u)
+            if service:
+                service.events().delete(
+                    calendarId='primary',
+                    eventId=google_event_ids[uid_str],
+                    sendUpdates='none'
+                ).execute()
+        except Exception as e:
+            print(f"Failed to delete GC for removed user {uid_str} on activity {activity.id}: {e}")
+        finally:
+            google_event_ids.pop(uid_str, None)
+
     details['google_event_ids'] = google_event_ids
     activity.details = details
     flag_modified(activity, "details")

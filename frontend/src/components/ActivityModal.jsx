@@ -474,7 +474,12 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     name="assignee_ids"
                                     value={formData.assignee_ids}
                                     onChange={handleChange}
-                                    options={users.map(u => ({ value: u.id, label: u.full_name || u.email }))}
+                                    options={[
+                                        ...users.map(u => ({ value: u.id, label: u.full_name || u.email })),
+                                        ...(activity?.assignees || [])
+                                            .filter(a => !users.some(u => u.id === a.id))
+                                            .map(a => ({ value: a.id, label: a.full_name || a.first_name || a.email || a.id }))
+                                    ]}
                                     placeholder="Select Interviewers..."
                                     className="mb-0"
                                     disabled={isRestricted}
