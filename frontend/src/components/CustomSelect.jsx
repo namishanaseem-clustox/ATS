@@ -25,7 +25,12 @@ const CustomSelect = ({ label, options, value, onChange, name, disabled = false,
     // Close on scroll/resize
     useEffect(() => {
         if (!isOpen) return;
-        const close = () => setIsOpen(false);
+        const close = (e) => {
+            if (e && e.type === 'scroll' && dropdownRef.current && dropdownRef.current.contains(e.target)) {
+                return;
+            }
+            setIsOpen(false);
+        };
         window.addEventListener('scroll', close, true);
         window.addEventListener('resize', close);
         return () => {
