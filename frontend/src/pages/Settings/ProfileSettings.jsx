@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { updateUser, uploadAvatar, removeAvatar } from '../../api/users';
+import client from '../../api/client';
 import Breadcrumb from '../../components/Breadcrumb';
 import { Save, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X, Camera, Trash2 } from 'lucide-react';
 
@@ -397,16 +398,12 @@ const ProfileSettings = () => {
                                         setSaving(true);
                                         setResetMessage(null);
                                         try {
-                                            const res = await fetch('http://localhost:8000/forgot-password', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ email: user.email }),
-                                            });
-                                            if (!res.ok) throw new Error('Request failed');
+                                            await client.post('/forgot-password', { email: user.email });
                                             setResetMessage({ type: 'success', text: `Reset link sent to ${user.email}` });
                                             setTimeout(() => setResetMessage(null), 5000);
-                                        } catch {
-                                            setResetMessage({ type: 'error', text: 'Failed to send reset email.' });
+                                        } catch (err) {
+                                            const errorMsg = err.response?.data?.detail || 'Failed to send reset email.';
+                                            setResetMessage({ type: 'error', text: errorMsg });
                                             setTimeout(() => setResetMessage(null), 5000);
                                         } finally {
                                             setSaving(false);

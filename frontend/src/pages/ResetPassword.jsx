@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { KeyRound, Eye, EyeOff, Check } from 'lucide-react';
+import client from '../api/client';
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
@@ -26,17 +27,14 @@ const ResetPassword = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('http://localhost:8000/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, new_password: formData.new_password }),
+            await client.post('/reset-password', {
+                token,
+                new_password: formData.new_password
             });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail || 'Reset failed.');
             setSuccess(true);
             setTimeout(() => navigate('/login'), 3000);
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.data?.detail || err.message || 'Reset failed.');
         } finally {
             setLoading(false);
         }

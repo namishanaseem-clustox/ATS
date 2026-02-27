@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Mail, Check } from 'lucide-react';
+import client from '../api/client';
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -13,18 +14,10 @@ const ForgotPassword = () => {
         setLoading(true);
         setError('');
         try {
-            const res = await fetch('http://localhost:8000/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-            if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.detail || 'Something went wrong.');
-            }
+            await client.post('/forgot-password', { email });
             setSubmitted(true);
         } catch (err) {
-            setError(err.message);
+            setError(err.response?.data?.detail || err.message || 'Something went wrong.');
         } finally {
             setLoading(false);
         }
