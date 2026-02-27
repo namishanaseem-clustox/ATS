@@ -9,6 +9,7 @@ import FilterPanel from '../components/FilterPanel';
 import useColumnPersistence from '../hooks/useColumnPersistence';
 import Breadcrumb from '../components/Breadcrumb';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const ACTIVITY_COLUMNS = [
     { id: 'title', label: 'Title', required: true },
@@ -24,6 +25,8 @@ const Tasks = () => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('list'); // 'list' | 'calendar'
+    const { user } = useAuth();
+    const isInterviewer = user?.role === 'interviewer';
     const [selectedActivity, setSelectedActivity] = useState(null);
     const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -238,15 +241,17 @@ const Tasks = () => {
                 {/* Sub-header: Create button + Filters/Columns left, Results right */}
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => {
-                                setSelectedActivity(null);
-                                setIsEditModalOpen(true);
-                            }}
-                            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
-                        >
-                            + Create activity
-                        </button>
+                        {!isInterviewer && (
+                            <button
+                                onClick={() => {
+                                    setSelectedActivity(null);
+                                    setIsEditModalOpen(true);
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"
+                            >
+                                + Create activity
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-4">

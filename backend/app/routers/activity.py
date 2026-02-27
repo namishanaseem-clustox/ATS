@@ -91,6 +91,12 @@ def get_my_interviews(db: Session = Depends(get_db), current_user: User = Depend
 
 @router.post("/", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
 def create_activity(activity: ActivityCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    # Interviewers are not allowed to create activities
+    if current_user.role == UserRole.INTERVIEWER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Interviewers are not permitted to create activities."
+        )
     activity_data = activity.dict(exclude={"assignee_ids"})
     db_activity = ScheduledActivity(**activity_data)
     db_activity.created_by = current_user.id

@@ -47,7 +47,7 @@ const MultiSelect = ({ label, options, value = [], onChange, name, disabled = fa
                     <div className="flex flex-wrap gap-1">
                         {value.length > 0 ? (
                             value.map(val => {
-                                const option = options.find(o => o.value === val);
+                                const option = options.find(o => String(o.value) === String(val));
                                 return (
                                     <span key={val} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                                         {option?.label || val}

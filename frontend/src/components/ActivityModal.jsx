@@ -334,7 +334,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
 
                         {isRestricted && (
                             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700 text-sm">
-                                As an interviewer, you can only edit Time, Location/Link, Description, and Status.
+                                As an interviewer, you can only edit Location/Link, Description, and Status.
                             </div>
                         )}
 
@@ -475,10 +475,10 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     value={formData.assignee_ids}
                                     onChange={handleChange}
                                     options={[
-                                        ...users.map(u => ({ value: u.id, label: u.full_name || u.email })),
+                                        ...users.map(u => ({ value: u.id, label: u.full_name || u.display_name || u.email })),
                                         ...(activity?.assignees || [])
-                                            .filter(a => !users.some(u => u.id === a.id))
-                                            .map(a => ({ value: a.id, label: a.full_name || a.first_name || a.email || a.id }))
+                                            .filter(a => !users.some(u => String(u.id) === String(a.id)))
+                                            .map(a => ({ value: a.id, label: a.full_name || a.display_name || a.first_name || a.email || String(a.id) }))
                                     ]}
                                     placeholder="Select Interviewers..."
                                     className="mb-0"
@@ -551,37 +551,43 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                                     <div className="text-[11px] font-semibold tracking-wide uppercase text-[#00C853]/80">Time slot scheduled</div>
                                                 </div>
                                             </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => setSlotPickerOpen(true)}
-                                                className="text-xs font-semibold text-[#00C853] hover:bg-[#00C853]/10 px-3 py-1.5 rounded-lg border border-[#00C853]/20 transition-all"
-                                            >Reschedule</button>
+                                            {/* Hide reschedule button if restricted */}
+                                            {!isRestricted && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSlotPickerOpen(true)}
+                                                    className="text-xs font-semibold text-[#00C853] hover:bg-[#00C853]/10 px-3 py-1.5 rounded-lg border border-[#00C853]/20 transition-all"
+                                                >Reschedule</button>
+                                            )}
                                         </div>
                                     ) : !manualTimeEntry ? (
                                         <button
                                             type="button"
                                             onClick={() => setSlotPickerOpen(true)}
-                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:bg-green-50/50 hover:border-green-300 hover:text-green-700 transition-all group"
+                                            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold border border-dashed transition-all group ${isRestricted ? 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed' : 'bg-gray-50 border-gray-300 text-gray-500 hover:bg-green-50/50 hover:border-green-300 hover:text-green-700'}`}
+                                            disabled={isRestricted}
                                         >
-                                            <CalendarDays className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
-                                            Select a Time Slot
+                                            <CalendarDays className={`w-4 h-4 transition-colors ${isRestricted ? 'text-gray-300' : 'text-gray-400 group-hover:text-green-600'}`} />
+                                            {isRestricted ? 'Time Slot Currently Unassigned' : 'Select a Time Slot'}
                                         </button>
                                     ) : null}
 
-                                    {/* Manual toggle */}
-                                    <div className="flex justify-end">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setManualTimeEntry(v => !v);
-                                                setAvailabilityResult(null);
-                                            }}
-                                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                                        >
-                                            <Pencil className="w-3 h-3" />
-                                            {manualTimeEntry ? 'Use slot picker' : 'Enter times manually'}
-                                        </button>
-                                    </div>
+                                    {/* Manual toggle (Hidden if restricted) */}
+                                    {!isRestricted && (
+                                        <div className="flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setManualTimeEntry(v => !v);
+                                                    setAvailabilityResult(null);
+                                                }}
+                                                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                            >
+                                                <Pencil className="w-3 h-3" />
+                                                {manualTimeEntry ? 'Use slot picker' : 'Enter times manually'}
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {/* Manual datetime inputs */}
                                     {manualTimeEntry && (
@@ -593,7 +599,8 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                                     name="scheduled_at"
                                                     value={formData.scheduled_at}
                                                     onChange={handleChange}
-                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                                                    disabled={isRestricted}
                                                 />
                                             </div>
                                             <div>
@@ -603,7 +610,8 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                                     name="end_time"
                                                     value={formData.end_time}
                                                     onChange={handleChange}
-                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                                                    disabled={isRestricted}
                                                 />
                                             </div>
                                         </div>

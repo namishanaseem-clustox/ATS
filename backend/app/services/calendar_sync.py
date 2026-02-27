@@ -36,20 +36,12 @@ def sync_event_to_google(activity: ScheduledActivity, creator: User, db):
     if not activity.scheduled_at or not activity.end_time:
         return # Cannot schedule without a time block
 
-    # Build unique set of involved users
-    involved_users = {}
+    # Map attendees for the invitation list (Google will email them)
+    attendees = []
     if activity.assignees:
         for u in activity.assignees:
-            involved_users[u.id] = u
-    else:
-        # Fallback to creator if no assignees (e.g. personal task)
-        involved_users[creator.id] = creator
-
-    # Map attendees just for context (using sendUpdates='none' prevents invites from firing)
-    attendees = []
-    for u in involved_users.values():
-        if u.email:
-            attendees.append({'email': u.email})
+            if u.email:
+                attendees.append({'email': u.email})
 
     event_body = {
         'summary': activity.title,
@@ -67,66 +59,44 @@ def sync_event_to_google(activity: ScheduledActivity, creator: User, db):
         },
     }
 
-    # Use activity.details to store per-user event IDs
+    # Use activity.details to store the universal event ID under the creator
     from sqlalchemy.orm.attributes import flag_modified
     details = activity.details or {}
     google_event_ids = details.get('google_event_ids', {})
+    creator_uid_str = str(creator.id)
+    
+    service = _get_service(creator)
+    if not service:
+        print(f"[Calendar Sync] Creator {creator.email} has no Google connection. Calendar invites cannot be sent on their behalf.")
+        return
 
-    for uid, u in involved_users.items():
-        service = _get_service(u)
-        if not service:
-            continue
+    try:
+        existing_event_id = google_event_ids.get(creator_uid_str)
+        
+        if existing_event_id:
+            # Update existing event
+            updated_event = service.events().update(
+                calendarId='primary', 
+                eventId=existing_event_id, 
+                body=event_body,
+                sendUpdates='all'
+            ).execute()
+            activity.event_html_link = updated_event.get('htmlLink')
+        else:
+            # Create new event natively on creator's calendar
+            created_event = service.events().insert(
+                calendarId='primary', 
+                body=event_body,
+                sendUpdates='all'
+            ).execute()
             
-        try:
-            user_uid_str = str(uid)
-            existing_event_id = google_event_ids.get(user_uid_str)
-            
-            if existing_event_id:
-                # Update existing event
-                updated_event = service.events().update(
-                    calendarId='primary', 
-                    eventId=existing_event_id, 
-                    body=event_body,
-                    sendUpdates='none'
-                ).execute()
-                # For backward compatibility / display, we can store creator's htmlLink
-                if u.id == creator.id:
-                    activity.event_html_link = updated_event.get('htmlLink')
-            else:
-                # Create new event directly in their calendar
-                created_event = service.events().insert(
-                    calendarId='primary', 
-                    body=event_body,
-                    sendUpdates='none'
-                ).execute()
+            google_event_ids[creator_uid_str] = created_event.get('id')
+            activity.external_id = created_event.get('id')
+            activity.external_provider = 'google'
+            activity.event_html_link = created_event.get('htmlLink')
                 
-                google_event_ids[user_uid_str] = created_event.get('id')
-                if u.id == creator.id:
-                    activity.external_id = created_event.get('id')
-                    activity.external_provider = 'google'
-                    activity.event_html_link = created_event.get('htmlLink')
-                    
-        except Exception as e:
-            print(f"Failed to sync GC for user {uid} on activity {activity.id}: {e}")
-
-    # Clean up events for anyone removed from the activity
-    removed_uid_strs = set(google_event_ids.keys()) - set(str(uid) for uid in involved_users.keys())
-    for uid_str in list(removed_uid_strs):
-        try:
-            u = db.query(User).filter(User.id == uid_str).first()
-            if not u:
-                continue
-            service = _get_service(u)
-            if service:
-                service.events().delete(
-                    calendarId='primary',
-                    eventId=google_event_ids[uid_str],
-                    sendUpdates='none'
-                ).execute()
-        except Exception as e:
-            print(f"Failed to delete GC for removed user {uid_str} on activity {activity.id}: {e}")
-        finally:
-            google_event_ids.pop(uid_str, None)
+    except Exception as e:
+        print(f"Failed to sync GC for creator {creator.email} on activity {activity.id}: {e}")
 
     details['google_event_ids'] = google_event_ids
     activity.details = details
@@ -161,7 +131,7 @@ def delete_event_from_google(activity: ScheduledActivity, creator: User, db):
             service.events().delete(
                 calendarId='primary', 
                 eventId=event_id,
-                sendUpdates='none'
+                sendUpdates='all'
             ).execute()
         except Exception as e:
             print(f"Failed to delete GC event for user {user_id_str} on activity {activity.id}: {e}")
