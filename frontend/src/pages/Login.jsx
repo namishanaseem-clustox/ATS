@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import logo from '../assets/Clustox Logo Black_Artboard 1.png';
 
 const Login = () => {
@@ -90,6 +90,15 @@ const Login = () => {
                                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#00C853] focus:border-[#00C853] sm:text-sm"
                                 />
                             </div>
+                        </div>
+
+                        <div className="flex justify-end">
+                            <Link
+                                to="/forgot-password"
+                                className="text-sm text-[#00C853] hover:text-green-700 transition-colors"
+                            >
+                                Forgot your password?
+                            </Link>
                         </div>
 
                         {error && (

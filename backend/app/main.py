@@ -10,6 +10,7 @@ from app.routers import preferences as preferences_router
 from app.routers import requisitions as requisitions_router
 from app.routers import calendar as calendar_router
 from app.models import user_preferences  # ensure table is registered in metadata
+from app.models import password_reset  # ensure password_reset_tokens table is created
 from app.database import Base, engine
 
 

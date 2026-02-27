@@ -28,6 +28,8 @@ import RequisitionsPage from './pages/Requisitions/RequisitionsPage';
 import RequisitionForm from './pages/Requisitions/RequisitionForm';
 import RequisitionDetail from './pages/Requisitions/RequisitionDetail';
 import AcceptInvitation from './pages/AcceptInvitation';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/invite/:token" element={<AcceptInvitation />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected Routes */}
             <Route element={<Layout />}>

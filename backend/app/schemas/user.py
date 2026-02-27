@@ -48,6 +48,7 @@ class UserUpdate(BaseModel):
     role: Optional[UserRole] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    current_password: Optional[str] = None  # Required when changing your own password
     is_active: Optional[bool] = None
     department_id: Optional[UUID] = None
 

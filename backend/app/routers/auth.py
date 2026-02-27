@@ -1,6 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from typing import List, Optional
 from uuid import UUID
+import secrets
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -8,7 +10,9 @@ from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr
 from app.database import get_db
 from app.models.user import User, UserRole
+from app.models.password_reset import PasswordResetToken
 from app.core.security import verify_password, create_access_token, get_password_hash, SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.utils.email import send_password_reset_email
 
 router = APIRouter()
 
@@ -161,9 +165,24 @@ def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(ge
 
     if "password" in update_data:
         password = update_data.pop("password")
-        if password: # strict check to ensure not empty string if sent?
-             hashed_password = get_password_hash(password)
-             db_user.hashed_password = hashed_password
+        if password:
+            # Require current password when a user is changing their own password
+            if is_self_update:
+                current_password = update_data.pop("current_password", None)
+                if not current_password:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="current_password is required to change your password."
+                    )
+                if not verify_password(current_password, db_user.hashed_password):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Current password is incorrect."
+                    )
+            else:
+                # Admins changing someone else's password don't need current_password
+                update_data.pop("current_password", None)
+            db_user.hashed_password = get_password_hash(password)
 
     for key, value in update_data.items():
         setattr(db_user, key, value)
@@ -172,7 +191,72 @@ def update_user(user_id: UUID, user_update: UserUpdate, db: Session = Depends(ge
     db.refresh(db_user)
     return db_user
 
-import os
+
+# ─── Password Reset Flow ───────────────────────────────────────────────────────
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+
+@router.post("/forgot-password", status_code=200)
+def forgot_password(payload: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """Initiates email-based password reset. Always returns 200 to prevent user enumeration."""
+    user = db.query(User).filter(User.email == payload.email).first()
+    
+    if user:
+        # Invalidate any existing unused tokens for this user
+        db.query(PasswordResetToken).filter(
+            PasswordResetToken.user_id == user.id,
+            PasswordResetToken.is_used == False
+        ).update({"is_used": True})
+        
+        raw_token = secrets.token_urlsafe(32)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+        
+        reset_token = PasswordResetToken(
+            user_id=user.id,
+            token=raw_token,
+            expires_at=expires_at,
+        )
+        db.add(reset_token)
+        db.commit()
+        
+        frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+        reset_url = f"{frontend_url}/reset-password?token={raw_token}"
+        send_password_reset_email(user.email, reset_url)
+    
+    return {"message": "If that email address is in our system, you will receive a reset link shortly."}
+
+
+@router.post("/reset-password", status_code=200)
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+    """Validates a reset token and updates the user's password."""
+    token_record = db.query(PasswordResetToken).filter(
+        PasswordResetToken.token == payload.token
+    ).first()
+    
+    if not token_record:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link.")
+    
+    if token_record.is_used:
+        raise HTTPException(status_code=400, detail="This reset link has already been used.")
+    
+    if datetime.now(timezone.utc) > token_record.expires_at:
+        raise HTTPException(status_code=400, detail="This reset link has expired. Please request a new one.")
+    
+    user = db.query(User).filter(User.id == token_record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="Invalid reset link.")
+    
+    user.hashed_password = get_password_hash(payload.new_password)
+    token_record.is_used = True
+    db.commit()
+    
+    return {"message": "Password reset successfully. You can now log in with your new password."}
 import shutil
 from fastapi import File, UploadFile
 
