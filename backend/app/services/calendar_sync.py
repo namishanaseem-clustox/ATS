@@ -27,26 +27,29 @@ def _get_service(user: User):
 
 def sync_event_to_google(activity: ScheduledActivity, creator: User, db):
     """
-    Creates or updates an event in Google Calendar.
-    Requires `scheduled_at` and `end_time` to be set.
+    Creates or updates an event directly on the Google Calendar of ALL involved users (creator + assignees)
+    who have connected their Google accounts.
     """
     if activity.activity_type == "Note":
         return
 
-    # To create an event, we need the creator's connected calendar
-    service = _get_service(creator)
-    if not service:
-        return
-        
     if not activity.scheduled_at or not activity.end_time:
         return # Cannot schedule without a time block
-        
-    # Map assignees to attendee emails
-    attendees = []
+
+    # Build unique set of involved users
+    involved_users = {}
     if activity.assignees:
         for u in activity.assignees:
-            if u.email:
-                attendees.append({'email': u.email})
+            involved_users[u.id] = u
+    else:
+        # Fallback to creator if no assignees (e.g. personal task)
+        involved_users[creator.id] = creator
+
+    # Map attendees just for context (using sendUpdates='none' prevents invites from firing)
+    attendees = []
+    for u in involved_users.values():
+        if u.email:
+            attendees.append({'email': u.email})
 
     event_body = {
         'summary': activity.title,
@@ -64,45 +67,90 @@ def sync_event_to_google(activity: ScheduledActivity, creator: User, db):
         },
     }
 
-    try:
-        if activity.external_id and activity.external_provider == 'google':
-            # Update existing event
-            updated_event = service.events().update(
-                calendarId='primary', 
-                eventId=activity.external_id, 
-                body=event_body
-            ).execute()
-            activity.event_html_link = updated_event.get('htmlLink')
-        else:
-            # Create new event
-            created_event = service.events().insert(
-                calendarId='primary', 
-                body=event_body
-            ).execute()
-            
-            activity.external_id = created_event.get('id')
-            activity.external_provider = 'google'
-            activity.event_html_link = created_event.get('htmlLink')
-            
-        db.commit()
-    except Exception as e:
-        print(f"Failed to sync event to Google Calendar for activity {activity.id}: {e}")
+    # Use activity.details to store per-user event IDs
+    from sqlalchemy.orm.attributes import flag_modified
+    details = activity.details or {}
+    google_event_ids = details.get('google_event_ids', {})
 
-def delete_event_from_google(activity: ScheduledActivity, creator: User):
+    for uid, u in involved_users.items():
+        service = _get_service(u)
+        if not service:
+            continue
+            
+        try:
+            user_uid_str = str(uid)
+            existing_event_id = google_event_ids.get(user_uid_str)
+            
+            if existing_event_id:
+                # Update existing event
+                updated_event = service.events().update(
+                    calendarId='primary', 
+                    eventId=existing_event_id, 
+                    body=event_body,
+                    sendUpdates='none'
+                ).execute()
+                # For backward compatibility / display, we can store creator's htmlLink
+                if u.id == creator.id:
+                    activity.event_html_link = updated_event.get('htmlLink')
+            else:
+                # Create new event directly in their calendar
+                created_event = service.events().insert(
+                    calendarId='primary', 
+                    body=event_body,
+                    sendUpdates='none'
+                ).execute()
+                
+                google_event_ids[user_uid_str] = created_event.get('id')
+                if u.id == creator.id:
+                    activity.external_id = created_event.get('id')
+                    activity.external_provider = 'google'
+                    activity.event_html_link = created_event.get('htmlLink')
+                    
+        except Exception as e:
+            print(f"Failed to sync GC for user {uid} on activity {activity.id}: {e}")
+
+    details['google_event_ids'] = google_event_ids
+    activity.details = details
+    flag_modified(activity, "details")
+    db.commit()
+
+def delete_event_from_google(activity: ScheduledActivity, creator: User, db):
     """
-    Deletes the event from Google Calendar if it was synced.
+    Deletes the individual Google Calendar events for all involved users.
     """
-    if not activity.external_id or activity.external_provider != 'google':
+    details = activity.details or {}
+    google_event_ids = details.get('google_event_ids', {})
+    
+    # Handle legacy fallback (creator's external_id)
+    if not google_event_ids and activity.external_id and activity.external_provider == 'google':
+        google_event_ids = {str(creator.id): activity.external_id}
+
+    if not google_event_ids:
         return
         
-    service = _get_service(creator)
-    if not service:
-        return
-        
-    try:
-        service.events().delete(
-            calendarId='primary', 
-            eventId=activity.external_id
-        ).execute()
-    except Exception as e:
-        print(f"Failed to delete event from Google Calendar for activity {activity.id}: {e}")
+    for user_id_str, event_id in google_event_ids.items():
+        try:
+            # We must lookup the user to get their tokens
+            u = db.query(User).filter(User.id == user_id_str).first()
+            if not u:
+                continue
+                
+            service = _get_service(u)
+            if not service:
+                continue
+                
+            service.events().delete(
+                calendarId='primary', 
+                eventId=event_id,
+                sendUpdates='none'
+            ).execute()
+        except Exception as e:
+            print(f"Failed to delete GC event for user {user_id_str} on activity {activity.id}: {e}")
+            
+    # clear them out
+    details['google_event_ids'] = {}
+    from sqlalchemy.orm.attributes import flag_modified
+    activity.details = details
+    flag_modified(activity, "details")
+    db.commit()
+

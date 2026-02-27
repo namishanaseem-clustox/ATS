@@ -217,7 +217,7 @@ def delete_activity(activity_id: UUID, db: Session = Depends(get_db), current_us
     # Delete from Google Calendar if synced
     creator = db.query(User).filter(User.id == db_activity.created_by).first()
     if creator:
-        delete_event_from_google(db_activity, creator)
+        delete_event_from_google(db_activity, creator, db)
         
     # Delete associated feedbacks to prevent NotNullViolation
     from app.models.feedback import Feedback
