@@ -1,6 +1,7 @@
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date as date_type
+from zoneinfo import ZoneInfo
 
 # Allow HTTP (non-HTTPS) redirect URIs during local development
 # IMPORTANT: Remove this in production and use HTTPS
@@ -243,3 +244,110 @@ async def get_calendar_availability(
             busy_slots[str(user.id)] = None # Default to None if API call fails
             
     return busy_slots
+
+
+class AvailableSlotsRequest(BaseModel):
+    date: str          # YYYY-MM-DD
+    duration_minutes: int
+    user_ids: List[str]
+
+@router.post("/available-slots")
+async def get_available_slots(
+    req: AvailableSlotsRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generates working-hour slots (09:00–17:00) for a given date and duration.
+    Marks each slot as busy if ANY of the requested users has a Google Calendar
+    conflict. Users without Google Calendar are treated as available.
+    Returns: [ { start, end, available } ]
+    """
+    # Use local timezone (PKT = UTC+5)
+    tz = ZoneInfo("Asia/Karachi")
+
+    try:
+        target_date = date_type.fromisoformat(req.date)
+    except ValueError:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail="Invalid date format, expected YYYY-MM-DD")
+
+    # Build slots 09:00 – 17:00 local time
+    work_start_hour = 9
+    work_end_hour = 17
+    duration = timedelta(minutes=req.duration_minutes)
+
+    slots = []
+    slot_start = datetime(target_date.year, target_date.month, target_date.day,
+                         work_start_hour, 0, 0, tzinfo=tz)
+    day_end = datetime(target_date.year, target_date.month, target_date.day,
+                       work_end_hour, 0, 0, tzinfo=tz)
+
+    while slot_start + duration <= day_end:
+        slot_end = slot_start + duration
+        slots.append({"start": slot_start, "end": slot_end, "available": True})
+        slot_start = slot_end
+
+    if not slots:
+        return []
+
+    # Only check availability if Google Calendar is configured
+    if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET or not req.user_ids:
+        return [
+            {"start": s["start"].isoformat(), "end": s["end"].isoformat(), "available": True}
+            for s in slots
+        ]
+
+    # Fetch Google Calendar busy blocks for the whole day
+    day_min = datetime(target_date.year, target_date.month, target_date.day,
+                       0, 0, 0, tzinfo=tz).astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z")
+    day_max = datetime(target_date.year, target_date.month, target_date.day,
+                       23, 59, 59, tzinfo=tz).astimezone(ZoneInfo("UTC")).isoformat().replace("+00:00", "Z")
+
+    users = db.query(User).filter(User.id.in_(req.user_ids)).all()
+
+    # Collect all busy blocks across all connected users
+    all_busy_blocks = []  # list of (start_dt, end_dt)
+    for user in users:
+        if not user.google_refresh_token:
+            continue  # Treat as available
+        try:
+            creds = Credentials(
+                token=user.google_access_token,
+                refresh_token=user.google_refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id=GOOGLE_CLIENT_ID,
+                client_secret=GOOGLE_CLIENT_SECRET,
+                scopes=SCOPES
+            )
+            service = build('calendar', 'v3', credentials=creds)
+            body = {
+                "timeMin": day_min,
+                "timeMax": day_max,
+                "timeZone": "UTC",
+                "items": [{"id": "primary"}]
+            }
+            result = service.freebusy().query(body=body).execute()
+            busy_blocks = result.get("calendars", {}).get("primary", {}).get("busy", [])
+            for block in busy_blocks:
+                b_start = datetime.fromisoformat(block["start"].replace("Z", "+00:00"))
+                b_end = datetime.fromisoformat(block["end"].replace("Z", "+00:00"))
+                all_busy_blocks.append((b_start, b_end))
+        except Exception as e:
+            print(f"Could not fetch calendar for user {user.id}: {e}")
+            # Treat as available on error
+
+    # Mark slots that overlap any busy block
+    for slot in slots:
+        slot_s = slot["start"].astimezone(ZoneInfo("UTC"))
+        slot_e = slot["end"].astimezone(ZoneInfo("UTC"))
+        for b_start, b_end in all_busy_blocks:
+            # Overlap: slot starts before block ends AND slot ends after block starts
+            if slot_s < b_end and slot_e > b_start:
+                slot["available"] = False
+                break
+
+    return [
+        {"start": s["start"].isoformat(), "end": s["end"].isoformat(), "available": s["available"]}
+        for s in slots
+    ]

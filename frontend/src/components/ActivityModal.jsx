@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase, ClipboardList, Check, AlertTriangle } from 'lucide-react';
+import { X, MapPin, User, Clock, AlignLeft, Users, Briefcase, ClipboardList, Check, AlertTriangle, CalendarDays, Pencil } from 'lucide-react';
+import SlotPickerModal from './SlotPickerModal';
 import { useAuth } from '../context/AuthContext';
 import { getJobCandidates } from '../api/candidates';
 import { getJobs } from '../api/jobs';
@@ -57,9 +58,13 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
     const [users, setUsers] = useState([]);
     const [scorecardTemplates, setScorecardTemplates] = useState([]);
 
-    // Calendar Availability State
     const [availabilityChecking, setAvailabilityChecking] = useState(false);
     const [availabilityResult, setAvailabilityResult] = useState(null); // { status: "success"|"conflict"|"error", matchInfo: [] }
+
+    // Slot picker state
+    const [slotPickerOpen, setSlotPickerOpen] = useState(false);
+    const [manualTimeEntry, setManualTimeEntry] = useState(false);
+    const [selectedSlotLabel, setSelectedSlotLabel] = useState('');
 
     // Pre-fill form when editing
     useEffect(() => {
@@ -78,6 +83,19 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 assignee_ids: activity.assignees?.map(a => a.id) || [],
                 scorecard_template_id: activity.scorecard_template_id || '',
             });
+
+            if (activity.scheduled_at && activity.end_time) {
+                const sDate = new Date(activity.scheduled_at);
+                const eDate = new Date(activity.end_time);
+
+                const formatTime = (d) =>
+                    new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).format(d);
+                const formatDate = (d) =>
+                    new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(d);
+                setSelectedSlotLabel(`${formatDate(sDate)} · ${formatTime(sDate)}–${formatTime(eDate)}`);
+            } else {
+                setSelectedSlotLabel('');
+            }
         } else {
             setFormData({
                 activity_type: initialType,
@@ -93,22 +111,27 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 assignee_ids: [],
                 scorecard_template_id: '',
             });
+            setSelectedSlotLabel('');
+            setManualTimeEntry(false);
         }
     }, [activity, isOpen, jobId, candidateId, initialType]);
 
-    // Fetch related data
+    // Fetch related data on open
     useEffect(() => {
         if (!isOpen) return;
         const fetchData = async () => {
             try {
-                if (jobId) {
-                    const cands = await getJobCandidates(jobId);
+                // Always fetch jobs list (we need it when no jobId context)
+                const jobsList = await getJobs();
+                setJobs(jobsList || []);
+
+                // Fetch candidates if we have a concrete job context
+                const effectiveJobId = jobId || (activity?.job_id) || formData.job_id;
+                if (effectiveJobId) {
+                    const cands = await getJobCandidates(effectiveJobId);
                     setCandidates(cands || []);
                 }
-                if (!jobId) {
-                    const jobsList = await getJobs();
-                    setJobs(jobsList || []);
-                }
+
                 const [usersList, templatesList] = await Promise.all([
                     getUsers(),
                     getScorecardTemplates(),
@@ -121,6 +144,23 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         };
         fetchData();
     }, [isOpen, jobId]);
+
+    // Re-fetch candidates whenever the selected job changes
+    useEffect(() => {
+        if (!formData.job_id) {
+            setCandidates([]);
+            return;
+        }
+        const fetchCandidates = async () => {
+            try {
+                const cands = await getJobCandidates(formData.job_id);
+                setCandidates(cands || []);
+            } catch (err) {
+                console.error('Failed to fetch candidates:', err);
+            }
+        };
+        fetchCandidates();
+    }, [formData.job_id]);
 
     const checkAvailability = async () => {
         if (!formData.scheduled_at || !formData.end_time || !formData.assignee_ids.length) {
@@ -194,6 +234,30 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
         }
     };
 
+    // Called when user picks a slot from SlotPickerModal
+    const handleSlotSelect = ({ start, end }) => {
+        // Convert ISO to datetime-local format
+        const toLocal = (iso) => {
+            const d = new Date(iso);
+            const pad = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        };
+        setFormData(prev => ({ ...prev, scheduled_at: toLocal(start), end_time: toLocal(end) }));
+        // Build a nice human label
+        const dateStr = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const fmt = (iso) => {
+            const d = new Date(iso);
+            let h = d.getHours();
+            const m = d.getMinutes();
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            return `${h}:${String(m).padStart(2, '0')} ${ampm}`;
+        };
+        setSelectedSlotLabel(`${dateStr} · ${fmt(start)} – ${fmt(end)}`);
+        setAvailabilityResult(null); // clear old check
+        setManualTimeEntry(false);
+    };
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
@@ -243,6 +307,15 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                 <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full relative z-10">
+                    {/* SlotPickerModal renders over this modal */}
+                    <SlotPickerModal
+                        isOpen={slotPickerOpen}
+                        onClose={() => setSlotPickerOpen(false)}
+                        onSelect={handleSlotSelect}
+                        assigneeIds={formData.assignee_ids}
+                        initialDate={formData.scheduled_at ? formData.scheduled_at.split('T')[0] : new Date().toISOString().split('T')[0]}
+                        initialDurationMinutes={formData.scheduled_at && formData.end_time ? Math.round((new Date(formData.end_time) - new Date(formData.scheduled_at)) / 60000) : 45}
+                    />
                     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                         <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg leading-6 font-medium text-gray-900">
@@ -265,7 +338,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} className="space-y-5">
                             {/* Title & Type */}
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="col-span-1">
@@ -294,9 +367,10 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                 </div>
                             </div>
 
-                            {/* Context Selection (Candidate or Job) */}
+                            {/* Context Selection — always show Job; show Candidate when we have a job context */}
                             {jobId ? (
-                                <div>
+                                // Opened from a Job page — job is fixed, only pick candidate
+                                <>
                                     <CustomSelect
                                         label={
                                             <span className="flex items-center">
@@ -311,12 +385,13 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                             { value: '', label: '-- None --' },
                                             ...candidates.filter(c => c.candidate).map(c => ({ value: c.candidate.id, label: `${c.candidate.first_name} ${c.candidate.last_name}` }))
                                         ]}
-                                        className="mb-0"
+                                        className=""
                                         disabled={isRestricted}
                                     />
-                                </div>
+                                </>
                             ) : (
-                                <div>
+                                // Opened from Activities page — show Job picker, then Candidate picker
+                                <>
                                     <CustomSelect
                                         label={
                                             <span className="flex items-center">
@@ -326,81 +401,43 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         }
                                         name="job_id"
                                         value={formData.job_id}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            // Reset candidate when job changes
+                                            setFormData(prev => ({ ...prev, candidate_id: '' }));
+                                        }}
                                         required={!jobId}
                                         options={[
                                             { value: '', label: '-- Select Job --' },
                                             ...jobs.map(j => ({ value: j.id, label: j.title }))
                                         ]}
-                                        className="mb-0"
+                                        className=""
                                         disabled={isRestricted}
                                     />
-                                </div>
+                                    {/* Show candidate picker once a job is selected */}
+                                    {formData.job_id && (
+                                        <CustomSelect
+                                            label={
+                                                <span className="flex items-center">
+                                                    <User className="h-4 w-4 mr-2" />
+                                                    Related Candidate
+                                                </span>
+                                            }
+                                            name="candidate_id"
+                                            value={formData.candidate_id}
+                                            onChange={handleChange}
+                                            options={[
+                                                { value: '', label: '-- None --' },
+                                                ...candidates.filter(c => c.candidate).map(c => ({ value: c.candidate.id, label: `${c.candidate.first_name} ${c.candidate.last_name}` }))
+                                            ]}
+                                            className=""
+                                            disabled={isRestricted}
+                                        />
+                                    )}
+                                </>
                             )}
 
-                            {/* Date & Time (ALLOWED) */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        <Clock className="h-4 w-4 mr-2" />
-                                        Start Time
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        name="scheduled_at"
-                                        value={formData.scheduled_at}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                        End Time
-                                    </label>
-                                    <input
-                                        type="datetime-local"
-                                        name="end_time"
-                                        value={formData.end_time}
-                                        onChange={handleChange}
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Location (ALLOWED) */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                    <MapPin className="h-4 w-4 mr-2" />
-                                    Location / Link
-                                </label>
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                                    placeholder="e.g. Conference Room A or Zoom Link"
-                                />
-                            </div>
-
-                            {/* Participants (RESTRICTED) */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 flex items-center">
-                                    <Users className="h-4 w-4 mr-2" />
-                                    Participants (External)
-                                </label>
-                                <input
-                                    type="text"
-                                    name="participants"
-                                    value={formData.participants}
-                                    onChange={handleChange}
-                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
-                                    placeholder="Jane Doe (Client), etc."
-                                    disabled={isRestricted}
-                                />
-                            </div>
-
-                            {/* Assignees (RESTRICTED) */}
+                            {/* Assignees (RESTRICTED) – before Date & Time so assignees are known when checking slots */}
                             <div>
                                 <div className="flex justify-between items-center mb-1">
                                     <label className="text-sm font-medium text-gray-700 flex items-center">
@@ -408,28 +445,30 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         Assign Interviewers
                                     </label>
 
-                                    {/* Check Availability Inline Link */}
-                                    <button
-                                        type="button"
-                                        onClick={checkAvailability}
-                                        disabled={availabilityChecking || isRestricted || !formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time}
-                                        title={(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? "Please select Interviewers, Start Time, and End Time first" : "Check Google Calendar availability"}
-                                        className={`text-xs font-semibold flex items-center gap-1 transition-colors ${(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? 'text-gray-400 cursor-not-allowed' : 'text-[#00C853] hover:text-green-700 disabled:opacity-50'}`}
-                                    >
-                                        {availabilityChecking ? (
-                                            <span className="flex items-center gap-1 text-[#00C853]">
-                                                <div className="w-3 h-3 border-2 border-green-500 border-t-white rounded-full animate-spin"></div>
-                                                Checking...
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1">
-                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                </svg>
-                                                Check Availability
-                                            </span>
-                                        )}
-                                    </button>
+                                    {/* Check Availability – only shown in manual entry mode */}
+                                    {manualTimeEntry && (
+                                        <button
+                                            type="button"
+                                            onClick={checkAvailability}
+                                            disabled={availabilityChecking || isRestricted || !formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time}
+                                            title={(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? "Please select Interviewers, Start Time, and End Time first" : "Check Google Calendar availability"}
+                                            className={`text-xs font-semibold flex items-center gap-1 transition-colors ${(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? 'text-gray-400 cursor-not-allowed' : 'text-[#00C853] hover:text-green-700 disabled:opacity-50'}`}
+                                        >
+                                            {availabilityChecking ? (
+                                                <span className="flex items-center gap-1 text-[#00C853]">
+                                                    <div className="w-3 h-3 border-2 border-green-500 border-t-white rounded-full animate-spin"></div>
+                                                    Checking...
+                                                </span>
+                                            ) : (
+                                                <span className="flex items-center gap-1">
+                                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    Check Availability
+                                                </span>
+                                            )}
+                                        </button>
+                                    )}
                                 </div>
                                 <MultiSelect
                                     name="assignee_ids"
@@ -441,7 +480,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                     disabled={isRestricted}
                                 />
 
-                                {/* Availability Results */}
+                                {/* Availability Results (manual mode only) */}
                                 {availabilityResult && (
                                     <div className="mt-2 text-xs">
                                         {availabilityResult.status === 'success' ? (
@@ -485,6 +524,119 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         )}
                                     </div>
                                 )}
+                            </div>
+
+                            {/* ── Date & Time Section ── */}
+                            <div>
+                                <label className="text-sm font-medium text-gray-700 flex items-center gap-1.5 mb-1">
+                                    <Clock className="h-4 w-4" />
+                                    Date &amp; Time
+                                </label>
+                                <div className="space-y-3">
+
+                                    {/* Unified Summary Badge */}
+                                    {selectedSlotLabel && !manualTimeEntry ? (
+                                        <div className="flex items-center justify-between bg-[#00C853]/5 border border-[#00C853]/20 rounded-xl px-4 py-3">
+                                            <div className="flex items-center gap-3.5">
+                                                <div className="w-8 h-8 rounded-lg bg-[#00C853]/10 flex items-center justify-center shrink-0">
+                                                    <CalendarDays className="w-4 h-4 text-[#00C853]" />
+                                                </div>
+                                                <div>
+                                                    <div className="text-[13px] font-bold text-gray-900 leading-none mb-1">{selectedSlotLabel}</div>
+                                                    <div className="text-[11px] font-semibold tracking-wide uppercase text-[#00C853]/80">Time slot scheduled</div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setSlotPickerOpen(true)}
+                                                className="text-xs font-semibold text-[#00C853] hover:bg-[#00C853]/10 px-3 py-1.5 rounded-lg border border-[#00C853]/20 transition-all"
+                                            >Reschedule</button>
+                                        </div>
+                                    ) : !manualTimeEntry ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSlotPickerOpen(true)}
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold bg-gray-50 border border-dashed border-gray-300 text-gray-500 hover:bg-green-50/50 hover:border-green-300 hover:text-green-700 transition-all group"
+                                        >
+                                            <CalendarDays className="w-4 h-4 text-gray-400 group-hover:text-green-600 transition-colors" />
+                                            Select a Time Slot
+                                        </button>
+                                    ) : null}
+
+                                    {/* Manual toggle */}
+                                    <div className="flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setManualTimeEntry(v => !v);
+                                                setAvailabilityResult(null);
+                                            }}
+                                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                            {manualTimeEntry ? 'Use slot picker' : 'Enter times manually'}
+                                        </button>
+                                    </div>
+
+                                    {/* Manual datetime inputs */}
+                                    {manualTimeEntry && (
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">Start Time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    name="scheduled_at"
+                                                    value={formData.scheduled_at}
+                                                    onChange={handleChange}
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-gray-500 mb-1">End Time</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    name="end_time"
+                                                    value={formData.end_time}
+                                                    onChange={handleChange}
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 text-sm"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Location (ALLOWED) */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 flex items-center">
+                                    <MapPin className="h-4 w-4 mr-2" />
+                                    Location / Link
+                                </label>
+                                <input
+                                    type="text"
+                                    name="location"
+                                    value={formData.location}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+                                    placeholder="e.g. Conference Room A or Zoom Link"
+                                />
+                            </div>
+
+                            {/* Participants (RESTRICTED) */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 flex items-center">
+                                    <Users className="h-4 w-4 mr-2" />
+                                    Participants (External)
+                                </label>
+                                <input
+                                    type="text"
+                                    name="participants"
+                                    value={formData.participants}
+                                    onChange={handleChange}
+                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                                    placeholder="Jane Doe (Client), etc."
+                                    disabled={isRestricted}
+                                />
                             </div>
 
                             {/* Description (ALLOWED) */}

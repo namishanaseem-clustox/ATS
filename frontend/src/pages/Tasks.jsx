@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, User, Briefcase, MapPin, Search, ChevronRight, Star, List, LayoutGrid, CheckSquare, FileText, Video, Phone, Users, Filter, Edit2, Trash2, Eye, MoreVertical } from 'lucide-react';
-import { getAllActivities } from '../api/activities';
+import { getAllActivities, deleteActivity } from '../api/activities';
 import ScorecardModal from '../components/ScorecardModal';
 import ActivityModal from '../components/ActivityModal';
 import CalendarView from '../components/CalendarView';
@@ -57,6 +57,17 @@ const Tasks = () => {
     const handleEdit = (activity) => {
         setSelectedActivity(activity);
         setIsEditModalOpen(true);
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this activity?')) return;
+        try {
+            await deleteActivity(id);
+            fetchActivities();
+        } catch (error) {
+            console.error("Failed to delete activity", error);
+            alert("Failed to delete activity. Please try again.");
+        }
     };
 
     // Build base list (no notes)
@@ -270,6 +281,7 @@ const Tasks = () => {
                             visibleColumns={visibleColumns}
                             onEdit={handleEdit}
                             onRate={handleRate}
+                            onDelete={handleDelete}
                         />
                     </div>
                 )}
@@ -293,8 +305,6 @@ const Tasks = () => {
                     isOpen={isEditModalOpen}
                     onClose={() => setIsEditModalOpen(false)}
                     activity={selectedActivity}
-                    jobId={selectedActivity?.job_id}
-                    candidateId={selectedActivity?.candidate_id}
                     onSave={() => {
                         fetchActivities();
                         setIsEditModalOpen(false);
@@ -305,7 +315,7 @@ const Tasks = () => {
     );
 };
 
-const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate }) => {
+const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate, onDelete }) => {
     if (activities.length === 0) {
         return <div className="p-16 text-center text-gray-500 bg-white">No activities found matching your criteria.</div>;
     }
@@ -385,7 +395,7 @@ const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate }) => {
                                                 {activity.title}
                                             </div>
                                             <div className="flex items-center space-x-2 text-gray-400 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button className="hover:text-red-500 transition-colors" title="Delete"><Trash2 size={13} /></button>
+                                                <button onClick={() => onDelete(activity.id)} className="hover:text-red-500 transition-colors" title="Delete"><Trash2 size={13} /></button>
                                                 <button onClick={() => onEdit(activity)} className="hover:text-green-500 transition-colors" title="View"><Eye size={14} /></button>
                                             </div>
                                         </div>

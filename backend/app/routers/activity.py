@@ -218,6 +218,10 @@ def delete_activity(activity_id: UUID, db: Session = Depends(get_db), current_us
     creator = db.query(User).filter(User.id == db_activity.created_by).first()
     if creator:
         delete_event_from_google(db_activity, creator)
+        
+    # Delete associated feedbacks to prevent NotNullViolation
+    from app.models.feedback import Feedback
+    db.query(Feedback).filter(Feedback.activity_id == db_activity.id).delete()
 
     db.delete(db_activity)
     db.commit()
