@@ -22,7 +22,7 @@ const QuickActionsWidget = () => {
             icon: <Briefcase size={20} className="mb-2 text-purple-600 group-hover:scale-110 transition-transform" />,
             onClick: () => navigate('/jobs/new'),
             color: 'bg-purple-50 hover:bg-purple-100 border-purple-100',
-            show: !isInterviewer
+            show: !isInterviewer && user?.role !== 'hiring_manager'
         },
         {
             label: 'Schedule Interview',

@@ -241,18 +241,20 @@ const JobBoard = ({ embeddedDepartmentId }) => {
                             }
                         </p>
                         {(!activeFilters.status?.includes('Archived') || activeFilters.status?.length > 1 || !activeFilters.status) && (
-                            <button
-                                onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
-                                className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
-                            >
-                                <Plus size={16} className="mr-2" /> Create your first job
-                            </button>
+                            <RoleGuard allowedRoles={['hr', 'owner']}>
+                                <button
+                                    onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
+                                    className="inline-flex items-center px-4 py-2 bg-[#00C853] text-white rounded-md hover:bg-green-700 transition-colors font-medium text-sm"
+                                >
+                                    <Plus size={16} className="mr-2" /> Create your first job
+                                </button>
+                            </RoleGuard>
                         )}
                     </div>
                 ) : (
                     <div className="bg-white rounded border border-gray-200 shadow-sm overflow-hidden">
                         <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50/80">
-                            <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                            <RoleGuard allowedRoles={['hr', 'owner']}>
                                 <button
                                     onClick={() => navigate(departmentId ? `/jobs/new?dept=${departmentId}` : '/jobs/new')}
                                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors shadow-sm"

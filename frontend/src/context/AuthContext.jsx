@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import client from '../api/client';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AuthContext = createContext(null);
 
@@ -20,12 +21,15 @@ export const AuthProvider = ({ children }) => {
         client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
 
+    const queryClient = useQueryClient();
+
     const logout = useCallback(() => {
         localStorage.removeItem('token');
         setToken(null);
         setUser(null);
         delete client.defaults.headers.common['Authorization'];
-    }, []);
+        queryClient.clear();
+    }, [queryClient]);
 
     // Listen for session expiry fired by the Axios 401 interceptor
     useEffect(() => {

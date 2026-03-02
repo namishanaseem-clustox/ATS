@@ -133,52 +133,36 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
     recent_reqs = []
     if current_user.role != UserRole.INTERVIEWER:
         # Get recent pending requisitions
-        from app.models.requisition import JobRequisition, RequisitionStatus
+        from app.models.requisition import JobRequisition, RequisitionStatus, RequisitionLog
         
-        # Base query for everyone to see recent active/updated reqs (Extended to 90 days)
-        req_query = db.query(JobRequisition).filter(
-            or_(
-                JobRequisition.updated_at >= datetime.utcnow() - timedelta(days=90),
-                JobRequisition.created_at >= datetime.utcnow() - timedelta(days=90)
-            )
+        # Query the audit history to generate a distinct notification for each workflow event
+        log_query = db.query(RequisitionLog).join(JobRequisition).filter(
+            RequisitionLog.timestamp >= datetime.utcnow() - timedelta(days=90),
+            RequisitionLog.user_id != current_user.id  # Don't notify the user about their own actions
         )
         
         if is_admin:
-            # HR sees Pending_HR, Approved (for them to create job), plus general ones
-            # Owner sees Pending_Owner, Open (to know it's live), plus general ones
-            admin_visible_statuses = [
-                RequisitionStatus.DRAFT,
-                RequisitionStatus.CANCELLED,
-                RequisitionStatus.FILLED
-            ]
-            
             if current_user.role == UserRole.HR:
-                admin_visible_statuses.extend([RequisitionStatus.PENDING_HR, RequisitionStatus.APPROVED])
+                # HR cares about submissions from HM, or owner actions
+                log_query = log_query.filter(RequisitionLog.action != "Created Requisition")
             elif current_user.role == UserRole.OWNER:
-                admin_visible_statuses.extend([RequisitionStatus.PENDING_OWNER, RequisitionStatus.OPEN])
-                
-            req_query = req_query.filter(JobRequisition.status.in_(admin_visible_statuses))
+                # Owner cares about HR approvals, or HM submissions if skipped
+                log_query = log_query.filter(RequisitionLog.action != "Created Requisition")
         else:
-            # Hiring managers only see their own requisitions, regardless of status
-            req_query = req_query.filter(JobRequisition.hiring_manager_id == current_user.id)
+            # Hiring managers only see audit logs for their own requisitions
+            log_query = log_query.filter(JobRequisition.hiring_manager_id == current_user.id)
 
-        recent_reqs = req_query.order_by(desc(func.coalesce(JobRequisition.updated_at, JobRequisition.created_at))).limit(10).all()
+        recent_logs = log_query.order_by(desc(RequisitionLog.timestamp)).limit(10).all()
         
-        for req in recent_reqs:
-            status_label = "Pending Approval" if req.status in [RequisitionStatus.PENDING_HR, RequisitionStatus.PENDING_OWNER] else req.status.value
-            desc_text = f"Status: {status_label}"
-            
-            if req.status == RequisitionStatus.DRAFT and req.rejection_reason:
-                desc_text += f" - Reason: {req.rejection_reason[:50]}..." if len(req.rejection_reason) > 50 else f" - Reason: {req.rejection_reason}"
-
-            timestamp = req.updated_at if req.updated_at else req.created_at
+        for log in recent_logs:
+            req = log.requisition
             activities.append({
-                "id": str(req.id),
+                "id": str(req.id),  # Use req.id so frontend routing still clicks through to the requisition
                 "type": "requisition_pending",
                 "title": f"Requisition update: {req.job_title}",
-                "description": desc_text,
-                "timestamp": timestamp.isoformat() if timestamp else None,
-                "user": req.hiring_manager.full_name if req.hiring_manager else "Unknown"
+                "description": f"Action: {log.action}",
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "user": log.user.full_name if log.user else "System"
             })
 
     # Get recent assigned activities
@@ -211,7 +195,10 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
     
     filtered_activities = []
     for activity in activities:
-        notification_key = f"{activity['type']}_{activity['id']}"
+        # Include timestamp in key so the same entity can generate multiple distinct notifications over time
+        timestamp_suffix = str(int(datetime.fromisoformat(activity['timestamp']).timestamp())) if activity.get('timestamp') else "0"
+        notification_key = f"{activity['type']}_{activity['id']}_{timestamp_suffix}"
+        
         if notification_key not in dismissed_keys_set:
             activity['notification_key'] = notification_key
             filtered_activities.append(activity)
@@ -266,10 +253,10 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
         func.lower(JobApplication.current_stage) == 'hired'
     )
 
-    def restrict_dept(q, job_alias=Job):
+    def restrict_dept(q):
         """Apply department scope for hiring managers."""
         if dept_filter:
-            q = q.filter(job_alias.department_id == dept_filter)
+            q = q.filter(User.department_id == dept_filter)
         return q
 
     # ── 1. HIRES: ranked by who moved candidate to Hired (hired_by_user_id) ──
