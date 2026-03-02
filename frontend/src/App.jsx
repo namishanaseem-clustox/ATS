@@ -52,7 +52,7 @@ const Layout = () => {
       />
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0 z-10 w-full relative">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-8 flex-shrink-0 z-50 w-full relative">
           <Notifications />
           <UserProfileDropdown />
         </header>
