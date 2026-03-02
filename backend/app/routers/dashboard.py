@@ -86,8 +86,8 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
     
     is_admin = current_user.role in [UserRole.OWNER, UserRole.HR]
     
-    # Get recent job activities
-    job_query = db.query(Job).filter(Job.created_at >= datetime.utcnow() - timedelta(days=7))
+    # Get recent job activities (Extended to 90 days to catch mock data)
+    job_query = db.query(Job).filter(Job.created_at >= datetime.utcnow() - timedelta(days=90))
     if not is_admin:
         job_query = job_query.filter(
             or_(
@@ -105,11 +105,11 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
             "title": f"New job created: {job.title}",
             "description": f"Job code: {job.job_code}",
             "timestamp": job.created_at.isoformat() if job.created_at else None,
-            "user": job.hiring_manager_id or "Unknown"
+            "user": job.hiring_manager.full_name if job.hiring_manager else "Unknown"
         })
     
-    # Get recent candidate activities
-    candidate_query = db.query(Candidate).filter(Candidate.created_at >= datetime.utcnow() - timedelta(days=7))
+    # Get recent candidate activities (Extended to 90 days)
+    candidate_query = db.query(Candidate).filter(Candidate.created_at >= datetime.utcnow() - timedelta(days=90))
     if not is_admin:
         from app.models.candidate import JobApplication
         candidate_query = candidate_query.join(JobApplication).join(Job).filter(
@@ -135,11 +135,11 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
         # Get recent pending requisitions
         from app.models.requisition import JobRequisition, RequisitionStatus
         
-        # Base query for everyone to see recent active/updated reqs
+        # Base query for everyone to see recent active/updated reqs (Extended to 90 days)
         req_query = db.query(JobRequisition).filter(
             or_(
-                JobRequisition.updated_at >= datetime.utcnow() - timedelta(days=7),
-                JobRequisition.created_at >= datetime.utcnow() - timedelta(days=7)
+                JobRequisition.updated_at >= datetime.utcnow() - timedelta(days=90),
+                JobRequisition.created_at >= datetime.utcnow() - timedelta(days=90)
             )
         )
         
@@ -178,8 +178,26 @@ def get_recent_activities(db: Session = Depends(get_db), current_user: User = De
                 "title": f"Requisition update: {req.job_title}",
                 "description": desc_text,
                 "timestamp": timestamp.isoformat() if timestamp else None,
-                "user": req.hiring_manager_id or "Unknown"
+                "user": req.hiring_manager.full_name if req.hiring_manager else "Unknown"
             })
+
+    # Get recent assigned activities
+    from app.models.scheduled_activity import ScheduledActivity
+    activity_query = db.query(ScheduledActivity).filter(
+        ScheduledActivity.created_at >= datetime.utcnow() - timedelta(days=90),
+        ScheduledActivity.assignees.any(User.id == current_user.id)
+    )
+    recent_assigned = activity_query.order_by(desc(ScheduledActivity.created_at)).limit(10).all()
+    
+    for act in recent_assigned:
+        activities.append({
+            "id": str(act.id),
+            "type": "activity_assigned",
+            "title": f"New assigned {act.activity_type.lower() if act.activity_type else 'activity'}: {act.title}",
+            "description": f"Scheduled for: {act.scheduled_at.strftime('%Y-%m-%d %H:%M') if act.scheduled_at else 'TBD'}",
+            "timestamp": act.created_at.isoformat() if act.created_at else None,
+            "user": act.creator.full_name if act.creator else "Unknown"
+        })
 
     # Sort by timestamp
     activities.sort(key=lambda x: x["timestamp"] or "", reverse=True)

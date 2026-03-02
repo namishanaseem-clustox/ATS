@@ -47,10 +47,14 @@ const RequisitionForm = () => {
                 alert("Failed to load requisition");
                 setLoading(false);
             });
-        } else if (user?.department_id) {
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (!id && user?.department_id && !formData.department_id) {
             setFormData(prev => ({ ...prev, department_id: user.department_id }));
         }
-    }, [id, user]);
+    }, [id, user?.department_id]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;

@@ -9,6 +9,7 @@ import { getUsers } from '../api/users';
 import { getScorecardTemplates } from '../api/scorecards';
 import CustomSelect from './CustomSelect';
 import MultiSelect from './MultiSelect';
+import { API_BASE_URL } from '../api/client';
 
 const ACTIVITY_TYPES = [
     { value: 'Task', label: 'Task' },
@@ -172,7 +173,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
 
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8000/api/calendar/availability', {
+            const res = await fetch(`${API_BASE_URL}/api/calendar/availability`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

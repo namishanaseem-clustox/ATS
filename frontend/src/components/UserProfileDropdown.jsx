@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShieldCheck, LogOut } from 'lucide-react';
+import { API_BASE_URL } from '../api/client';
 
 const UserProfileDropdown = () => {
     const { user, logout, avatarCacheBust } = useAuth();
@@ -46,7 +47,7 @@ const UserProfileDropdown = () => {
                 title={user?.display_name || user?.full_name || 'User Profile'}
             >
                 {user?.avatar_url ? (
-                    <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
+                    <img src={`${API_BASE_URL}${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                     getInitials(user?.display_name || user?.full_name)
                 )}
@@ -60,7 +61,7 @@ const UserProfileDropdown = () => {
                         <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-9 h-9 rounded-full bg-gradient-to-tr from-[#00C853] to-emerald-400 text-white flex items-center justify-center font-bold text-sm shadow-sm overflow-hidden">
                                 {user?.avatar_url ? (
-                                    <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img src={`${API_BASE_URL}${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
                                     getInitials(user?.display_name || user?.full_name)
                                 )}

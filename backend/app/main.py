@@ -24,9 +24,13 @@ app = FastAPI(title="Clustox ATS API")
 # Mount uploads directory for static access
 app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
+import os
+
+frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
 # CORS Configuration
 origins = [
-    "http://localhost:5173", # Vite default
+    frontend_url,
     "http://127.0.0.1:5173",
     "http://localhost:3000",
 ]

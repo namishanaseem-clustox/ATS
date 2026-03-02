@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { updateUser, uploadAvatar, removeAvatar } from '../../api/users';
-import client from '../../api/client';
+import client, { API_BASE_URL } from '../../api/client';
 import Breadcrumb from '../../components/Breadcrumb';
 import { Save, ArrowLeft, Eye, EyeOff, ChevronRight, Check, X, Camera, Trash2 } from 'lucide-react';
 
@@ -231,7 +231,7 @@ const ProfileSettings = () => {
                         <div className="py-6 border-b border-gray-100 flex items-center gap-6">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#00C853] to-emerald-400 text-white flex items-center justify-center font-bold text-2xl shadow-sm border-2 border-white ring-1 ring-gray-100 object-cover overflow-hidden flex-shrink-0">
                                 {user?.avatar_url ? (
-                                    <img src={`http://localhost:8000${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
+                                    <img src={`${API_BASE_URL}${user.avatar_url}?t=${avatarCacheBust}`} alt="Avatar" className="w-full h-full object-cover" />
                                 ) : (
                                     getInitials(user?.full_name)
                                 )}
@@ -339,7 +339,7 @@ const ProfileSettings = () => {
                                         try {
                                             // The backend endpoint isn't wired to frontend api/users.js yet, so we'll do a direct fetch or axios call here
                                             const token = localStorage.getItem('token');
-                                            const res = await fetch('http://localhost:8000/api/calendar/disconnect', {
+                                            const res = await fetch(`${API_BASE_URL}/api/calendar/disconnect`, {
                                                 method: 'DELETE',
                                                 headers: { 'Authorization': `Bearer ${token}` }
                                             });
@@ -347,7 +347,7 @@ const ProfileSettings = () => {
                                                 setUser({ ...user, google_access_token: null });
                                                 setMessage({ type: 'success', text: 'Google Calendar disconnected.' });
                                             }
-                                        } catch (err) {
+                                        } catch {
                                             setMessage({ type: 'error', text: 'Failed to disconnect calendar.' });
                                         } finally {
                                             setSaving(false);
@@ -363,7 +363,7 @@ const ProfileSettings = () => {
                                         const token = localStorage.getItem('token');
                                         // Store token or state if needed, but the backend handles it via JWT cookie or current_user
                                         // The backend requires current_user, so we should actually hit an endpoint that returns the URL
-                                        window.location.href = `http://localhost:8000/api/calendar/authorize?token=${token}`;
+                                        window.location.href = `${API_BASE_URL}/api/calendar/authorize?token=${token}`;
                                     }}
                                     className="px-4 py-2 bg-[#00C853] text-white rounded-md text-sm font-medium hover:bg-green-700 transition shadow-sm"
                                 >

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, CalendarDays, Loader2, Clock } from 'lucide-react';
+import { API_BASE_URL } from '../api/client';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -43,7 +44,7 @@ const SlotPickerModal = ({ isOpen, onClose, onSelect, assigneeIds = [], initialD
             setSlots([]);
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch('http://localhost:8000/api/calendar/available-slots', {
+                const res = await fetch(`${API_BASE_URL}/api/calendar/available-slots`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

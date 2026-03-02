@@ -38,8 +38,8 @@ class Job(Base):
     skills = Column(JSONB, default=list) # List of strings
     description = Column(Text, nullable=True)
     
-    hiring_manager_id = Column(UUID(as_uuid=True), nullable=True)
-    recruiter_id = Column(UUID(as_uuid=True), nullable=True)
+    hiring_manager_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    recruiter_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
     
     deadline = Column(DateTime(timezone=True), nullable=True)
     status = Column(String, default=JobStatus.DRAFT.value)
@@ -69,6 +69,8 @@ class Job(Base):
     department = relationship("Department", backref="jobs")
     activities = relationship("JobActivity", back_populates="job", cascade="all, delete-orphan")
     scheduled_activities = relationship("ScheduledActivity", back_populates="job", cascade="all, delete-orphan")
+    hiring_manager = relationship("User", foreign_keys=[hiring_manager_id])
+    recruiter = relationship("User", foreign_keys=[recruiter_id])
 
 class JobActivity(Base):
     __tablename__ = "job_activities"

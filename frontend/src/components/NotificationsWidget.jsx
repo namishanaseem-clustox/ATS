@@ -26,14 +26,15 @@ const NotificationsWidget = () => {
     const notifications = activities || [];
     const visibleNotifications = showAll ? notifications : notifications.slice(0, 5);
 
-    const getIcon = (type) => {
-        switch (type) {
-            case 'candidate_created': return <div className="p-2 rounded-full bg-green-100 text-green-600"><FileText size={16} /></div>;
-            case 'user_created': return <div className="p-2 rounded-full bg-blue-100 text-blue-600"><UserPlus size={16} /></div>;
-            case 'requisition_pending': return <div className="p-2 rounded-full bg-yellow-100 text-yellow-600"><CheckCircle size={16} /></div>;
-            case 'job_created': return <div className="p-2 rounded-full bg-purple-100 text-purple-600"><Briefcase size={16} /></div>;
-            default: return <div className="p-2 rounded-full bg-gray-100 text-gray-400"><Bell size={16} /></div>;
-        }
+    // Manatal style uses circular initials for the actor
+    const getAvatar = (actorName, overrideColor) => {
+        const initial = actorName ? actorName[0].toUpperCase() : 'S';
+        const colorClass = overrideColor || 'bg-[#7CB342] text-white'; // Default Manatal green
+        return (
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0 ${colorClass}`}>
+                {initial}
+            </div>
+        );
     };
 
     const getLink = (type, id) => {
@@ -41,6 +42,7 @@ const NotificationsWidget = () => {
             case 'candidate_created': return `/candidates/${id}`;
             case 'requisition_pending': return `/requisitions/${id}`;
             case 'job_created': return `/jobs/${id}`;
+            case 'activity_assigned': return `/tasks`;
             default: return '#';
         }
     };
@@ -58,9 +60,9 @@ const NotificationsWidget = () => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-0 h-full flex flex-col">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="font-bold text-gray-800 text-lg">NOTIFICATIONS</h3>
+        <div className="bg-white shadow-sm border border-gray-200 h-[400px] flex flex-col relative w-full overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+                <h3 className="font-bold text-gray-900 text-[15px] uppercase tracking-wide">NOTIFICATIONS</h3>
                 {notifications.length > 5 && (
                     <button
                         onClick={() => setShowAll(!showAll)}
@@ -76,12 +78,14 @@ const NotificationsWidget = () => {
                     <div className="text-sm text-gray-500 text-center py-4">No recent activities</div>
                 ) : (
                     visibleNotifications.map((notif, idx) => (
-                        <Link key={idx} to={getLink(notif.type, notif.id)} className="flex items-start border-b border-gray-50 pb-3 last:border-0 last:pb-0 hover:bg-gray-50 transition-colors p-2 rounded -mx-2 relative group">
-                            <div className="flex-shrink-0 mr-3">
-                                {getIcon(notif.type)}
+                        <Link key={idx} to={getLink(notif.type, notif.id)} className="flex items-start border-b border-gray-100 pb-4 pt-2 last:border-0 last:pb-0 hover:bg-gray-50/50 transition-colors px-4 group">
+                            <div className="mr-4 mt-1">
+                                {getAvatar(notif.user || 'System')}
                             </div>
-                            <div className="flex-1 min-w-0 mr-6">
-                                <p className="text-sm text-gray-800 hover:text-blue-600 truncate">{notif.title}</p>
+                            <div className="flex-1 min-w-0 pr-6">
+                                <p className="text-[13px] text-gray-800 leading-snug">
+                                    <span className="font-semibold">{notif.user || 'System'}</span> {notif.title.replace(notif.user || 'System', '').trim()}
+                                </p>
                                 {notif.description && <p className="text-xs text-gray-600 mt-0.5 truncate">{notif.description}</p>}
                                 <span className="text-xs text-gray-400 mt-1 block">{formatTime(notif.timestamp)}</span>
                             </div>

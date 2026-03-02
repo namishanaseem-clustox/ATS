@@ -295,7 +295,7 @@ const ScorecardTemplatesPage = () => {
         try {
             await deleteScorecardTemplate(id);
             fetchTemplates();
-        } catch (err) {
+        } catch {
             alert('Failed to delete template');
         }
     };

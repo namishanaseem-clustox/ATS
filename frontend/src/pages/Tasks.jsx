@@ -285,7 +285,6 @@ const Tasks = () => {
                             activities={filteredActivities}
                             visibleColumns={visibleColumns}
                             onEdit={handleEdit}
-                            onRate={handleRate}
                             onDelete={handleDelete}
                         />
                     </div>
@@ -320,7 +319,7 @@ const Tasks = () => {
     );
 };
 
-const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate, onDelete }) => {
+const ActivitiesTable = ({ activities, visibleColumns, onEdit, onDelete }) => {
     if (activities.length === 0) {
         return <div className="p-16 text-center text-gray-500 bg-white">No activities found matching your criteria.</div>;
     }
@@ -381,8 +380,7 @@ const ActivitiesTable = ({ activities, visibleColumns, onEdit, onRate, onDelete 
                         const durationStr = calculateDuration(activity.scheduled_at, activity.end_time);
 
                         const creatorName = activity.creator?.full_name || activity.creator?.first_name || 'System';
-                        const initials = creatorName.substring(0, 2).toUpperCase();
-                        const colorClass = getAvatarColor(creatorName);
+                        // initials and colorClass for creatorName are unused
 
                         // Alternate row backgrounds slightly like Manatal
                         const isEven = index % 2 === 0;

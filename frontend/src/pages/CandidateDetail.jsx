@@ -10,6 +10,7 @@ import Breadcrumb from '../components/Breadcrumb';
 import CandidateModal from '../components/CandidateModal';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
+import { API_BASE_URL } from '../api/client';
 
 const CandidateDetail = () => {
     const { id } = useParams();
@@ -275,12 +276,12 @@ const CandidateDetail = () => {
                                 <div className="h-full min-h-[600px] bg-gray-100 rounded-lg border border-gray-200 overflow-hidden relative">
                                     {candidate.resume_file_path ? (
                                         <iframe
-                                            src={`http://localhost:8000/static/${candidate.resume_file_path.split('/').pop()}`}
+                                            src={`${API_BASE_URL}/static/${candidate.resume_file_path.split('/').pop()}`}
                                             className="w-full h-full absolute inset-0"
                                             title="Resume Preview"
                                         >
                                             <p className="p-4 text-center">Your browser does not support PDFs.
-                                                <a href={`http://localhost:8000/static/${candidate.resume_file_path.split('/').pop()}`} className="text-blue-600 hover:underline ml-1">Download the PDF</a>.</p>
+                                                <a href={`${API_BASE_URL}/static/${candidate.resume_file_path.split('/').pop()}`} className="text-blue-600 hover:underline ml-1">Download the PDF</a>.</p>
                                         </iframe>
                                     ) : (
                                         <div className="h-full flex flex-col items-center justify-center text-gray-500 p-8">

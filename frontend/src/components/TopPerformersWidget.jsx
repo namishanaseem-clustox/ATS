@@ -45,123 +45,120 @@ const TopPerformersWidget = () => {
         actions: Math.ceil(16 * m)
     };
 
-    const MyRow = ({ label, count, rank }) => (
-        <div className="flex items-center p-3 border border-gray-100 rounded-lg hover:shadow-sm transition-shadow mb-2">
-            <div className={`h-10 w-10 rounded-full bg-blue-100 overflow-hidden mr-3 flex items-center justify-center text-blue-600 font-bold`}>
-                {user?.first_name?.[0] || 'U'}
+    const RankBadge = ({ rank }) => {
+        const bg = rank === '1st' || rank === 1 ? 'bg-[#007BFF]' : rank === '2nd' || rank === 2 ? 'bg-[#00C853]' : 'bg-[#00BCD4]';
+        const displayRank = typeof rank === 'number' ? `${rank}${rank === 1 ? 'st' : rank === 2 ? 'nd' : 'rd'}` : rank;
+        return (
+            <div className={`absolute -top-1.5 -right-1.5 ${bg} text-white text-[9px] font-bold px-1 py-0.5 rounded-md shadow-sm z-10 leading-none`}>
+                {displayRank}
             </div>
-            <div className="flex-1">
-                <div className="flex justify-between items-start">
-                    <span className="text-sm font-bold text-blue-600">You</span>
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{rank}</span>
-                </div>
-                <p className="text-xs text-gray-500">{count} {label}</p>
-            </div>
-        </div>
-    );
+        );
+    };
 
-    const ColleagueRow = ({ name, count, label, bg, text, rank }) => (
-        <div className="flex items-center p-3 border border-gray-50 rounded-lg bg-gray-50 mb-2 opacity-75 hover:opacity-100 transition-opacity">
-            <div className={`h-10 w-10 rounded-full ${bg} overflow-hidden mr-3 flex items-center justify-center ${text} font-bold`}>
-                {name[0]}
-            </div>
-            <div className="flex-1">
-                <div className="flex justify-between items-start">
-                    <span className="text-sm font-bold text-gray-700">{name}</span>
-                    <span className="bg-gray-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{rank}</span>
+    const UserAvatar = ({ name, count, label, isMe, rank }) => {
+        const initial = name ? name[0].toUpperCase() : 'U';
+        return (
+            <div className="flex flex-col items-center justify-center p-2 relative">
+                <div className="relative mb-2">
+                    <div className="w-[42px] h-[42px] rounded-full bg-gray-200 overflow-hidden flex items-center justify-center border-2 border-white shadow-sm">
+                        {/* We use initials or an image. Since we don't have images for mock, we use nice bg */}
+                        <div className={`w-full h-full flex items-center justify-center font-bold text-white ${isMe ? 'bg-gray-800' : 'bg-gray-400'}`}>
+                            {initial}
+                        </div>
+                    </div>
+                    {rank && <RankBadge rank={rank} />}
                 </div>
-                <p className="text-xs text-gray-500">{count} {label}</p>
+                <span className={`text-[11px] truncate w-20 text-center ${isMe ? 'text-blue-600 font-semibold' : 'text-blue-500 hover:underline cursor-pointer'}`}>
+                    {isMe ? 'You' : name}
+                </span>
+                <span className="text-[10px] text-gray-400">{count} {label}</span>
             </div>
-        </div>
-    );
+        );
+    };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-0">
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                <h3 className="font-bold text-gray-800 text-lg">TOP PERFORMERS</h3>
-                <div className="flex space-x-2">
+        <div className="bg-white shadow-sm border border-gray-200 overflow-hidden w-full">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+                <h3 className="font-bold text-gray-900 text-[15px] uppercase tracking-wide">TOP PERFORMERS</h3>
+                <div className="flex space-x-2 items-center">
                     <button
                         onClick={handleRefresh}
                         disabled={isRefreshing}
-                        className={`text-xs border border-blue-600 text-blue-600 px-2 py-1 rounded hover:bg-blue-50 transition-colors ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        className={`text-xs border border-blue-600 text-blue-600 px-3 py-1.5 rounded bg-white hover:bg-blue-50 transition-colors font-medium flex items-center ${isRefreshing ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                        <span className="mr-1">↻</span> {isRefreshing ? 'Refreshing...' : 'Refresh'}
                     </button>
                     <select
                         value={timeframe}
                         onChange={(e) => setTimeframe(e.target.value)}
-                        className="text-xs text-blue-600 border border-blue-200 px-2 py-1 rounded bg-blue-50 focus:outline-none cursor-pointer"
+                        className="text-xs text-blue-600 border border-blue-200 px-2 py-1.5 rounded bg-white focus:outline-none cursor-pointer font-medium"
                     >
-                        <option value="today">Today</option>
+                        <option value="this_month">2/1/2026 - 2/28/2026</option>
                         <option value="this_week">This Week</option>
-                        <option value="this_month">This Month</option>
+                        <option value="today">Today</option>
                         <option value="this_year">This Year</option>
                     </select>
                 </div>
             </div>
 
-            <div className={`p-4 space-y-6 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+            <div className={`p-0 transition-opacity duration-300 ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
 
                 {/* Hires */}
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center">
-                            HIRES <UserCheck size={12} className="ml-1" />
+                <div className="border-b border-gray-100">
+                    <div className="flex justify-between items-center px-4 pt-4 mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase flex items-center">
+                            HIRES <span className="ml-1 text-gray-300">℗</span>
                         </h4>
-                        <button
-                            onClick={() => setExpandHires(!expandHires)}
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                            {expandHires ? 'Show Less' : 'View more'}
-                        </button>
+                        <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
-                    <div>
-                        <MyRow label="Hires" count={myStats.hires} rank="3rd" />
-                        {expandHires && colleagues.map((c, i) => (
-                            <ColleagueRow key={i} name={c.name} count={c.hires} label="Hires" bg={c.bg} text={c.text} rank={`${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : 'rd'}`} />
-                        ))}
+                    <div className="flex items-center justify-center py-4 text-xs text-gray-400">
+                        {myStats.hires > 0 ? (
+                            <div className="flex items-center justify-start px-4 w-full gap-4 overflow-x-auto">
+                                <UserAvatar name="You" label="hires" count={myStats.hires} isMe={true} rank={3} />
+                                {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="hires" count={c.hires} rank={i + 1} />)}
+                            </div>
+                        ) : "No users with hires found."}
                     </div>
                 </div>
 
                 {/* Candidates */}
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center">
-                            CANDIDATES <Users size={12} className="ml-1" />
+                <div className="border-b border-gray-100">
+                    <div className="flex justify-between items-center px-4 pt-4 mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase flex items-center">
+                            CANDIDATES <span className="ml-1 text-gray-300">℗</span>
                         </h4>
-                        <button
-                            onClick={() => setExpandCandidates(!expandCandidates)}
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                            {expandCandidates ? 'Show Less' : 'View more'}
-                        </button>
+                        <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
-                    <div>
-                        <MyRow label="Candidates" count={myStats.candidates} rank="1st" />
-                        {expandCandidates && colleagues.map((c, i) => (
-                            <ColleagueRow key={i} name={c.name} count={c.candidates} label="Candidates" bg={c.bg} text={c.text} rank={`${i + 2}th`} />
-                        ))}
+                    <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
+                        <UserAvatar name="You" label="candidates" count={myStats.candidates} isMe={true} />
+                        {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="candidates" count={c.candidates} rank={i + 1} />)}
+                    </div>
+                </div>
+
+                {/* Jobs */}
+                <div className="border-b border-gray-100">
+                    <div className="flex justify-between items-center px-4 pt-4 mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase flex items-center">
+                            JOBS <span className="ml-1 text-gray-300">℗</span>
+                        </h4>
+                        <button className="text-[11px] text-blue-600 font-medium">View more</button>
+                    </div>
+                    <div className="flex items-center justify-center py-4 text-xs text-gray-400">
+                        No users with jobs found.
                     </div>
                 </div>
 
                 {/* Actions Taken */}
                 <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <h4 className="text-xs font-bold text-gray-500 uppercase flex items-center">
-                            ACTIONS TAKEN <Activity size={12} className="ml-1" />
+                    <div className="flex justify-between items-center px-4 pt-4 mb-2">
+                        <h4 className="text-[11px] font-bold text-gray-500 uppercase flex items-center">
+                            ACTIONS TAKEN <span className="ml-1 text-gray-300">℗</span>
                         </h4>
-                        <button
-                            onClick={() => setExpandActions(!expandActions)}
-                            className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                            {expandActions ? 'Show Less' : 'View more'}
-                        </button>
+                        <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
-                    <div>
-                        <MyRow label="Actions" count={myStats.actions} rank="2nd" />
-                        {expandActions && colleagues.map((c, i) => (
-                            <ColleagueRow key={i} name={c.name} count={c.actions} label="Actions" bg={c.bg} text={c.text} rank={`${i === 1 ? 1 : i === 0 ? 3 : 4}th`} />
-                        ))}
+                    <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
+                        <UserAvatar name="You" label="Actions" count={myStats.actions} isMe={true} />
+                        {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="Actions" count={c.actions} rank={i + 1} />)}
                     </div>
                 </div>
 
