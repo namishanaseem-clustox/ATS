@@ -63,9 +63,15 @@ class JobApplication(Base):
     current_stage = Column(String, default="new") # Matches Pipeline stages
     application_status = Column(String, default=ApplicationStatus.NEW.value)
     
+    # Attribution: who added this candidate and who made the hire
+    added_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    hired_by_user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    
     # Relationships
     candidate = relationship("Candidate", back_populates="applications")
     job = relationship("Job", backref="applications") # Simple backref for now
+    added_by = relationship("User", foreign_keys=[added_by_user_id])
+    hired_by = relationship("User", foreign_keys=[hired_by_user_id])
 
     # Scoring
     score_details = Column(JSONB, default=dict) # { "technical": 4, "communication": 5, ... }

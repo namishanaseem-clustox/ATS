@@ -64,7 +64,7 @@ class CandidateService:
         # Simplified query without loading applications to avoid performance issues
         return query.offset(skip).limit(limit).all()
 
-    def create_candidate(self, db: Session, candidate: CandidateCreate):
+    def create_candidate(self, db: Session, candidate: CandidateCreate, added_by_user_id=None):
         # Extract job_id if present
         job_id = candidate.job_id
         # Convert Pydantic model to dict, excluding job_id from Candidate model fields
@@ -84,7 +84,8 @@ class CandidateService:
                 candidate_id=db_candidate.id,
                 job_id=job_id,
                 current_stage=_get_first_stage_id(db, job_id),
-                application_status="New"
+                application_status="New",
+                added_by_user_id=added_by_user_id,
             )
             db.add(application)
             db.commit()
@@ -93,7 +94,7 @@ class CandidateService:
         db.refresh(db_candidate)
         return db_candidate
 
-    def update_candidate(self, db: Session, candidate_id: UUID, candidate: CandidateUpdate):
+    def update_candidate(self, db: Session, candidate_id: UUID, candidate: CandidateUpdate, added_by_user_id=None):
         db_candidate = self.get_candidate(db, candidate_id)
         if not db_candidate:
             return None
@@ -122,7 +123,8 @@ class CandidateService:
                     candidate_id=db_candidate.id,
                     job_id=job_id,
                     current_stage=_get_first_stage_id(db, job_id),
-                    application_status="New"
+                    application_status="New",
+                    added_by_user_id=added_by_user_id,
                 )
                  db.add(application)
                  db.commit()

@@ -240,134 +240,130 @@ def dismiss_activity(
 
 @router.get("/top-performers")
 def get_top_performers(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    """Get top performers metrics"""
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access dashboard"
-        )
+    """Get top performers metrics using standard ATS attribution.
     
-    # Top hiring managers by jobs created
-    top_hiring_managers = db.query(
-        Job.hiring_manager_id,
-        func.count(Job.id).label('jobs_count')
-    ).filter(
-        Job.is_deleted == False,
-        Job.hiring_manager_id.isnot(None)
-    ).group_by(Job.hiring_manager_id).order_by(desc('jobs_count')).limit(5).all()
-    
-    # Get user details for hiring managers
-    hiring_manager_data = []
-    for hm_id, count in top_hiring_managers:
-        hm_user = db.query(User).filter(User.id == hm_id).first()
-        if hm_user:
-            hiring_manager_data.append({
-                "user_id": str(hm_id),
-                "name": hm_user.full_name or "Unknown",
-                "email": hm_user.email,
-                "jobs_count": count,
-                "role": "Hiring Manager"
-            })
-    
-    # Top interviewers by activities
-    top_interviewers = db.query(
-        User.id,
-        User.full_name,
-        User.email,
-        func.count(ScheduledActivity.id).label('activities_count')
-    ).join(ScheduledActivity.assignees).group_by(
-        User.id, User.full_name, User.email
-    ).order_by(desc('activities_count')).limit(5).all()
-    
-    interviewer_data = []
-    for user_id, name, email, count in top_interviewers:
-        interviewer_data.append({
-            "user_id": str(user_id),
-            "name": name or "Unknown",
-            "email": email,
-            "activities_count": count,
-            "role": "Interviewer"
-        })
-    
+    - Hires: Who moved candidates to Hired (hired_by_user_id), with dept fallback
+    - Candidates: Who added candidates to the pipeline (added_by_user_id), with dept fallback
+    - Jobs: Who opened requisitions (recruiter_id / hiring_manager_id on Job)
+    - Actions: Who completed scheduled activities
+    """
+    from sqlalchemy import desc, func, or_
+    from app.models.candidate import JobApplication
+    from app.models.job import Job
+    from app.models.scheduled_activity import ScheduledActivity
+    from app.models.pipeline_stage import PipelineStage
+
+    # Hiring Managers see only their own department
+    is_hiring_manager = current_user.role.value == 'hiring_manager'
+    dept_filter = current_user.department_id if is_hiring_manager and current_user.department_id else None
+
+    # Hired stage detection
+    hired_stage_ids = [str(r[0]) for r in db.query(PipelineStage.id).filter(
+        func.lower(PipelineStage.name) == 'hired'
+    ).all()]
+    hired_expr = or_(
+        JobApplication.current_stage.in_(hired_stage_ids),
+        func.lower(JobApplication.current_stage) == 'hired'
+    )
+
+    def restrict_dept(q, job_alias=Job):
+        """Apply department scope for hiring managers."""
+        if dept_filter:
+            q = q.filter(job_alias.department_id == dept_filter)
+        return q
+
+    # ── 1. HIRES: ranked by who moved candidate to Hired (hired_by_user_id) ──
+    hires_direct = db.query(
+        User.id, User.full_name, func.count(JobApplication.id).label('count')
+    ).join(JobApplication, JobApplication.hired_by_user_id == User.id
+    ).join(Job, Job.id == JobApplication.job_id
+    ).filter(User.is_active == True, User.is_deleted.isnot(True))
+    hires_direct = restrict_dept(hires_direct)
+    hires_data = hires_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    # Fallback: if hired_by_user_id not set yet, attribute via job recruiter
+    if not hires_data:
+        hires_fallback = db.query(
+            User.id, User.full_name, func.count(JobApplication.id).label('count')
+        ).join(Job, or_(Job.recruiter_id == User.id, Job.hiring_manager_id == User.id)
+        ).join(JobApplication, JobApplication.job_id == Job.id
+        ).filter(hired_expr, User.is_active == True, User.is_deleted.isnot(True))
+        hires_fallback = restrict_dept(hires_fallback)
+        hires_data = hires_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    # ── 2. CANDIDATES: ranked by who sourced the candidate (added_by_user_id) ──
+    cands_direct = db.query(
+        User.id, User.full_name, func.count(JobApplication.id).label('count')
+    ).join(JobApplication, JobApplication.added_by_user_id == User.id
+    ).join(Job, Job.id == JobApplication.job_id
+    ).filter(User.is_active == True, User.is_deleted.isnot(True))
+    cands_direct = restrict_dept(cands_direct)
+    candidates_data = cands_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    # Fallback: attribute via job recruiter/hiring_manager
+    if not candidates_data:
+        cands_fallback = db.query(
+            User.id, User.full_name, func.count(JobApplication.id).label('count')
+        ).join(Job, or_(Job.recruiter_id == User.id, Job.hiring_manager_id == User.id)
+        ).join(JobApplication, JobApplication.job_id == Job.id
+        ).filter(User.is_active == True, User.is_deleted.isnot(True))
+        cands_fallback = restrict_dept(cands_fallback)
+        candidates_data = cands_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    # ── 3. JOBS: who opened requisitions (recruiter_id or hiring_manager_id) ──
+    jobs_q = db.query(
+        User.id, User.full_name, func.count(Job.id).label('count')
+    ).join(Job, or_(Job.recruiter_id == User.id, Job.hiring_manager_id == User.id)
+    ).filter(Job.is_deleted == False, User.is_active == True, User.is_deleted.isnot(True))
+    jobs_q = restrict_dept(jobs_q)
+    jobs_data = jobs_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    # ── 4. ACTIONS: scheduled activities assigned to users ──
+    actions_q = db.query(
+        User.id, User.full_name, func.count(ScheduledActivity.id).label('count')
+    ).join(ScheduledActivity.assignees)
+    if dept_filter:
+        actions_q = actions_q.filter(User.department_id == dept_filter)
+    actions_data = actions_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+
+    def format_list(data_tuples):
+        return [{"id": str(u_id), "name": name or "Unknown", "count": count} for u_id, name, count in data_tuples]
+
     return {
-        "top_hiring_managers": hiring_manager_data,
-        "top_interviewers": interviewer_data
+        "hires": format_list(hires_data),
+        "candidates": format_list(candidates_data),
+        "jobs": format_list(jobs_data),
+        "actions": format_list(actions_data)
     }
 
-@router.get("/actions-taken")
-def get_actions_taken(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    """Get actions taken leaderboard"""
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access dashboard"
-        )
-    
-    # This would ideally come from an activity log table
-    # For now, we'll simulate with available data
-    
-    # Count activities per user (as a proxy for actions taken)
-    user_actions = db.query(
-        User.id,
-        User.full_name,
-        User.email,
-        func.count(ScheduledActivity.id).label('actions_count')
-    ).outerjoin(ScheduledActivity.assignees).group_by(
-        User.id, User.full_name, User.email
-    ).order_by(desc('actions_count')).limit(10).all()
-    
-    actions_data = []
-    for user_id, name, email, count in user_actions:
-        actions_data.append({
-            "user_id": str(user_id),
-            "name": name or "Unknown",
-            "email": email,
-            "actions_count": count,
-            "role": "User"
-        })
-    
-    return actions_data
 
 @router.get("/my-performance")
 def get_my_performance(db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
-    """Get current user's performance metrics"""
-    if current_user.role not in [UserRole.OWNER, UserRole.HR]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to access dashboard"
-        )
+    """Get current user's candidate volume over the last 5 months"""
+    from datetime import datetime
+    from dateutil.relativedelta import relativedelta
+    from app.models.candidate import JobApplication
+    from sqlalchemy import func
     
-    # Get user's job-related metrics
-    my_jobs = db.query(Job).filter(
-        Job.hiring_manager_id == current_user.id,
-        Job.is_deleted == False
-    ).all()
-    
-    # Get applications to user's jobs
-    my_job_ids = [job.id for job in my_jobs]
-    applications = db.query(JobApplication).filter(
-        JobApplication.job_id.in_(my_job_ids)
-    ).all()
-    
-    # Calculate metrics over time
     now = datetime.utcnow()
-    metrics_by_month = {}
+    metrics = []
     
-    for i in range(6):  # Last 6 months
-        month_start = now.replace(day=1) - timedelta(days=30*i)
-        month_end = month_start + timedelta(days=31)
+    # We want the last 5 months including current
+    for i in range(4, -1, -1):
+        target_month = now - relativedelta(months=i)
+        start_date = target_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_date = start_date + relativedelta(months=1)
         
-        month_jobs = [j for j in my_jobs if j.created_at and month_start <= j.created_at < month_end]
-        month_applications = [a for a in applications if a.applied_at and month_start <= a.applied_at < month_end]
+        # Count candidates applied to jobs owned by the user in this month window
+        count = db.query(JobApplication).join(Job, JobApplication.job_id == Job.id).filter(
+            Job.hiring_manager_id == current_user.id,
+            JobApplication.applied_at >= start_date,
+            JobApplication.applied_at < end_date
+        ).count()
         
-        metrics_by_month[f"month_{i}"] = {
-            "month": month_start.strftime("%b %Y"),
-            "jobs_created": len(month_jobs),
-            "applications_received": len(month_applications)
-        }
-    
-    return {
-        "total_jobs_created": len(my_jobs),
-        "total_applications_received": len(applications),
-        "metrics_by_month": metrics_by_month
-    }
+        metrics.append({
+            "name": start_date.strftime("%b"),
+            "candidates": count
+        })
+        
+    return metrics

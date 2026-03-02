@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { UserCheck, Users, Briefcase, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { getTopPerformers } from '../api/dashboard';
 
 const TopPerformersWidget = () => {
     const { user } = useAuth();
@@ -9,41 +11,20 @@ const TopPerformersWidget = () => {
     const [expandHires, setExpandHires] = useState(false);
     const [expandCandidates, setExpandCandidates] = useState(false);
     const [expandActions, setExpandActions] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
     const [timeframe, setTimeframe] = useState('this_month');
 
+    const { data, isLoading, refetch, isFetching } = useQuery({
+        queryKey: ['top-performers', timeframe],
+        queryFn: getTopPerformers,
+    });
+
+    const isRefreshing = isFetching;
+
     const handleRefresh = () => {
-        setIsRefreshing(true);
-        // Simulate network request
-        setTimeout(() => {
-            setIsRefreshing(false);
-        }, 1000);
+        refetch();
     };
 
-    const getMultiplier = () => {
-        switch (timeframe) {
-            case 'today': return 0.1;
-            case 'this_week': return 0.25;
-            case 'this_year': return 12;
-            case 'this_month':
-            default: return 1;
-        }
-    };
-
-    const m = getMultiplier();
-
-    // Mock Colleagues Data
-    const colleagues = [
-        { name: 'Jane Doe', hires: Math.ceil(2 * m), candidates: Math.ceil(5 * m), actions: Math.ceil(10 * m), bg: 'bg-green-100', text: 'text-green-700' },
-        { name: 'Josh Smith', hires: Math.ceil(1 * m), candidates: Math.ceil(8 * m), actions: Math.ceil(22 * m), bg: 'bg-purple-100', text: 'text-purple-700' },
-        { name: 'Ben Stokes', hires: 0, candidates: Math.ceil(3 * m), actions: Math.ceil(5 * m), bg: 'bg-orange-100', text: 'text-orange-700' }
-    ];
-
-    const myStats = {
-        hires: Math.ceil(0 * m), // always 0 based on original mock
-        candidates: Math.ceil(12 * m),
-        actions: Math.ceil(16 * m)
-    };
+    const topData = data || { hires: [], candidates: [], jobs: [], actions: [] };
 
     const RankBadge = ({ rank }) => {
         const bg = rank === '1st' || rank === 1 ? 'bg-[#007BFF]' : rank === '2nd' || rank === 2 ? 'bg-[#00C853]' : 'bg-[#00BCD4]';
@@ -112,10 +93,9 @@ const TopPerformersWidget = () => {
                         <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
                     <div className="flex items-center justify-center py-4 text-xs text-gray-400">
-                        {myStats.hires > 0 ? (
+                        {isLoading ? "Loading..." : topData.hires.length > 0 ? (
                             <div className="flex items-center justify-start px-4 w-full gap-4 overflow-x-auto">
-                                <UserAvatar name="You" label="hires" count={myStats.hires} isMe={true} rank={3} />
-                                {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="hires" count={c.hires} rank={i + 1} />)}
+                                {topData.hires.map((c, i) => <UserAvatar key={i} name={c.name} label="hires" count={c.count} isMe={c.id === user?.id} rank={i + 1} />)}
                             </div>
                         ) : "No users with hires found."}
                     </div>
@@ -129,9 +109,12 @@ const TopPerformersWidget = () => {
                         </h4>
                         <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
-                    <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
-                        <UserAvatar name="You" label="candidates" count={myStats.candidates} isMe={true} />
-                        {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="candidates" count={c.candidates} rank={i + 1} />)}
+                    <div className="flex items-center justify-center py-4 text-xs text-gray-400">
+                        {isLoading ? "Loading..." : topData.candidates.length > 0 ? (
+                            <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
+                                {topData.candidates.map((c, i) => <UserAvatar key={i} name={c.name} label="candidates" count={c.count} isMe={c.id === user?.id} rank={i + 1} />)}
+                            </div>
+                        ) : "No users with candidates found."}
                     </div>
                 </div>
 
@@ -144,7 +127,11 @@ const TopPerformersWidget = () => {
                         <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
                     <div className="flex items-center justify-center py-4 text-xs text-gray-400">
-                        No users with jobs found.
+                        {isLoading ? "Loading..." : topData.jobs.length > 0 ? (
+                            <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
+                                {topData.jobs.map((c, i) => <UserAvatar key={i} name={c.name} label="jobs" count={c.count} isMe={c.id === user?.id} rank={i + 1} />)}
+                            </div>
+                        ) : "No users with jobs found."}
                     </div>
                 </div>
 
@@ -156,9 +143,12 @@ const TopPerformersWidget = () => {
                         </h4>
                         <button className="text-[11px] text-blue-600 font-medium">View more</button>
                     </div>
-                    <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
-                        <UserAvatar name="You" label="Actions" count={myStats.actions} isMe={true} />
-                        {colleagues.map((c, i) => <UserAvatar key={i} name={c.name} label="Actions" count={c.actions} rank={i + 1} />)}
+                    <div className="flex items-center justify-center py-4 text-xs text-gray-400">
+                        {isLoading ? "Loading..." : topData.actions.length > 0 ? (
+                            <div className="flex items-center justify-start px-4 py-3 w-full gap-4 overflow-x-auto">
+                                {topData.actions.map((c, i) => <UserAvatar key={i} name={c.name} label="Actions" count={c.count} isMe={c.id === user?.id} rank={i + 1} />)}
+                            </div>
+                        ) : "No users with actions found."}
                     </div>
                 </div>
 

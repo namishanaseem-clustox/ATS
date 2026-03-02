@@ -17,8 +17,14 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=JobResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(RoleChecker([UserRole.HR, UserRole.OWNER, UserRole.HIRING_MANAGER]))])
-def create_job(job: JobCreate, db: Session = Depends(get_db)):
-    return job_service.create_job(db=db, job=job)
+def create_job(job: JobCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+    db_job = job_service.create_job(db=db, job=job)
+    # Auto-assign the creating user as recruiter if not explicitly set
+    if db_job and not db_job.recruiter_id:
+        db_job.recruiter_id = current_user.id
+        db.commit()
+        db.refresh(db_job)
+    return db_job
 
 @router.get("/", response_model=List[JobResponse])
 def read_jobs(skip: int = 0, limit: int = 100, department_id: UUID = None, status: str = None, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
@@ -304,7 +310,7 @@ def read_job_candidates(job_id: UUID, db: Session = Depends(get_db), current_use
     return applications
 
 @router.put("/{job_id}/candidates/{candidate_id}/stage")
-def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, db: Session = Depends(get_db)):
+def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     # stage_data expected to be {"stage": "New Stage Name"}
     stage = stage_data.get("stage")
     if not stage:
@@ -313,7 +319,27 @@ def update_candidate_stage(job_id: UUID, candidate_id: UUID, stage_data: dict, d
     application = candidate_service.update_application_stage(db, job_id, candidate_id, stage)
     if not application:
         raise HTTPException(status_code=404, detail="Application/Job not found")
-        
+
+    # Track who added this candidate (first time stage is set)
+    if not application.added_by_user_id:
+        application.added_by_user_id = current_user.id
+
+    # Track who hired this candidate (when moved to Hired stage)
+    from app.models.pipeline_stage import PipelineStage
+    from sqlalchemy import func as sa_func
+    hired_stage = db.query(PipelineStage).filter(
+        sa_func.lower(PipelineStage.name) == 'hired'
+    ).first()
+    hired_stage_id = str(hired_stage.id) if hired_stage else None
+    current = str(application.current_stage).lower()
+    is_hired = current == 'hired' or (hired_stage_id and application.current_stage == hired_stage_id)
+    if is_hired:
+        application.hired_by_user_id = current_user.id
+    else:
+        # Clear hired_by if moved away from hired
+        application.hired_by_user_id = None
+
+    db.commit()
     return {"message": "Stage updated successfully", "application_id": str(application.id), "current_stage": application.current_stage}
 
 from app.schemas.candidate import ApplicationScoreCreate, JobApplicationResponse
