@@ -279,7 +279,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
     ).join(Job, Job.id == JobApplication.job_id
     ).filter(User.is_active == True, User.is_deleted.isnot(True))
     hires_direct = restrict_dept(hires_direct)
-    hires_data = hires_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+    hires_data = hires_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     # Fallback: if hired_by_user_id not set yet, attribute via job recruiter
     if not hires_data:
@@ -289,7 +289,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
         ).join(JobApplication, JobApplication.job_id == Job.id
         ).filter(hired_expr, User.is_active == True, User.is_deleted.isnot(True))
         hires_fallback = restrict_dept(hires_fallback)
-        hires_data = hires_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+        hires_data = hires_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     # ── 2. CANDIDATES: ranked by who sourced the candidate (added_by_user_id) ──
     cands_direct = db.query(
@@ -298,7 +298,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
     ).join(Job, Job.id == JobApplication.job_id
     ).filter(User.is_active == True, User.is_deleted.isnot(True))
     cands_direct = restrict_dept(cands_direct)
-    candidates_data = cands_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+    candidates_data = cands_direct.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     # Fallback: attribute via job recruiter/hiring_manager
     if not candidates_data:
@@ -308,7 +308,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
         ).join(JobApplication, JobApplication.job_id == Job.id
         ).filter(User.is_active == True, User.is_deleted.isnot(True))
         cands_fallback = restrict_dept(cands_fallback)
-        candidates_data = cands_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+        candidates_data = cands_fallback.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     # ── 3. JOBS: who opened requisitions (recruiter_id or hiring_manager_id) ──
     jobs_q = db.query(
@@ -316,7 +316,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
     ).join(Job, or_(Job.recruiter_id == User.id, Job.hiring_manager_id == User.id)
     ).filter(Job.is_deleted == False, User.is_active == True, User.is_deleted.isnot(True))
     jobs_q = restrict_dept(jobs_q)
-    jobs_data = jobs_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+    jobs_data = jobs_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     # ── 4. ACTIONS: scheduled activities assigned to users ──
     actions_q = db.query(
@@ -324,7 +324,7 @@ def get_top_performers(db: Session = Depends(get_db), current_user: User = Depen
     ).join(ScheduledActivity.assignees)
     if dept_filter:
         actions_q = actions_q.filter(User.department_id == dept_filter)
-    actions_data = actions_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(3).all()
+    actions_data = actions_q.group_by(User.id, User.full_name).order_by(desc('count')).limit(10).all()
 
     def format_list(data_tuples):
         return [{"id": str(u_id), "name": name or "Unknown", "count": count} for u_id, name, count in data_tuples]

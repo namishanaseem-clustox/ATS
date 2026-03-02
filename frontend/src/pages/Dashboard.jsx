@@ -7,6 +7,7 @@ import RecentActionsWidget from '../components/RecentActionsWidget';
 import MyActivitiesWidget from '../components/MyActivitiesWidget';
 import TopPerformersWidget from '../components/TopPerformersWidget';
 import MyPerformanceChartWidget from '../components/MyPerformanceChartWidget'; // We will create this next
+import RoleGuard from '../components/RoleGuard';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -34,7 +35,9 @@ const Dashboard = () => {
 
           {/* Right Column */}
           <div className="col-span-12 lg:col-span-5 flex flex-col gap-6">
-            <TopPerformersWidget />
+            <RoleGuard allowedRoles={['owner', 'hr', 'hiring_manager']}>
+              <TopPerformersWidget />
+            </RoleGuard>
             <MyPerformanceChartWidget />
           </div>
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, ArrowRight, Search, Plus, Filter, Download as DownloadIcon, ChevronDown, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Search, Plus, Filter, Download as DownloadIcon, ChevronDown, Trash2, Users, X } from 'lucide-react';
 import ActionMenu from '../components/ActionMenu';
 import { getCandidates, deleteCandidate } from '../api/candidates';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import RoleGuard from '../components/RoleGuard';
 import CandidateForm from '../components/CandidateForm';
@@ -30,7 +30,9 @@ const Candidates = ({ readOnly = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [inputValue, setInputValue] = useState('');
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const { user } = useAuth();
+    const statusParam = searchParams.get('status'); // e.g. 'hired'
 
     const [visibleColumns, toggleColumn] = useColumnPersistence('clustox_candidates_columns', CANDIDATE_COLUMNS.map(c => c.id));
 
@@ -123,6 +125,20 @@ const Candidates = ({ readOnly = false }) => {
     return (
         <div className="p-8 max-w-7xl mx-auto">
             <Breadcrumb items={[{ label: 'Candidates' }]} />
+
+            {/* Status filter banner */}
+            {statusParam && (
+                <div className="mb-4 flex items-center gap-2 bg-teal-50 border border-teal-200 text-teal-800 text-sm px-4 py-2 rounded-lg">
+                    <span className="font-medium capitalize">{statusParam}</span>
+                    <span className="text-teal-600">filter active — showing candidates filtered by status</span>
+                    <button
+                        onClick={() => setSearchParams({})}
+                        className="ml-auto text-teal-500 hover:text-teal-700"
+                    >
+                        <X size={14} />
+                    </button>
+                </div>
+            )}
 
             {/* Page header */}
             <div className="flex justify-between items-center mb-6">
