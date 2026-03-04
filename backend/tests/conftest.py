@@ -1,9 +1,10 @@
 import os
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from alembic.config import Config
 from alembic import command
 from typing import Generator
+from unittest.mock import patch
 
 # IMPORTANT: Set this BEFORE importing any app modules
 TEST_DATABASE_URL = "postgresql://postgres:postgres@localhost/clustox_test_db"
@@ -34,19 +35,32 @@ def setup_test_database():
 @pytest.fixture(scope="function")
 def db_session() -> Generator:
     """
-    Provides a transactional scope around a series of operations.
-    Rolls back the transaction after the test to ensure a clean slate.
+    Provides a transactional scope using nested transactions (SAVEPOINTs).
+    
+    Services that call db.commit() are redirected to flush + restart the
+    nested transaction, so the outer transaction can still rollback cleanly
+    after each test, ensuring full isolation.
     """
     engine = create_engine(TEST_DATABASE_URL)
     connection = engine.connect()
+    # Begin outer transaction — will be rolled back at end of test
     transaction = connection.begin()
     
-    # Bind session to our connection
     session = SessionLocal(bind=connection)
+    
+    # Start a SAVEPOINT nested transaction
+    session.begin_nested()
+    
+    # Whenever session.commit() is called by service code, instead of
+    # committing to the outer transaction, we flush and restart the savepoint.
+    @event.listens_for(session, "after_transaction_end")
+    def restart_savepoint(session, transaction):
+        if transaction.nested and not transaction._parent.nested:
+            session.begin_nested()
     
     yield session
     
-    # Rollback and clean up after test
+    # Rollback the outer transaction — this undoes everything done in the test
     session.close()
     transaction.rollback()
     connection.close()

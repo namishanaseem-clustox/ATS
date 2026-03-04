@@ -67,7 +67,7 @@ def send_invitation_email(to_email: str, role: str, invite_url: str):
     </html>
     """
     
-    msg.set_content("Please enable HTML to view this message.")
+    msg.set_content("You have been invited to join the Clustox ATS platform")
     msg.add_alternative(html_content, subtype='html')
     
     logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
@@ -140,7 +140,7 @@ def send_password_reset_email(to_email: str, reset_url: str):
     </html>
     """
 
-    msg.set_content("Please enable HTML to view this message.")
+    msg.set_content("We received a request to reset the password for your Clustox ATS account")
     msg.add_alternative(html_content, subtype='html')
 
     logo_path = Path(__file__).parent.parent / "assets" / "logo.png"
