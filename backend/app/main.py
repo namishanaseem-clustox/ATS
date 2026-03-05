@@ -26,14 +26,8 @@ app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 import os
 
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173")
-
-# CORS Configuration
-origins = [
-    frontend_url,
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-]
+frontend_urls_raw = os.getenv("FRONTEND_URL", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000")
+origins = [url.strip() for url in frontend_urls_raw.split(",")]
 
 app.add_middleware(
     CORSMiddleware,
