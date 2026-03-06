@@ -23,6 +23,7 @@ const ActionMenu = ({ actions }) => {
     return (
         <div className="relative inline-block text-left" ref={menuRef}>
             <button
+                data-testid="action-menu-trigger"
                 onClick={(e) => {
                     e.stopPropagation();
                     setIsOpen(!isOpen);
