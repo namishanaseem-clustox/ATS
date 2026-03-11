@@ -54,7 +54,7 @@ const MyActivitiesWidget = () => {
                 <div className="p-8 flex flex-col items-center justify-center text-gray-400">
                     <Calendar size={32} className="mb-2 opacity-20" />
                     <p className="text-sm">No pending activities</p>
-                    <button onClick={() => navigate('/jobs')} className="mt-2 text-xs text-blue-600 flex items-center">
+                    <button onClick={() => navigate('/tasks')} className="mt-2 text-xs text-blue-600 flex items-center">
                         <PlusCircle size={12} className="mr-1" /> Schedule something
                     </button>
                 </div>

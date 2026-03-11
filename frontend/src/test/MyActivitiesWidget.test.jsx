@@ -130,7 +130,7 @@ describe('MyActivitiesWidget', () => {
         expect(mockNavigate).toHaveBeenCalledWith('/tasks');
     });
 
-    it('navigates to /jobs when "Schedule something" is clicked in empty state', async () => {
+    it('navigates to /tasks when "Schedule something" is clicked in empty state', async () => {
         getMyInterviews.mockResolvedValue([]);
         renderWidget();
 
@@ -139,7 +139,7 @@ describe('MyActivitiesWidget', () => {
         });
 
         fireEvent.click(screen.getByText('Schedule something'));
-        expect(mockNavigate).toHaveBeenCalledWith('/jobs');
+        expect(mockNavigate).toHaveBeenCalledWith('/tasks');
     });
 
     it('navigates to candidate profile -> activities tab when an activity WITH a candidate is clicked', async () => {
