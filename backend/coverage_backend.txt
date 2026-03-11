@@ -1,0 +1,253 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/ct-20032/Documents/Clustox ATS/backend
+plugins: asyncio-1.3.0, anyio-4.12.1, cov-7.0.0, env-1.5.0, mock-3.15.1
+asyncio: mode=strict, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 204 items
+
+tests/routers/test_activities.py .................                       [  8%]
+tests/routers/test_auth.py ............                                  [ 14%]
+tests/routers/test_calendar.py ...................                       [ 23%]
+tests/routers/test_candidates.py ............                            [ 29%]
+tests/routers/test_dashboard.py ........                                 [ 33%]
+tests/routers/test_departments.py .................                      [ 41%]
+tests/routers/test_feedback.py ...........                               [ 47%]
+tests/routers/test_jobs.py ......................                        [ 57%]
+tests/routers/test_pipeline.py ..........                                [ 62%]
+tests/routers/test_preferences.py ...                                    [ 64%]
+tests/routers/test_requisitions.py .........                             [ 68%]
+tests/routers/test_scorecards.py .......                                 [ 72%]
+tests/services/test_calendar_sync.py .......                             [ 75%]
+tests/services/test_candidate_service.py .............                   [ 81%]
+tests/services/test_department_service.py ......                         [ 84%]
+tests/services/test_job_service.py ..........                            [ 89%]
+tests/services/test_parser_service.py .......                            [ 93%]
+tests/services/test_screening_service.py .....                           [ 95%]
+tests/utils/test_email.py .........                                      [100%]
+
+=============================== warnings summary ===============================
+app/database.py:11
+  /home/ct-20032/Documents/Clustox ATS/backend/app/database.py:11: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+app/schemas/user.py:21
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/user.py:21: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DepartmentSummary(BaseModel):
+
+venv/lib/python3.10/site-packages/pydantic/_internal/_config.py:383
+  /home/ct-20032/Documents/Clustox ATS/backend/venv/lib/python3.10/site-packages/pydantic/_internal/_config.py:383: UserWarning: Valid config keys have changed in V2:
+  * 'orm_mode' has been renamed to 'from_attributes'
+    warnings.warn(message, UserWarning)
+
+app/schemas/user.py:29
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/user.py:29: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UserResponse(UserBase):
+
+app/schemas/department.py:24
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/department.py:24: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DepartmentInDBBase(DepartmentBase):
+
+app/schemas/job.py:27
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/job.py:27: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('max_salary')
+
+app/schemas/job.py:57
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/job.py:57: PydanticDeprecatedSince20: Pydantic V1 style `@validator` validators are deprecated. You should migrate to Pydantic V2 style `@field_validator` validators, see the migration guide for more details. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    @validator('max_salary')
+
+app/schemas/job.py:64
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/job.py:64: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class DepartmentSummary(BaseModel):
+
+app/schemas/job.py:70
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/job.py:70: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class JobActivityResponse(BaseModel):
+
+app/schemas/job.py:81
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/job.py:81: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class JobResponse(JobBase):
+
+app/schemas/candidate.py:67
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/candidate.py:67: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class CandidateResponse(CandidateBase):
+
+app/schemas/candidate.py:81
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/candidate.py:81: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class CandidateBasicResponse(CandidateBase):
+
+app/schemas/candidate.py:116
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/candidate.py:116: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class JobApplicationResponse(JobApplicationBase):
+
+app/schemas/scorecard.py:37
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/scorecard.py:37: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ScorecardTemplateResponse(ScorecardTemplateBase):
+
+app/schemas/activity.py:56
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/activity.py:56: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class ActivityResponse(ActivityBase):
+
+venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:275
+  /home/ct-20032/Documents/Clustox ATS/backend/venv/lib/python3.10/site-packages/google/api_core/_python_version_support.py:275: FutureWarning: You are using a Python version (3.10.12) which Google will stop supporting in new releases of google.api_core once it reaches its end of life (2026-10-04). Please upgrade to the latest Python version, or at least Python 3.11, to continue receiving updates for google.api_core past that date.
+    warnings.warn(message, FutureWarning)
+
+app/schemas/feedback.py:34
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/feedback.py:34: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class FeedbackResponse(FeedbackBase):
+
+app/schemas/pipeline.py:18
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/pipeline.py:18: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class PipelineTemplateResponse(PipelineTemplateBase):
+
+app/schemas/pipeline.py:43
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/pipeline.py:43: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class PipelineStageResponse(PipelineStageBase):
+
+app/schemas/preferences.py:16
+  /home/ct-20032/Documents/Clustox ATS/backend/app/schemas/preferences.py:16: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    class UserPreferencesResponse(UserPreferencesBase):
+
+tests/routers/test_activities.py::test_create_activity
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/activity.py:100: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    activity_data = activity.dict(exclude={"assignee_ids"})
+
+tests/routers/test_activities.py::test_update_activity
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/activity.py:190: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = activity.dict(exclude_unset=True)
+
+tests/routers/test_candidates.py: 1 warning
+tests/services/test_candidate_service.py: 14 warnings
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/candidate_service.py:71: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    candidate_data = candidate.dict(exclude={"job_id"})
+
+tests/routers/test_candidates.py::test_update_candidate_as_hr
+tests/services/test_candidate_service.py::test_update_candidate
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/candidate_service.py:102: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = candidate.dict(exclude_unset=True)
+
+tests/routers/test_departments.py::test_create_department_as_owner
+tests/routers/test_departments.py::test_create_department_as_hr
+tests/services/test_department_service.py::test_create_department
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/department.py:93: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    db_department = Department(**department.dict())
+
+tests/routers/test_departments.py::test_get_departments_returns_list
+tests/routers/test_departments.py::test_get_departments_returns_list
+tests/services/test_department_service.py::test_get_departments
+tests/services/test_department_service.py::test_get_departments
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/department.py:73: PydanticDeprecatedSince20: The `from_orm` method is deprecated; set `model_config['from_attributes']=True` and use `model_validate` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    dept_out = DepartmentResponse.from_orm(dept)
+
+tests/routers/test_departments.py::test_get_departments_returns_list
+tests/routers/test_departments.py::test_get_departments_returns_list
+tests/services/test_department_service.py::test_get_departments
+tests/services/test_department_service.py::test_get_departments
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/department.py:82: PydanticDeprecatedSince20: The `copy` method is deprecated; use `model_copy` instead. See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    dept_out = dept_out.copy(update={
+
+tests/routers/test_departments.py::test_update_department
+tests/services/test_department_service.py::test_update_department
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/department.py:104: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = department.dict(exclude_unset=True)
+
+tests/routers/test_feedback.py::test_create_feedback_db_integrity_error
+tests/routers/test_feedback.py::test_create_feedback_general_exception
+  /home/ct-20032/Documents/Clustox ATS/backend/tests/conftest.py:65: SAWarning: transaction already deassociated from connection
+    transaction.rollback()
+
+tests/routers/test_jobs.py: 3 warnings
+tests/services/test_job_service.py: 13 warnings
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/job_service.py:119: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    job_data = job.dict()
+
+tests/routers/test_jobs.py::test_update_job_as_owner
+tests/services/test_job_service.py::test_update_job
+  /home/ct-20032/Documents/Clustox ATS/backend/app/services/job_service.py:151: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = job_update.dict(exclude_unset=True)
+
+tests/routers/test_pipeline.py::test_create_pipeline_template
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/pipeline.py:29: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    new_template = PipelineTemplate(**template.dict())
+
+tests/routers/test_pipeline.py::test_update_pipeline_template
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/pipeline.py:48: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = template_update.dict(exclude_unset=True)
+
+tests/routers/test_pipeline.py::test_create_pipeline_stage
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/pipeline.py:95: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    new_stage = PipelineStage(**stage.dict())
+
+tests/routers/test_pipeline.py::test_update_pipeline_stage
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/pipeline.py:110: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = stage_update.dict(exclude_unset=True)
+
+tests/routers/test_preferences.py::test_update_my_preferences
+tests/routers/test_preferences.py::test_update_creates_if_not_exist
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/preferences.py:40: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = prefs_update.dict(exclude_unset=True)
+
+tests/routers/test_scorecards.py::test_create_scorecard_template_as_owner
+tests/routers/test_scorecards.py::test_create_default_scorecard_replaces_old_default
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/scorecard.py:36: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    db_template = ScorecardTemplate(**template.dict())
+
+tests/routers/test_scorecards.py::test_update_scorecard_template
+  /home/ct-20032/Documents/Clustox ATS/backend/app/routers/scorecard.py:69: PydanticDeprecatedSince20: The `dict` method is deprecated; use `model_dump` instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.12/migration/
+    update_data = update.dict(exclude_unset=True)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.10.12-final-0 _______________
+
+Name                                Stmts   Miss  Cover
+-------------------------------------------------------
+app/core/security.py                   20      1    95%
+app/database.py                        13      0   100%
+app/dependencies.py                    10      0   100%
+app/main.py                            35      1    97%
+app/models/candidate.py                59      0   100%
+app/models/department.py               19      0   100%
+app/models/feedback.py                 21      0   100%
+app/models/invitation.py               23      0   100%
+app/models/job.py                      56      0   100%
+app/models/password_reset.py           15      0   100%
+app/models/pipeline_stage.py           14      0   100%
+app/models/pipeline_template.py        12      0   100%
+app/models/requisition.py              47      0   100%
+app/models/scheduled_activity.py       45      0   100%
+app/models/scorecard_template.py       14      0   100%
+app/models/user.py                     37      0   100%
+app/models/user_preferences.py         17      0   100%
+app/routers/activity.py               106      6    94%
+app/routers/auth.py                   273    126    54%
+app/routers/calendar.py               169      1    99%
+app/routers/candidate.py              100     18    82%
+app/routers/dashboard.py              142      5    96%
+app/routers/departments.py             96     24    75%
+app/routers/feedback.py                62      1    98%
+app/routers/job.py                    221    130    41%
+app/routers/pipeline.py                94     12    87%
+app/routers/preferences.py             29      0   100%
+app/routers/requisitions.py           110     11    90%
+app/routers/scorecard.py               54      6    89%
+app/schemas/__init__.py                 0      0   100%
+app/schemas/activity.py                64      0   100%
+app/schemas/candidate.py               97      0   100%
+app/schemas/department.py              29      0   100%
+app/schemas/feedback.py                35      0   100%
+app/schemas/job.py                     76      5    93%
+app/schemas/pipeline.py                34      0   100%
+app/schemas/preferences.py             17      0   100%
+app/schemas/requisition.py             60      0   100%
+app/schemas/scorecard.py               26      0   100%
+app/schemas/user.py                    57      0   100%
+app/services/calendar_sync.py          75     13    83%
+app/services/candidate_service.py     157     43    73%
+app/services/department.py             65      4    94%
+app/services/job_service.py           153     40    74%
+app/services/parser_service.py         45      0   100%
+app/services/screening_service.py      47      6    87%
+app/utils/email.py                     60      2    97%
+-------------------------------------------------------
+TOTAL                                3010    455    85%
+====================== 204 passed, 81 warnings in 54.98s =======================

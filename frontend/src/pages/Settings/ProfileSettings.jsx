@@ -175,6 +175,7 @@ const ProfileSettings = () => {
                                 onClick={(e) => { e.stopPropagation(); handleSaveField(fieldName); }}
                                 disabled={saving}
                                 className="p-1.5 bg-[#00C853] text-white rounded hover:bg-green-700 transition"
+                                aria-label="Save"
                             >
                                 <Check size={16} />
                             </button>
@@ -186,6 +187,7 @@ const ProfileSettings = () => {
                                 }}
                                 disabled={saving}
                                 className="p-1.5 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 transition"
+                                aria-label="Cancel"
                             >
                                 <X size={16} />
                             </button>
@@ -266,6 +268,7 @@ const ProfileSettings = () => {
                                 className="hidden"
                                 ref={fileInputRef}
                                 onChange={handleFileChange}
+                                aria-label="Profile Picture"
                             />
                         </div>
 
@@ -445,8 +448,9 @@ const ProfileSettings = () => {
                             {editingField === 'password' && (
                                 <form onSubmit={handlePasswordSubmit} className="mt-4 max-w-sm space-y-3">
                                     <div className="relative">
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Current Password</label>
+                                        <label htmlFor="current_password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Current Password</label>
                                         <input
+                                            id="current_password"
                                             name="current_password"
                                             type={showCurrentPw ? 'text' : 'password'}
                                             value={formData.current_password}
@@ -455,13 +459,14 @@ const ProfileSettings = () => {
                                             required
                                             className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853] bg-white shadow-sm"
                                         />
-                                        <button type="button" onClick={() => setShowCurrentPw(v => !v)} className="absolute right-3 top-[26px] text-gray-400 hover:text-gray-600">
+                                        <button type="button" onClick={() => setShowCurrentPw(v => !v)} className="absolute right-3 top-[26px] text-gray-400 hover:text-gray-600" aria-label="Toggle Current Password Visibility">
                                             {showCurrentPw ? <EyeOff size={16} /> : <Eye size={16} />}
                                         </button>
                                     </div>
                                     <div className="relative">
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">New Password</label>
+                                        <label htmlFor="new_password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">New Password</label>
                                         <input
+                                            id="new_password"
                                             name="new_password"
                                             type={showNewPw ? 'text' : 'password'}
                                             value={formData.new_password}
@@ -469,13 +474,14 @@ const ProfileSettings = () => {
                                             required
                                             className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-[#00C853] bg-white shadow-sm"
                                         />
-                                        <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-[26px] text-gray-400 hover:text-gray-600">
+                                        <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-[26px] text-gray-400 hover:text-gray-600" aria-label="Toggle New Password Visibility">
                                             {showNewPw ? <EyeOff size={16} /> : <Eye size={16} />}
                                         </button>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Confirm New Password</label>
+                                        <label htmlFor="confirm_password" className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1">Confirm New Password</label>
                                         <input
+                                            id="confirm_password"
                                             name="confirm_password"
                                             type="password"
                                             value={formData.confirm_password}

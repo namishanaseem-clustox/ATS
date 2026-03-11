@@ -7,6 +7,25 @@ from app.database import get_db
 from app.routers.auth import get_current_active_user
 from app.models.user import User, UserRole
 from app.models.department import Department
+from app.core.security import get_password_hash
+
+
+def _persist_user(db_session, role: UserRole, email: str = None, password: str = "testpass") -> User:
+    """Creates a user and saves them to the test DB."""
+    if not email:
+        email = f"{role.value}.{uuid4().hex[:6]}@dept-test.com"
+        
+    user = User(
+        email=email,
+        full_name=f"Test {role.value.title()}",
+        hashed_password=get_password_hash(password),
+        role=role,
+        is_active=True,
+        is_deleted=False
+    )
+    db_session.add(user)
+    db_session.flush()
+    return user
 
 
 def make_user(role: UserRole) -> User:
@@ -113,6 +132,57 @@ def test_get_departments_interviewer_without_dept_returns_empty(db_session, over
     assert response.json() == []
 
 
+def test_get_departments_hiring_manager_specific_access(db_session, override_get_db):
+    """HM sees depts they own or are members of (lines 46-48)."""
+    hm = _persist_user(db_session, UserRole.HIRING_MANAGER)
+    
+    # Dept owned by HM
+    dept_owned = Department(name="Owned", owner_id=hm.id)
+    # Dept where HM is a member
+    dept_member = Department(name="Member")
+    db_session.add_all([dept_owned, dept_member])
+    db_session.flush() # Flush to get IDs
+    
+    hm.department_id = dept_member.id
+    db_session.commit()
+
+    app.dependency_overrides[get_current_active_user] = lambda: hm
+    with TestClient(app) as client:
+        response = client.get("/departments/")
+    
+    assert response.status_code == 200
+    names = [d["name"] for d in response.json()]
+    assert "Owned" in names
+    assert "Member" in names
+    app.dependency_overrides.clear()
+
+
+def test_get_departments_interviewer_with_dept(db_session, override_get_db):
+    """Interviewer sees ONLY their assigned department (lines 53-54)."""
+    dept = Department(name="Interviewer Dept")
+    db_session.add(dept)
+    db_session.flush()
+    
+    interviewer = _persist_user(db_session, UserRole.INTERVIEWER, email="int@test.com")
+    interviewer.department_id = dept.id
+    db_session.commit()
+    
+    # Another dept they shouldn't see
+    other = Department(name="Other Dept")
+    db_session.add(other)
+    db_session.commit()
+
+    app.dependency_overrides[get_current_active_user] = lambda: interviewer
+    with TestClient(app) as client:
+        response = client.get("/departments/")
+    
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["name"] == "Interviewer Dept"
+    app.dependency_overrides.clear()
+
+
 # ─── GET /departments/{department_id} ──────────────────────────────────────
 
 def test_get_department_by_id(client, db_session):
@@ -211,9 +281,60 @@ def test_get_department_members_not_found(client):
     assert response.status_code == 404
 
 
-def test_unauthenticated_request_returns_401():
-    """Without auth override, the real JWT dependency should return 401."""
+def test_get_department_members_forbidden(db_session, override_get_db):
+    """Interviewer cannot see members of a dept they don't belong to (line 153)."""
+    dept = Department(name="Secret Dept")
+    db_session.add(dept)
+    db_session.flush()
+    
+    interviewer = _persist_user(db_session, UserRole.INTERVIEWER, email="intranger@test.com")
+    interviewer.department_id = None
+    db_session.commit()
+
+    app.dependency_overrides[get_current_active_user] = lambda: interviewer
+    with TestClient(app) as client:
+        response = client.get(f"/departments/{dept.id}/members")
+    assert response.status_code == 403
     app.dependency_overrides.clear()
-    with TestClient(app) as c:
-        response = c.get("/departments/")
-    assert response.status_code == 401
+
+
+def test_remove_member_success_and_failures(db_session, override_get_db):
+    """Cover lines 107-135."""
+    dept = Department(name="Member Dept")
+    db_session.add(dept)
+    db_session.flush()
+    
+    member = _persist_user(db_session, UserRole.INTERVIEWER, email="member@test.com")
+    member.department_id = dept.id
+    db_session.commit()
+    
+    # 1. Not Found Dept
+    owner = _persist_user(db_session, UserRole.OWNER)
+    app.dependency_overrides[get_current_active_user] = lambda: owner
+    client = TestClient(app)
+    response = client.delete(f"/departments/{uuid4()}/members/{member.id}")
+    assert response.status_code == 404
+    
+    # 2. Forbidden (non-admin)
+    hm = _persist_user(db_session, UserRole.HIRING_MANAGER)
+    app.dependency_overrides[get_current_active_user] = lambda: hm
+    response = client.delete(f"/departments/{dept.id}/members/{member.id}")
+    assert response.status_code == 403
+    
+    # 3. User Not Found
+    app.dependency_overrides[get_current_active_user] = lambda: owner
+    response = client.delete(f"/departments/{dept.id}/members/{uuid4()}")
+    assert response.status_code == 404
+    
+    # 4. Success
+    response = client.delete(f"/departments/{dept.id}/members/{member.id}")
+    assert response.status_code == 204
+    db_session.refresh(member)
+    assert member.department_id is None
+    
+    # 5. User not a member (already removed)
+    response = client.delete(f"/departments/{dept.id}/members/{member.id}")
+    assert response.status_code == 400
+    assert "not a member" in response.json()["detail"]
+    
+    app.dependency_overrides.clear()

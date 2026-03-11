@@ -134,6 +134,7 @@ const Candidates = ({ readOnly = false }) => {
                     <button
                         onClick={() => setSearchParams({})}
                         className="ml-auto text-teal-500 hover:text-teal-700"
+                        aria-label="Clear status filter"
                     >
                         <X size={14} />
                     </button>

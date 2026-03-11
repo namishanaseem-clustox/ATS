@@ -37,6 +37,7 @@ const UserActions = ({ onEdit, onDelete }) => {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-700 transition-colors focus:outline-none"
+                aria-label="User Actions"
             >
                 <MoreVertical size={20} />
             </button>
@@ -416,8 +417,9 @@ const Team = () => {
 
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                                            <label htmlFor="invite_full_name" className="block text-sm font-medium text-gray-700">Full Name</label>
                                             <input
+                                                id="invite_full_name"
                                                 type="text"
                                                 name="full_name"
                                                 value={inviteFormData.full_name}
@@ -428,8 +430,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                                            <label htmlFor="invite_email" className="block text-sm font-medium text-gray-700">Email Address</label>
                                             <input
+                                                id="invite_email"
                                                 type="email"
                                                 name="email"
                                                 required
@@ -441,8 +444,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                            <label htmlFor="invite_phone" className="block text-sm font-medium text-gray-700">Phone</label>
                                             <input
+                                                id="invite_phone"
                                                 type="text"
                                                 name="phone"
                                                 value={inviteFormData.phone}
@@ -453,8 +457,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                                            <label htmlFor="invite_location" className="block text-sm font-medium text-gray-700">Location</label>
                                             <input
+                                                id="invite_location"
                                                 type="text"
                                                 name="location"
                                                 value={inviteFormData.location}
@@ -527,8 +532,9 @@ const Team = () => {
 
                                     <div className="space-y-4">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                                            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">Full Name</label>
                                             <input
+                                                id="full_name"
                                                 type="text"
                                                 name="full_name"
                                                 required
@@ -539,8 +545,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
                                             <input
+                                                id="email"
                                                 type="email"
                                                 name="email"
                                                 required
@@ -551,8 +558,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Phone</label>
+                                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone</label>
                                             <input
+                                                id="phone"
                                                 type="text"
                                                 name="phone"
                                                 value={formData.phone}
@@ -562,8 +570,9 @@ const Team = () => {
                                         </div>
 
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                                            <label htmlFor="location" className="block text-sm font-medium text-gray-700">Location</label>
                                             <input
+                                                id="location"
                                                 type="text"
                                                 name="location"
                                                 value={formData.location}

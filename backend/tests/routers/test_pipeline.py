@@ -208,3 +208,84 @@ def test_delete_default_stage_fails(db_session, override_get_db, test_template):
     
     assert response.status_code == 400
     assert "Cannot delete default stage" in response.json()["detail"]
+def test_pipeline_template_failures(db_session, override_get_db, test_template):
+    # 1. Create Forbidden
+    user = _persist_user(db_session, UserRole.INTERVIEWER)
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    client = TestClient(app)
+    response = client.post("/pipeline/templates", json={"name": "X"})
+    assert response.status_code == 403
+    
+    # 2. Update Forbidden
+    response = client.put(f"/pipeline/templates/{test_template.id}", json={"name": "X"})
+    assert response.status_code == 403
+    
+    # 3. Update Not Found
+    admin = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    response = client.put(f"/pipeline/templates/{uuid4()}", json={"name": "X"})
+    assert response.status_code == 404
+    
+    # 4. Delete Forbidden
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    response = client.delete(f"/pipeline/templates/{test_template.id}")
+    assert response.status_code == 403
+    
+    # 5. Delete Not Found
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    response = client.delete(f"/pipeline/templates/{uuid4()}")
+    assert response.status_code == 404
+    app.dependency_overrides.clear()
+
+
+def test_update_pipeline_template_clear_default(db_session, override_get_db, test_template):
+    """Cover line 51."""
+    other = PipelineTemplate(name="Other Default", is_default=True)
+    db_session.add(other)
+    db_session.commit()
+    
+    admin = _persist_user(db_session, UserRole.OWNER)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    with TestClient(app) as client:
+        response = client.put(f"/pipeline/templates/{test_template.id}", json={"is_default": True, "name": "New Default"})
+    
+    assert response.status_code == 200
+    db_session.refresh(other)
+    assert other.is_default is False
+    app.dependency_overrides.clear()
+
+
+def test_pipeline_stage_failures(db_session, override_get_db, test_template, test_stage):
+    # 1. Create Forbidden
+    user = _persist_user(db_session, UserRole.INTERVIEWER)
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    client = TestClient(app)
+    response = client.post("/pipeline/stages", json={"name": "X", "order": 1, "pipeline_template_id": str(test_template.id)})
+    assert response.status_code == 403
+    
+    # 2. Create Template Not Found (line 93)
+    admin = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    response = client.post("/pipeline/stages", json={"name": "X", "order": 1, "pipeline_template_id": str(uuid4())})
+    assert response.status_code == 404
+    
+    # 3. Update Forbidden
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    response = client.put(f"/pipeline/stages/{test_stage.id}", json={"name": "X"})
+    assert response.status_code == 403
+    
+    # 4. Update Not Found
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    response = client.put(f"/pipeline/stages/{uuid4()}", json={"name": "X"})
+    assert response.status_code == 404
+    
+    # 5. Delete Forbidden
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    response = client.delete(f"/pipeline/stages/{test_stage.id}")
+    assert response.status_code == 403
+    
+    # 6. Delete Not Found
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    response = client.delete(f"/pipeline/stages/{uuid4()}")
+    assert response.status_code == 404
+    app.dependency_overrides.clear()

@@ -137,3 +137,63 @@ def test_delete_scorecard_template(db_session, override_get_db, test_template):
     assert response.status_code == 204
     deleted = db_session.query(ScorecardTemplate).filter_by(id=test_template.id).first()
     assert deleted is None
+def test_get_scorecard_template_not_found(db_session, override_get_db):
+    user = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    with TestClient(app) as client:
+        response = client.get(f"/scorecards/{uuid4()}")
+    assert response.status_code == 404
+    app.dependency_overrides.clear()
+
+
+def test_update_scorecard_template_failures(db_session, override_get_db, test_template):
+    # 1. Forbidden
+    user = _persist_user(db_session, UserRole.INTERVIEWER)
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    with TestClient(app) as client:
+        response = client.put(f"/scorecards/{test_template.id}", json={"name": "X"})
+    assert response.status_code == 403
+    
+    # 2. Not Found
+    admin = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    with TestClient(app) as client:
+        response = client.put(f"/scorecards/{uuid4()}", json={"name": "X"})
+    assert response.status_code == 404
+    app.dependency_overrides.clear()
+
+
+def test_update_scorecard_template_clear_default(db_session, override_get_db, test_template):
+    """Cover line 73."""
+    # Set another as default
+    other = ScorecardTemplate(name="Default", is_default=True, sections=[])
+    db_session.add(other)
+    db_session.commit()
+    
+    admin = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    with TestClient(app) as client:
+        # Update test_template to be default, should clear 'other'
+        response = client.put(f"/scorecards/{test_template.id}", json={"is_default": True})
+    
+    assert response.status_code == 200
+    db_session.refresh(other)
+    assert other.is_default is False
+    app.dependency_overrides.clear()
+
+
+def test_delete_scorecard_template_failures(db_session, override_get_db, test_template):
+    # 1. Forbidden
+    user = _persist_user(db_session, UserRole.INTERVIEWER)
+    app.dependency_overrides[get_current_active_user] = lambda: user
+    with TestClient(app) as client:
+        response = client.delete(f"/scorecards/{test_template.id}")
+    assert response.status_code == 403
+    
+    # 2. Not Found
+    admin = _persist_user(db_session, UserRole.HR)
+    app.dependency_overrides[get_current_active_user] = lambda: admin
+    with TestClient(app) as client:
+        response = client.delete(f"/scorecards/{uuid4()}")
+    assert response.status_code == 404
+    app.dependency_overrides.clear()

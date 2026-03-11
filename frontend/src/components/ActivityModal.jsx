@@ -165,9 +165,10 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
 
     const checkAvailability = async () => {
         if (!formData.scheduled_at || !formData.end_time || !formData.assignee_ids.length) {
-            setAvailabilityResult({ status: 'error', message: 'Please select start time, end time, and at least one interviewer.' });
+            setError('Please select start time, end time, and at least one interviewer');
             return;
         }
+        setError('');
         setAvailabilityChecking(true);
         setAvailabilityResult(null);
 
@@ -451,7 +452,7 @@ const ActivityModal = ({ isOpen, onClose, activity = null, jobId, candidateId = 
                                         <button
                                             type="button"
                                             onClick={checkAvailability}
-                                            disabled={availabilityChecking || isRestricted || !formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time}
+                                            disabled={availabilityChecking || isRestricted}
                                             title={(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? "Please select Interviewers, Start Time, and End Time first" : "Check Google Calendar availability"}
                                             className={`text-xs font-semibold flex items-center gap-1 transition-colors ${(!formData.assignee_ids.length || !formData.scheduled_at || !formData.end_time) ? 'text-gray-400 cursor-not-allowed' : 'text-[#00C853] hover:text-green-700 disabled:opacity-50'}`}
                                         >
