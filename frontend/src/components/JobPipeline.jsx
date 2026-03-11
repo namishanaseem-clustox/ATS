@@ -128,15 +128,18 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
     };
 
     const handleScoreClick = (e, app) => {
+        console.log('handleScoreClick called for:', app.candidate.id);
         e.stopPropagation();
         setScoringCandidate(app);
         setIsScoreModalOpen(true);
     };
 
     const handleSaveScore = async (scoreData) => {
+        console.log('handleSaveScore called with:', scoreData);
         if (!scoringCandidate) return;
         try {
             await updateCandidateScore(jobId, scoringCandidate.candidate.id, scoreData);
+            console.log('updateCandidateScore resolved');
             scoringCandidate.score_details = scoreData;
             const numericScores = Object.entries(scoreData)
                 .filter(([k, v]) => k !== 'recommendation' && typeof v === 'number')
@@ -149,6 +152,7 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
 
             setIsScoreModalOpen(false);
             setScoringCandidate(null);
+            console.log('handleSaveScore state updated');
         } catch (error) {
             console.error('Failed to save score', error);
             alert('Failed to save score');
@@ -276,6 +280,7 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                                 ref={provided.innerRef}
                                                                                 {...provided.draggableProps}
                                                                                 {...provided.dragHandleProps}
+                                                                                onClick={(e) => handleScoreClick(e, app)}
                                                                                 className="bg-white p-3 rounded border border-gray-200 shadow-sm mb-3 hover:shadow-md transition-shadow cursor-grab active:cursor-grabbing group relative"
                                                                                 style={{ ...provided.draggableProps.style }}
                                                                             >
@@ -283,8 +288,6 @@ const JobPipeline = ({ pipelineConfig, candidates = [], onUpdatePipeline, onMove
                                                                                     <h4 className="font-medium text-gray-800 text-sm truncate pr-6" title={`${app.candidate.first_name} ${app.candidate.last_name}`}>
                                                                                         {app.candidate.first_name} {app.candidate.last_name}
                                                                                     </h4>
-
-
                                                                                 </div>
                                                                                 <div className="flex items-center text-xs text-gray-500 mb-2">
                                                                                     <User size={12} className="mr-1" />

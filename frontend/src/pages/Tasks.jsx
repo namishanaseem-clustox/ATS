@@ -286,6 +286,7 @@ const Tasks = () => {
                             visibleColumns={visibleColumns}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
+                            onRate={handleRate}
                         />
                     </div>
                 )}
@@ -319,7 +320,7 @@ const Tasks = () => {
     );
 };
 
-const ActivitiesTable = ({ activities, visibleColumns, onEdit, onDelete }) => {
+const ActivitiesTable = ({ activities, visibleColumns, onEdit, onDelete, onRate }) => {
     if (activities.length === 0) {
         return <div className="p-16 text-center text-gray-500 bg-white">No activities found matching your criteria.</div>;
     }
@@ -400,6 +401,9 @@ const ActivitiesTable = ({ activities, visibleColumns, onEdit, onDelete }) => {
                                             <div className="flex items-center space-x-2 text-gray-400 ml-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => onDelete(activity.id)} className="hover:text-red-500 transition-colors" title="Delete"><Trash2 size={13} /></button>
                                                 <button onClick={() => onEdit(activity)} className="hover:text-green-500 transition-colors" title="View"><Eye size={14} /></button>
+                                                {(activity.activity_type === 'Interview' || activity.activity_type === 'Call' || activity.activity_type === 'Meeting' || activity.activity_type === 'Task') && (
+                                                    <button onClick={() => onRate(activity)} className="hover:text-yellow-500 transition-colors" title="Rate"><Star size={13} className="fill-current" /></button>
+                                                )}
                                             </div>
                                         </div>
                                     </td>

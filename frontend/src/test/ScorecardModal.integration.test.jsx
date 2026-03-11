@@ -127,4 +127,125 @@ describe('ScorecardModal Integration Test', () => {
         // Verification: The rendered text shows the backend error properly
         expect(await screen.findByText('Only assigned user can submit feedback')).toBeInTheDocument();
     });
+
+    it('shows validation errors if submitted without overall score or recommendation', async () => {
+        const onSaveMock = vi.fn();
+        await act(async () => {
+            render(
+                <ScorecardModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    activity={mockActivity}
+                    onSave={onSaveMock}
+                />
+            );
+        });
+
+        const submitButton = screen.getByRole('button', { name: 'Submit Scorecard' });
+
+        // Submit instantly without clicking any scores
+        await act(async () => {
+            fireEvent.click(submitButton);
+        });
+
+        // Error for overall score should show
+        expect(screen.getByText('Please provide an overall score')).toBeInTheDocument();
+        expect(feedbacksApi.createFeedback).not.toHaveBeenCalled();
+
+        // Click an overall score
+        const overall3Button = screen.getAllByRole('button', { name: '3' })[5];
+        await act(async () => {
+            fireEvent.click(overall3Button);
+        });
+
+        // Submit again
+        await act(async () => {
+            fireEvent.click(submitButton);
+        });
+
+        // Error for recommendation should show now
+        expect(screen.getByText('Please provide a recommendation')).toBeInTheDocument();
+        expect(feedbacksApi.createFeedback).not.toHaveBeenCalled();
+    });
+
+    it('loads and displays existing feedback on mount', async () => {
+        const existingFeedback = {
+            overall_score: 4,
+            recommendation: 'Yes',
+            comments: 'Good candidate',
+            scorecard: [
+                { criteria: "Technical Proficiency", score: 4, comment: "Solid" },
+            ]
+        };
+
+        await act(async () => {
+            render(
+                <ScorecardModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    activity={mockActivity}
+                    onSave={vi.fn()}
+                    existingFeedback={existingFeedback}
+                />
+            );
+        });
+
+        // Header should indicate update
+        expect(screen.getByText('Update Interview Scorecard')).toBeInTheDocument();
+
+        // Comment textarea should match
+        const commentBox = screen.getByPlaceholderText('Summarize your final thoughts on the candidate...');
+        expect(commentBox).toHaveValue('Good candidate');
+
+        // Note: checking which specific button is active via classes is slightly brittle, 
+        // but we know 'Update Scorecard' text changes on the button
+        expect(screen.getByRole('button', { name: 'Update Scorecard' })).toBeInTheDocument();
+    });
+
+    it('uses template sections when provided in the activity', async () => {
+        const activityWithTemplate = {
+            ...mockActivity,
+            scorecard_template: {
+                sections: [
+                    { label: 'Custom Criteria A' },
+                    { label: 'Custom Criteria B' }
+                ]
+            }
+        };
+
+        await act(async () => {
+            render(
+                <ScorecardModal
+                    isOpen={true}
+                    onClose={vi.fn()}
+                    activity={activityWithTemplate}
+                    onSave={vi.fn()}
+                />
+            );
+        });
+
+        expect(screen.getByText('Custom Criteria A')).toBeInTheDocument();
+        expect(screen.getByText('Custom Criteria B')).toBeInTheDocument();
+        // Default criteria should not be present
+        expect(screen.queryByText('Technical Proficiency')).not.toBeInTheDocument();
+
+        // Let's test typing a comment in a criteria row to cover 'handleCommentChange' entirely
+        const commentInputs = screen.getAllByPlaceholderText('Specific comments for this criteria...');
+        await act(async () => {
+            fireEvent.change(commentInputs[0], { target: { value: 'Good' } });
+        });
+        expect(commentInputs[0]).toHaveValue('Good');
+    });
+
+    it('returns null if isOpen is false', async () => {
+        const { container } = render(
+            <ScorecardModal
+                isOpen={false}
+                onClose={vi.fn()}
+                activity={mockActivity}
+                onSave={vi.fn()}
+            />
+        );
+        expect(container.firstChild).toBeNull();
+    });
 });

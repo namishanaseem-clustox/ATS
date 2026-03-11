@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, MapPin, User, Users, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote } from 'lucide-react';
+import { Calendar, Clock, MapPin, User, Users, CheckCircle, Circle, XCircle, Edit2, Trash2, Phone, Video, FileText, Mic, StickyNote, Star } from 'lucide-react';
 import { getJobActivities, getCandidateActivities, deleteActivity } from '../api/activities';
 import ActivityModal from './ActivityModal';
+import ScorecardModal from './ScorecardModal';
 import { useAuth } from '../context/AuthContext';
 
 const ActivityList = ({ jobId, candidateId }) => {
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isScoreModalOpen, setIsScoreModalOpen] = useState(false);
     const [selectedActivity, setSelectedActivity] = useState(null);
     const { user } = useAuth();
     const isInterviewer = user?.role === 'interviewer';
@@ -39,6 +41,11 @@ const ActivityList = ({ jobId, candidateId }) => {
     const handleEdit = (activity) => {
         setSelectedActivity(activity);
         setIsModalOpen(true);
+    };
+
+    const handleScore = (activity) => {
+        setSelectedActivity(activity);
+        setIsScoreModalOpen(true);
     };
 
     const handleDelete = async (id) => {
@@ -156,15 +163,26 @@ const ActivityList = ({ jobId, candidateId }) => {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="mt-2 flex justify-end space-x-2">
-                                        <button onClick={() => handleEdit(activity)} className="text-indigo-600 hover:text-indigo-900">
-                                            <Edit2 className="h-4 w-4" />
-                                        </button>
-                                        {!isInterviewer && (
-                                            <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900">
-                                                <Trash2 className="h-4 w-4" />
+                                    <div className="mt-2 flex justify-end items-center space-x-3">
+                                        {['Interview', 'Call', 'Meeting', 'Task'].includes(activity.activity_type) && (
+                                            <button
+                                                onClick={() => handleScore(activity)}
+                                                className="flex items-center gap-1.5 text-xs font-bold text-[#00C853] hover:bg-green-50 px-2 py-1 rounded-md border border-green-100 transition-all shadow-sm"
+                                            >
+                                                <Star className="h-3 w-3 fill-[#00C853]" />
+                                                Score
                                             </button>
                                         )}
+                                        <div className="flex items-center space-x-2 border-l border-gray-100 pl-3">
+                                            <button onClick={() => handleEdit(activity)} className="text-indigo-600 hover:text-indigo-900 p-1 hover:bg-indigo-50 rounded-full transition-colors">
+                                                <Edit2 className="h-4 w-4" />
+                                            </button>
+                                            {!isInterviewer && (
+                                                <button onClick={() => handleDelete(activity.id)} className="text-red-600 hover:text-red-900 p-1 hover:bg-red-50 rounded-full transition-colors">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </li>
@@ -181,6 +199,22 @@ const ActivityList = ({ jobId, candidateId }) => {
                 candidateId={candidateId}
                 onSave={handleSave}
             />
+
+            {selectedActivity && isScoreModalOpen && (
+                <ScorecardModal
+                    isOpen={isScoreModalOpen}
+                    onClose={() => {
+                        setIsScoreModalOpen(false);
+                        setSelectedActivity(null);
+                    }}
+                    activity={selectedActivity}
+                    onSave={() => {
+                        fetchActivities();
+                        setIsScoreModalOpen(false);
+                        setSelectedActivity(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

@@ -99,17 +99,21 @@ describe('JobBoard Integration Tests', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockNavigate.mockReset();
+        server.resetHandlers();
 
-        // Default MSW handlers: 2 active jobs, no archived
+        // Clear search params to avoid leakage
+        [...mockSearchParams.keys()].forEach(key => mockSearchParams.delete(key));
+
+        // Default MSW handlers
         server.use(
-            http.get('*/jobs', ({ request }) => {
+            http.get('http://localhost:8000/jobs', ({ request }) => {
                 const url = new URL(request.url);
                 if (url.searchParams.get('status') === 'Archived') {
                     return HttpResponse.json([]);
                 }
                 return HttpResponse.json(ACTIVE_JOBS);
             }),
-            http.get('*/departments', () => HttpResponse.json([])),
+            http.get('http://localhost:8000/departments', () => HttpResponse.json([])),
         );
     });
 
@@ -264,5 +268,190 @@ describe('JobBoard Integration Tests', () => {
         expect(screen.getByText('No jobs yet')).toBeInTheDocument();
 
         consoleError.mockRestore();
+    });
+
+    // ── 10: ColumnSelector toggling ──────────────────────────────────────────
+    it('toggles non-required columns correctly and prevents toggling required ones', async () => {
+        const user = userEvent.setup();
+        renderBoard();
+        await screen.findByText('Frontend Developer');
+
+        // Open column selector (assuming it's a dropdown or similar button that opens the columns)
+        const columnsBtn = screen.getByRole('button', { name: /Columns/i }); // ColumnSelector uses a 'Columns' button usually, wait let's find it by icon or testid if not. Actually, let's just find the button that has Columns. If there isn't one, we find by text.
+        // The Columns icon is used, and the text might be visually hidden or present. Let's assume there's a button.
+        await user.click(columnsBtn);
+
+        // Click a non-required column to toggle it off (e.g., Job Stage)
+        const stageToggle = screen.getByRole('checkbox', { name: /Job Stage/i });
+        await user.click(stageToggle);
+
+        // Ensure "Job Stage" is no longer in the document headers
+        expect(screen.queryByRole('columnheader', { name: /Job Stage/i })).not.toBeInTheDocument();
+
+        // Click a required column to try to toggle it off (e.g., Position Name)
+        const titleToggle = screen.getByRole('checkbox', { name: /Position Name/i });
+        await user.click(titleToggle);
+
+        // Required column should still be there
+        expect(screen.getByRole('columnheader', { name: /Position Name/i })).toBeInTheDocument();
+    });
+
+    // ── 11: FilterPanel ──────────────────────────────────────────────────────
+    it('applies filters from the FilterPanel', async () => {
+        const user = userEvent.setup();
+        renderBoard();
+        await screen.findByText('Frontend Developer');
+
+        // Open Filter Panel
+        const filterBtn = screen.getByRole('button', { name: /Filters/i });
+        await user.click(filterBtn);
+
+        // Select 'Draft' status
+        const draftCheckbox = screen.getByRole('checkbox', { name: /Draft/i });
+        await user.click(draftCheckbox);
+
+        // Wait for it to apply
+        expect(screen.getByText('Product Manager')).toBeInTheDocument(); // Draft
+        expect(screen.queryByText('Frontend Developer')).not.toBeInTheDocument(); // Published
+
+        // Clear filters
+        // Replace line 318:
+        const clearBtn = screen.getByRole('button', { name: /Clear/i });
+        await user.click(clearBtn);
+
+        expect(screen.getByText('Frontend Developer')).toBeInTheDocument();
+        expect(screen.getByText('Product Manager')).toBeInTheDocument();
+    });
+
+    // ── 12: Embedded Department & Fetching ───────────────────────────────────
+    it('fetches department details when embeddedDepartmentId is provided', async () => {
+        server.use(
+            http.get('*/departments', () => HttpResponse.json([{ id: 'd1', name: 'Engineering Dept', description: 'Eng description' }]))
+        );
+
+        // ✅ Add this — useAuth must be mocked before rendering
+        useAuth.mockReturnValue({
+            user: { id: 'u1', role: 'owner' },
+            loading: false,
+            isAuthenticated: true,
+        });
+
+        render(
+            <MemoryRouter>
+                <JobBoard embeddedDepartmentId="d1" />
+            </MemoryRouter>
+        );
+
+        await screen.findByText('Frontend Developer');
+    });
+    it('fetches and displays department details when "?dept=" URL param is provided', async () => {
+        mockSearchParams.set('dept', 'd1');
+        server.use(
+            http.get('http://localhost:8000/departments', () =>
+                HttpResponse.json([{ id: 'd1', name: 'Engineering Dept', description: 'Eng description' }])
+            )
+        );
+
+        // ✅ Remove the manual useAuth.mockReturnValue here — renderBoard() handles it
+        // OR: skip renderBoard() and render directly (shown below)
+        useAuth.mockReturnValue({
+            user: { id: 'u1', role: 'owner' },
+            loading: false,
+            isAuthenticated: true,
+        });
+
+        // ✅ Use render() directly so useAuth isn't overwritten
+        render(
+            <MemoryRouter>
+                <JobBoard />
+            </MemoryRouter>
+        );
+
+        // Replace lines 369-371:
+        const title = await screen.findByRole('heading', { name: 'Engineering Dept' });
+        expect(title).toBeInTheDocument();
+        expect(screen.getByText('Eng description')).toBeInTheDocument();
+    });
+
+    // ── 13: Unarchive Flow ───────────────────────────────────────────────────
+    it('allows unarchiving an archived job', async () => {
+        const user = userEvent.setup();
+        let unarchiveCalled = false;
+
+        server.use(
+            http.get('http://localhost:8000/jobs', ({ request }) => {
+                const url = new URL(request.url);
+                if (url.searchParams.get('status') === 'Archived') {
+                    return HttpResponse.json([{ ...ACTIVE_JOBS[0], id: 'archived-1', status: 'Archived', title: 'Archived Job' }]);
+                }
+                return HttpResponse.json([]);
+            }),
+            http.put('http://localhost:8000/jobs/:id', () => {
+                unarchiveCalled = true;
+                return HttpResponse.json({ success: true });
+            })
+        );
+        mockSearchParams.set('status', 'Archived');
+
+        renderBoard('owner');
+
+        await screen.findByText('Archived Job');
+
+        // Mock window.confirm to return true
+        const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+        const unarchiveBtn = screen.getByRole('button', { name: /Unarchive/i });
+        await user.click(unarchiveBtn);
+
+        expect(confirmSpy).toHaveBeenCalled();
+        expect(unarchiveCalled).toBe(true);
+
+        mockSearchParams.delete('status');
+        confirmSpy.mockRestore();
+    });
+
+    // ── 14: Permanent Delete Flow ────────────────────────────────────────────
+    it('allows permanently deleting an archived job', async () => {
+        const user = userEvent.setup();
+        let deleteCalled = false;
+
+        server.use(
+            http.get('http://localhost:8000/jobs', ({ request }) => {
+                const url = new URL(request.url);
+                if (url.searchParams.get('status') === 'Archived') {
+                    // Start with 1 archived, then return 0 after delete Called? Let's just track deleteCalled
+                    return deleteCalled ? HttpResponse.json([]) : HttpResponse.json([{ ...ACTIVE_JOBS[0], id: 'archived-1', status: 'Archived', title: 'Archived Job' }]);
+                }
+                return HttpResponse.json([]);
+            }),
+            http.delete('http://localhost:8000/jobs/:id/permanent', () => {
+                deleteCalled = true;
+                return HttpResponse.json({ success: true });
+            })
+        );
+        mockSearchParams.set('status', 'Archived');
+
+        renderBoard('owner');
+
+        await screen.findByText('Archived Job');
+
+        const deleteBtn = screen.getByRole('button', { name: /Delete/i });
+        await user.click(deleteBtn);
+
+        // Modal should open
+        // Type the job title to confirm
+        const confirmInput = screen.getByPlaceholderText('Archived Job');
+        await user.type(confirmInput, 'Archived Job');
+
+        const confirmDeleteBtn = screen.getByRole('button', { name: /Permanently Delete/i });
+        await user.click(confirmDeleteBtn);
+
+        expect(deleteCalled).toBe(true);
+        // Wait for removal
+        await waitFor(() => {
+            expect(screen.queryByText('Archived Job')).not.toBeInTheDocument();
+        });
+
+        mockSearchParams.delete('status');
     });
 });
