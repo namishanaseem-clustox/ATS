@@ -11,6 +11,9 @@ export default defineConfig({
     css: false,
     coverage: {
       provider: 'v8',
+      exclude: [
+        'src/test/**'
+      ],
       thresholds: {
         lines: 90,
         functions: 90,
