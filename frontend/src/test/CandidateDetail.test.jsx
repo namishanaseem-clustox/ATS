@@ -216,7 +216,7 @@ describe('CandidateDetail Component', () => {
         });
         renderComponent();
 
-        await waitFor(() => screen.getByText('John Doe'));
+        await waitFor(() => expect(screen.getAllByText('John Doe').length).toBeGreaterThan(0));
 
         expect(screen.queryByTitle('Edit Profile')).not.toBeInTheDocument();
         expect(screen.queryByTitle('Remove Application')).not.toBeInTheDocument();

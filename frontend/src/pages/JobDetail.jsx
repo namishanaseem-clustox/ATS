@@ -71,7 +71,7 @@ const JobDetail = () => {
 
     useEffect(() => {
         // Redirect interviewers away from restricted tabs
-        if (user?.role === 'interviewer' && (activeTab === 'candidates' || activeTab === 'pipeline' || activeTab === 'settings')) {
+        if (user?.role === 'interviewer' && (activeTab === 'pipeline' || activeTab === 'settings')) {
             setActiveTab('overview');
         }
     }, [activeTab, user?.role]);
@@ -272,16 +272,14 @@ const JobDetail = () => {
                         <Layout size={18} className="mr-3" />
                         Overview
                     </button>
-                    {user?.role !== 'interviewer' && (
-                        <button
-                            onClick={() => setActiveTab('candidates')}
-                            className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'candidates' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
-                                }`}
-                        >
-                            <Users size={18} className="mr-3" />
-                            Candidates
-                        </button>
-                    )}
+                    <button
+                        onClick={() => setActiveTab('candidates')}
+                        className={`w-full flex items-center px-4 py-2 text-sm font-medium rounded-md ${activeTab === 'candidates' ? 'bg-green-50 text-[#00C853]' : 'text-gray-600 hover:bg-gray-50'
+                            }`}
+                    >
+                        <Users size={18} className="mr-3" />
+                        Candidates
+                    </button>
                     {user?.role !== 'interviewer' && (
                         <button
                             onClick={() => setActiveTab('pipeline')}

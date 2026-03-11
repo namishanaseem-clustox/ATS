@@ -67,7 +67,7 @@ const CandidateDetail = () => {
     return (
         <div className="max-w-7xl mx-auto p-8 bg-gray-50 min-h-screen">
             <Breadcrumb items={[
-                { label: 'Candidates', to: '/candidates' },
+                ...(user?.role !== 'interviewer' ? [{ label: 'Candidates', to: '/candidates' }] : []),
                 { label: `${candidate.first_name} ${candidate.last_name}` }
             ]} />
 
@@ -262,8 +262,8 @@ const CandidateDetail = () => {
                                         )}
                                     </div>
 
-                                    {/* Interview Feedback Section - Only visible to HR, Owner, and Hiring Managers */}
-                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager']}>
+                                    {/* Interview Feedback Section - Visible to all roles interacting with the candidate */}
+                                    <RoleGuard allowedRoles={['hr', 'owner', 'hiring_manager', 'interviewer']}>
                                         <div>
                                             <h3 className="text-base font-bold text-gray-900 mb-4">Interview Feedback</h3>
                                             <CandidateScorecards candidateId={candidate.id} />
