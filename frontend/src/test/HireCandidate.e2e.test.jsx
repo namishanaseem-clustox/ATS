@@ -1,4 +1,5 @@
 import React from 'react';
+import { act } from 'react';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -142,6 +143,10 @@ describe('E2E Test: Hire a Candidate', () => {
                     },
                 ),
 
+                // ── Pipeline Templates ─────────────────────────────────────
+                http.get('*/pipeline-templates*', () => HttpResponse.json([])),
+                http.get('*/pipeline*', () => HttpResponse.json([])),
+
                 // ── Fallbacks ──────────────────────────────────────────────
                 http.get('*/notifications*', () => HttpResponse.json([])),
                 http.get('*/activities/all/', () => HttpResponse.json([])),
@@ -250,11 +255,13 @@ describe('E2E Test: Hire a Candidate', () => {
                 { timeout: 5_000 },
             );
 
-            window.mockOnDragEnd({
-                draggableId: 'cand-456',
-                source: { droppableId: 'new' },
-                destination: { droppableId: 'hired' },
-                type: 'CANDIDATE',
+            await act(async () => {
+                window.mockOnDragEnd({
+                    draggableId: 'cand-456',
+                    source: { droppableId: 'new' },
+                    destination: { droppableId: 'hired' },
+                    type: 'CANDIDATE',
+                });
             });
 
             // ── STEP 8: Verify candidate moved in UI ──────────────────────
@@ -276,11 +283,11 @@ describe('E2E Test: Hire a Candidate', () => {
             await waitFor(
                 () =>
                     expect(
-                        screen.getByRole('link', { name: /^home$/i }),
+                        screen.getByText(/^Home$/i),
                     ).toBeInTheDocument(),
                 { timeout: 5_000 },
             );
-            await user.click(screen.getByRole('link', { name: /^home$/i }));
+            await user.click(screen.getByText(/^Home$/i));
 
             await waitFor(
                 () =>

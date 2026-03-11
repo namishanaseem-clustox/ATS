@@ -170,7 +170,7 @@ const ActivityList = ({ jobId, candidateId }) => {
                                                 className="flex items-center gap-1.5 text-xs font-bold text-[#00C853] hover:bg-green-50 px-2 py-1 rounded-md border border-green-100 transition-all shadow-sm"
                                             >
                                                 <Star className="h-3 w-3 fill-[#00C853]" />
-                                                Score
+                                                Submit Scorecard
                                             </button>
                                         )}
                                         <div className="flex items-center space-x-2 border-l border-gray-100 pl-3">

@@ -402,7 +402,10 @@ const ActivitiesTable = ({ activities, visibleColumns, onEdit, onDelete, onRate 
                                                 <button onClick={() => onDelete(activity.id)} className="hover:text-red-500 transition-colors" title="Delete"><Trash2 size={13} /></button>
                                                 <button onClick={() => onEdit(activity)} className="hover:text-green-500 transition-colors" title="View"><Eye size={14} /></button>
                                                 {(activity.activity_type === 'Interview' || activity.activity_type === 'Call' || activity.activity_type === 'Meeting' || activity.activity_type === 'Task') && (
-                                                    <button onClick={() => onRate(activity)} className="hover:text-yellow-500 transition-colors" title="Rate"><Star size={13} className="fill-current" /></button>
+                                                    <button onClick={() => onRate(activity)} className="flex items-center gap-1 px-1.5 py-0.5 rounded border border-green-200 text-[#00C853] hover:bg-green-50 transition-colors shadow-sm ml-1" title="Submit Scorecard">
+                                                        <Star size={12} className="fill-[#00C853]" />
+                                                        <span className="text-[10px] font-bold uppercase tracking-wide">Submit Scorecard</span>
+                                                    </button>
                                                 )}
                                             </div>
                                         </div>
