@@ -1,0 +1,312 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/home/ct-20032/Documents/Clustox ATS/frontend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+[90mstdout[2m | src/test/ScorecardModal.integration.test.jsx[2m > [22m[2mScorecardModal Integration Test[2m > [22m[2msubmits successfully when assigned user inputs valid feedback
+[22m[39mSubmitting feedback payload: {
+  activity_id: [32m'act-123'[39m,
+  candidate_id: [32m'cand-456'[39m,
+  overall_score: [33m5[39m,
+  recommendation: [32m'Strong Yes'[39m,
+  scorecard: [
+    { criteria: [32m'Technical Proficiency'[39m, score: [33m4[39m, comment: [32m''[39m },
+    { criteria: [32m'Communication Skills'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Problem Solving'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Culture Fit'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Relevant Experience'[39m, score: [33m0[39m, comment: [32m''[39m }
+  ],
+  comments: [32m''[39m
+}
+
+[90mstdout[2m | src/test/ScorecardModal.integration.test.jsx[2m > [22m[2mScorecardModal Integration Test[2m > [22m[2mdisplays error and does not save when unauthorized user tries to submit
+[22m[39mSubmitting feedback payload: {
+  activity_id: [32m'act-123'[39m,
+  candidate_id: [32m'cand-456'[39m,
+  overall_score: [33m3[39m,
+  recommendation: [32m'No'[39m,
+  scorecard: [
+    { criteria: [32m'Technical Proficiency'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Communication Skills'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Problem Solving'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Culture Fit'[39m, score: [33m0[39m, comment: [32m''[39m },
+    { criteria: [32m'Relevant Experience'[39m, score: [33m0[39m, comment: [32m''[39m }
+  ],
+  comments: [32m''[39m
+}
+
+[90mstdout[2m | src/test/JobDetail.integration.test.jsx[2m > [22m[2mJobDetail Integration Tests[2m > [22m[2mhandles candidate movement in pipeline
+[22m[39mMoving candidate: cand-1 to stage: hired
+
+ [32m✓[39m src/test/ScorecardModal.integration.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 3927[2mms[22m[39m
+     [33m[2m✓[22m[39m submits successfully when assigned user inputs valid feedback [33m 1926[2mms[22m[39m
+     [33m[2m✓[22m[39m displays error and does not save when unauthorized user tries to submit [33m 1070[2mms[22m[39m
+     [33m[2m✓[22m[39m shows validation errors if submitted without overall score or recommendation [33m 716[2mms[22m[39m
+ [32m✓[39m src/test/JobDetail.integration.test.jsx [2m([22m[2m15 tests[22m[2m)[22m[33m 4959[2mms[22m[39m
+     [33m[2m✓[22m[39m renders job details and candidates successfully [33m 529[2mms[22m[39m
+     [33m[2m✓[22m[39m switches between all available tabs [33m 703[2mms[22m[39m
+     [33m[2m✓[22m[39m toggles column menu in candidates tab [33m 607[2mms[22m[39m
+     [33m[2m✓[22m[39m handles job archival (delete) [33m 415[2mms[22m[39m
+     [33m[2m✓[22m[39m handles job cloning [33m 362[2mms[22m[39m
+     [33m[2m✓[22m[39m opens and closes AI screening modal [33m 331[2mms[22m[39m
+     [33m[2m✓[22m[39m toggles a column and clicks backdrop in column menu [33m 505[2mms[22m[39m
+     [33m[2m✓[22m[39m switches back to overview tab from candidates [33m 356[2mms[22m[39m
+ [32m✓[39m src/test/DepartmentsPage.integration.test.jsx [2m([22m[2m25 tests[22m[2m)[22m[33m 5151[2mms[22m[39m
+     [33m[2m✓[22m[39m opens create modal when Add Department is clicked [33m 317[2mms[22m[39m
+     [33m[2m✓[22m[39m handles delete department flow [33m 765[2mms[22m[39m
+     [33m[2m✓[22m[39m filters departments by status, owner and created bucket [33m 535[2mms[22m[39m
+     [33m[2m✓[22m[39m submits create department form successfully [33m 334[2mms[22m[39m
+     [33m[2m✓[22m[39m submits update department form successfully [33m 466[2mms[22m[39m
+     [33m[2m✓[22m[39m covers outside clicks for FilterPanel and CustomSelect [33m 791[2mms[22m[39m
+     [33m[2m✓[22m[39m covers CustomSelect selection from portal [33m 628[2mms[22m[39m
+     [33m[2m✓[22m[39m covers scrolling inside CustomSelect dropdown [33m 330[2mms[22m[39m
+ [32m✓[39m src/test/Team.test.jsx [2m([22m[2m24 tests[22m[2m)[22m[33m 3158[2mms[22m[39m
+     [33m[2m✓[22m[39m opens and closes the Direct Add modal [33m 527[2mms[22m[39m
+     [33m[2m✓[22m[39m handles direct user creation success [33m 306[2mms[22m[39m
+ [32m✓[39m src/test/CandidateForm.integration.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 3458[2mms[22m[39m
+     [33m[2m✓[22m[39m renders empty fields when no initialData is provided (Create mode) [33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m allows adding and removing experience entries [33m 458[2mms[22m[39m
+     [33m[2m✓[22m[39m allows adding and removing education entries [33m 362[2mms[22m[39m
+     [33m[2m✓[22m[39m submits correctly parsed payload for new candidate [33m 1036[2mms[22m[39m
+     [33m[2m✓[22m[39m submits updated payload for existing candidate [33m 376[2mms[22m[39m
+     [33m[2m✓[22m[39m shows alert and stays open on API error [33m 497[2mms[22m[39m
+[90mstdout[2m | src/test/JobPipeline.e2e.test.jsx[2m > [22m[2mE2E Test: Post a Job Journey[2m > [22m[2mLogin -> Create Dept -> Create Job -> View on Board
+[22m[39mMOCK POST /jobs {
+  id: [32m'job-1773300897276'[39m,
+  title: [32m'New E2E Job Title'[39m,
+  department_id: [32m'dept-1773300896036'[39m,
+  location: [32m''[39m,
+  employment_type: [32m'Full-time'[39m,
+  headcount: [33m1[39m,
+  min_salary: [1mnull[22m,
+  max_salary: [1mnull[22m,
+  experience_range: [32m''[39m,
+  skills: [],
+  description: [32m''[39m,
+  deadline: [1mnull[22m,
+  pipeline_template_id: [32m'tpl-1'[39m,
+  status: [32m'Published'[39m,
+  department: { name: [32m'New E2E Dept'[39m },
+  created_at: [32m'2026-03-12T07:34:57.276Z'[39m
+}
+
+ [32m✓[39m src/test/JobPipeline.e2e.test.jsx [2m([22m[2m1 test[22m[2m)[22m[33m 3628[2mms[22m[39m
+     [33m[2m✓[22m[39m Login -> Create Dept -> Create Job -> View on Board [33m 3621[2mms[22m[39m
+ [32m✓[39m src/test/JobBoard.integration.test.jsx [2m([22m[2m19 tests[22m[2m)[22m[33m 3383[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the page heading and job table after data loads [33m 403[2mms[22m[39m
+     [33m[2m✓[22m[39m toggles non-required columns correctly and prevents toggling required ones [33m 561[2mms[22m[39m
+     [33m[2m✓[22m[39m applies filters from the FilterPanel [33m 412[2mms[22m[39m
+     [33m[2m✓[22m[39m allows permanently deleting an archived job [33m 505[2mms[22m[39m
+ [32m✓[39m src/test/ActivityModal.test.jsx [2m([22m[2m15 tests[22m[2m)[22m[33m 3253[2mms[22m[39m
+     [33m[2m✓[22m[39m submits update successfully with fallback title [33m 335[2mms[22m[39m
+     [33m[2m✓[22m[39m handles availability check with conflicts [33m 556[2mms[22m[39m
+     [33m[2m✓[22m[39m handles availability check API error [33m 372[2mms[22m[39m
+     [33m[2m✓[22m[39m handles unconnected results in availability check [33m 386[2mms[22m[39m
+     [33m[2m✓[22m[39m reschedules using slot picker [33m 466[2mms[22m[39m
+ [32m✓[39m src/test/ProfileSettings.test.jsx [2m([22m[2m17 tests[22m[2m)[22m[33m 2913[2mms[22m[39m
+     [33m[2m✓[22m[39m handles password reset email request and error timeout [33m 643[2mms[22m[39m
+     [33m[2m✓[22m[39m handles avatar upload, removal, and button click [33m 458[2mms[22m[39m
+ [32m✓[39m src/test/Candidates.integration.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 2484[2mms[22m[39m
+     [33m[2m✓[22m[39m filters candidates using FilterPanel [33m 1127[2mms[22m[39m
+     [33m[2m✓[22m[39m handles Add Candidate modal tabs and success callbacks [33m 605[2mms[22m[39m
+[90mstdout[2m | src/test/HireCandidate.e2e.test.jsx[2m > [22m[2mE2E Test: Hire a Candidate[2m > [22m[2mOwner moves candidate to Hired stage → hire count on dashboard increments
+[22m[39mMoving candidate: cand-456 to stage: hired
+
+ [32m✓[39m src/test/HireCandidate.e2e.test.jsx [2m([22m[2m1 test[22m[2m)[22m[33m 2316[2mms[22m[39m
+     [33m[2m✓[22m[39m Owner moves candidate to Hired stage → hire count on dashboard increments [33m 2309[2mms[22m[39m
+ [32m✓[39m src/test/SubmitFeedback.e2e.test.jsx [2m([22m[2m1 test[22m[2m)[22m[33m 2549[2mms[22m[39m
+     [33m[2m✓[22m[39m Login as Interviewer → navigate to Activities → click "View" → update status to Completed → save [33m 2544[2mms[22m[39m
+ [32m✓[39m src/test/Tasks.integration.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[33m 1969[2mms[22m[39m
+     [33m[2m✓[22m[39m filters activities by search query [33m 358[2mms[22m[39m
+     [33m[2m✓[22m[39m filters by type using FilterPanel [33m 474[2mms[22m[39m
+     [33m[2m✓[22m[39m switches between list and board (calendar) views [33m 388[2mms[22m[39m
+[90mstdout[2m | src/test/CandidatePipeline.e2e.test.jsx[2m > [22m[2mE2E Test: Candidate Pipeline[2m > [22m[2mLogin as HM -> Open Job -> Drag Candidate to Interview stage
+[22m[39mMoving candidate: cand-456 to stage: stage-2
+
+ [32m✓[39m src/test/NoteModal.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1862[2mms[22m[39m
+     [33m[2m✓[22m[39m renders with initial state for new note [33m 315[2mms[22m[39m
+     [33m[2m✓[22m[39m handles form input changes [33m 504[2mms[22m[39m
+     [33m[2m✓[22m[39m submits correctly for Update mode [33m 402[2mms[22m[39m
+ [32m✓[39m src/test/CandidatePipeline.e2e.test.jsx [2m([22m[2m1 test[22m[2m)[22m[33m 1736[2mms[22m[39m
+     [33m[2m✓[22m[39m Login as HM -> Open Job -> Drag Candidate to Interview stage [33m 1730[2mms[22m[39m
+ [32m✓[39m src/test/ScoreModal.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 1307[2mms[22m[39m
+     [33m[2m✓[22m[39m handles recommendation change [33m 353[2mms[22m[39m
+     [33m[2m✓[22m[39m submits scores correctly [33m 712[2mms[22m[39m
+ [32m✓[39m src/test/Sidebar.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1487[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the Home and Activities links for all roles [33m 527[2mms[22m[39m
+ [32m✓[39m src/test/CandidateModal.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1242[2mms[22m[39m
+ [32m✓[39m src/test/LoginJourney.e2e.test.jsx [2m([22m[2m2 tests[22m[2m)[22m[33m 1491[2mms[22m[39m
+     [33m[2m✓[22m[39m Login success -> redirects to dashboard [33m 1072[2mms[22m[39m
+     [33m[2m✓[22m[39m Bad credentials -> error shown and maintains login state [33m 414[2mms[22m[39m
+ [32m✓[39m src/test/JobPipeline.integration.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[33m 1074[2mms[22m[39m
+     [33m[2m✓[22m[39m handles syncing pipeline from template successfully [33m 305[2mms[22m[39m
+ [32m✓[39m src/test/ConfirmationModal.test.jsx [2m([22m[2m12 tests[22m[2m)[22m[33m 929[2mms[22m[39m
+ [32m✓[39m src/test/DepartmentCard.test.jsx [2m([22m[2m16 tests[22m[2m)[22m[33m 1133[2mms[22m[39m
+     [33m[2m✓[22m[39m opens the context menu when toggle is clicked [33m 331[2mms[22m[39m
+     [33m[2m✓[22m[39m calls onEdit and closes menu when Edit is clicked from the context menu [33m 306[2mms[22m[39m
+ [32m✓[39m src/test/NotificationsSettings.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1001[2mms[22m[39m
+     [33m[2m✓[22m[39m renders notification options correctly after loading [33m 362[2mms[22m[39m
+ [32m✓[39m src/test/NotificationsWidget.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 1007[2mms[22m[39m
+     [33m[2m✓[22m[39m shows "View more" button when more than 5 activities exist, and clicking it displays all [33m 723[2mms[22m[39m
+ [32m✓[39m src/test/Requisitions/RequisitionDetail.test.jsx [2m([22m[2m13 tests[22m[2m)[22m[33m 806[2mms[22m[39m
+ [32m✓[39m src/test/WelcomeModal.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 674[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the modal if hasSeenWelcome is outside localStorage [33m 482[2mms[22m[39m
+ [32m✓[39m src/test/AuthContext.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[33m 631[2mms[22m[39m
+     [33m[2m✓[22m[39m handles successful login [33m 308[2mms[22m[39m
+ [32m✓[39m src/test/ColumnSelector.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 725[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the toggle button and keeps dropdown closed by default [33m 365[2mms[22m[39m
+ [32m✓[39m src/test/ActionMenu.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 614[2mms[22m[39m
+ [32m✓[39m src/test/PermanentDeleteModal.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 951[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the modal with the job title when isOpen is true [33m 398[2mms[22m[39m
+ [32m✓[39m src/test/Breadcrumb.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 735[2mms[22m[39m
+     [33m[2m✓[22m[39m renders a nav element with the aria-label "Breadcrumb" [33m 383[2mms[22m[39m
+ [32m✓[39m src/test/CandidateDetail.test.jsx [2m([22m[2m14 tests[22m[2m)[22m[33m 662[2mms[22m[39m
+ [32m✓[39m src/test/UserProfileDropdown.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 627[2mms[22m[39m
+ [32m✓[39m src/test/JobCard.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 610[2mms[22m[39m
+ [32m✓[39m src/test/AppearanceSettings.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[33m 830[2mms[22m[39m
+     [33m[2m✓[22m[39m saves preferences successfully [33m 542[2mms[22m[39m
+ [32m✓[39m src/test/JobSelector.test.jsx [2m([22m[2m8 tests[22m[2m)[22m[33m 927[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the "None" option and all fetched job options in the dropdown [33m 559[2mms[22m[39m
+ [32m✓[39m src/test/CustomSelect.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 644[2mms[22m[39m
+ [32m✓[39m src/test/SettingsPage.test.jsx [2m([22m[2m6 tests[22m[2m)[22m[33m 438[2mms[22m[39m
+     [33m[2m✓[22m[39m renders the settings header and description [33m 370[2mms[22m[39m
+ [32m✓[39m src/test/MultiSelect.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[33m 811[2mms[22m[39m
+     [33m[2m✓[22m[39m opens the dropdown when the trigger button is clicked [33m 351[2mms[22m[39m
+ [32m✓[39m src/test/Dashboard.integration.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 486[2mms[22m[39m
+ [32m✓[39m src/test/AuthFlow.integration.test.jsx [2m([22m[2m2 tests[22m[2m)[22m[33m 524[2mms[22m[39m
+     [33m[2m✓[22m[39m Login success -> redirects to dashboard [33m 400[2mms[22m[39m
+ [32m✓[39m src/test/TopPerformersWidget.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[33m 377[2mms[22m[39m
+ [32m✓[39m src/test/MyActivitiesWidget.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[33m 326[2mms[22m[39m
+ [32m✓[39m src/test/TaskInboxWidget.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m src/test/Notifications.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 257[2mms[22m[39m
+ [32m✓[39m src/test/MyJobsWidget.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 188[2mms[22m[39m
+ [32m✓[39m src/test/MyCandidatesWidget.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 233[2mms[22m[39m
+ [32m✓[39m src/test/RecentActionsWidget.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 136[2mms[22m[39m
+ [32m✓[39m src/test/QuickActionsWidget.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 154[2mms[22m[39m
+ [32m✓[39m src/test/ProtectedRouteAndRoleGuard.test.jsx [2m([22m[2m10 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32m✓[39m src/test/AdminSmoke.test.jsx [2m([22m[2m1 test[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/test/MyPerformanceChartWidget.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[32m 90[2mms[22m[39m
+ [32m✓[39m src/test/ApplicationStatusBadge.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/test/Counter.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 58[2mms[22m[39m
+ [32m✓[39m src/test/APIClient.unit.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/test/Dashboard.smoke.test.jsx [2m([22m[2m2 tests[22m[2m | [22m[33m1 skipped[39m[2m)[22m[32m 60[2mms[22m[39m
+ [32m✓[39m src/test/api/departments.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/test/api/activities.test.js [2m([22m[2m9 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m src/test/api/jobs.test.js [2m([22m[2m16 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/test/api/requisitions.test.js [2m([22m[2m8 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/test/useDepartmentStore.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/test/api/scorecards.test.js [2m([22m[2m5 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m62 passed[39m[22m[90m (62)[39m
+[2m      Tests [22m [1m[32m514 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (515)[39m
+[2m   Start at [22m 12:34:43
+[2m   Duration [22m 60.62s[2m (transform 2.59s, setup 15.90s, import 27.01s, tests 71.67s, environment 44.19s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   68.44 |    65.21 |    68.5 |    69.7 |                   
+ src               |      80 |       75 |      60 |   85.71 |                   
+  App.jsx          |      80 |       75 |      60 |   85.71 | 51,74             
+ src/api           |   79.11 |    77.77 |    67.5 |   78.94 |                   
+  activities.js    |     100 |      100 |     100 |     100 |                   
+  candidates.js    |      75 |      100 |    62.5 |      75 | 9-10,29-34,43-44  
+  client.js        |     100 |     87.5 |     100 |     100 | 3                 
+  dashboard.js     |   66.66 |      100 |      50 |   66.66 | 4-5,19-20,29-30   
+  departments.js   |     100 |      100 |     100 |     100 |                   
+  feedbacks.js     |   33.33 |      100 |       0 |   33.33 | 4-5,9-10,14-15    
+  jobs.js          |     100 |      100 |     100 |     100 |                   
+  pipeline.js      |   43.47 |        0 |    12.5 |   43.47 | ...33-34,38-39,43 
+  preferences.js   |   33.33 |      100 |       0 |   33.33 | 4-5,9-10          
+  requisitions.js  |     100 |      100 |     100 |     100 |                   
+  scorecards.js    |     100 |      100 |     100 |     100 |                   
+  users.js         |   39.28 |      100 |   11.11 |   39.28 | ...34,38-45,49-50 
+ src/assets        |       0 |        0 |       0 |       0 |                   
+  ...rtboard 1.png |       0 |        0 |       0 |       0 |                   
+ src/components    |   70.58 |    65.75 |   71.54 |   71.69 |                   
+  ...ningModal.jsx |   25.71 |    22.22 |   28.57 |   26.66 | 20-145            
+  ActionMenu.jsx   |     100 |    91.66 |     100 |     100 | 10                
+  ActivityList.jsx |    1.47 |        0 |       0 |    1.63 | 9-214             
+  ...vityModal.jsx |   95.93 |     87.5 |    90.9 |   97.38 | 84,160,482-483    
+  ...atusBadge.jsx |     100 |      100 |     100 |     100 |                   
+  Breadcrumb.jsx   |     100 |      100 |     100 |     100 |                   
+  CalendarView.jsx |    7.35 |        0 |       0 |    9.25 | ...,81-95,109-193 
+  ...idateForm.jsx |   91.93 |     91.3 |   84.37 |   90.56 | 225-230,257-258   
+  ...dateModal.jsx |     100 |    83.33 |     100 |     100 | 9                 
+  CandidateRow.jsx |    5.26 |        0 |       0 |    6.66 | 10-139            
+  ...corecards.jsx |    5.26 |        0 |       0 |    5.55 | 7-77              
+  ...nSelector.jsx |     100 |      100 |     100 |     100 |                   
+  ...tionModal.jsx |     100 |      100 |     100 |     100 |                   
+  Counter.jsx      |     100 |      100 |     100 |     100 |                   
+  CustomSelect.jsx |   95.74 |    90.47 |   93.33 |   97.56 | 30                
+  ...tmentCard.jsx |      76 |    66.66 |      75 |      76 | 18-19,50-66       
+  ...mentModal.jsx |     100 |      100 |     100 |     100 |                   
+  ...ViewModal.jsx |    2.32 |        0 |       0 |    2.63 | 9-205             
+  FilterPanel.jsx  |     100 |    94.23 |     100 |     100 | 15,21,67          
+  ...tivityLog.jsx |    3.33 |        0 |       0 |    3.57 | 5-105             
+  JobCard.jsx      |     100 |      100 |     100 |     100 |                   
+  JobForm.jsx      |   93.54 |    54.54 |   92.85 |   92.59 | 45,243            
+  JobPipeline.jsx  |    75.2 |    67.74 |   72.22 |   75.67 | ...58,181,283-341 
+  JobSelector.jsx  |     100 |      100 |     100 |     100 |                   
+  MultiSelect.jsx  |     100 |     92.3 |     100 |     100 | 12,53             
+  ...iesWidget.jsx |     100 |      100 |     100 |     100 |                   
+  ...tesWidget.jsx |     100 |      100 |     100 |     100 |                   
+  MyJobsWidget.jsx |     100 |     87.5 |     100 |     100 | 60                
+  ...artWidget.jsx |     100 |      100 |     100 |     100 |                   
+  NoteList.jsx     |    2.12 |        0 |       0 |    2.56 | 9-145             
+  NoteModal.jsx    |   94.82 |    87.03 |     100 |   96.15 | 66,77             
+  ...fications.jsx |   91.66 |    82.14 |   93.75 |   92.85 | 20,65,67          
+  ...onsWidget.jsx |   83.78 |    68.57 |   88.88 |   84.84 | 19,43-46          
+  ...leteModal.jsx |     100 |      100 |     100 |     100 |                   
+  ...ctedRoute.jsx |     100 |      100 |     100 |     100 |                   
+  ...onsWidget.jsx |     100 |      100 |     100 |     100 |                   
+  ...onsWidget.jsx |     100 |      100 |     100 |     100 |                   
+  ResumeUpload.jsx |    2.63 |        0 |       0 |     2.7 | 7-75              
+  RoleGuard.jsx    |     100 |      100 |     100 |     100 |                   
+  ScoreModal.jsx   |   97.72 |    96.77 |     100 |   97.43 | 83                
+  ...cardModal.jsx |   98.52 |       85 |   94.11 |   98.46 | 224               
+  Sidebar.jsx      |     100 |    91.89 |     100 |     100 | 26-28             
+  ...ckerModal.jsx |   28.57 |    19.35 |   27.27 |   28.57 | ...5,41-63,68-178 
+  ...boxWidget.jsx |     100 |    95.65 |     100 |     100 | 35                
+  ...ersWidget.jsx |   84.21 |    97.82 |    64.7 |   91.17 | 135-137           
+  ...eDropdown.jsx |    92.3 |    80.76 |      80 |   91.66 | 75-106            
+  WelcomeModal.jsx |     100 |      100 |     100 |     100 |                   
+ src/context       |     100 |      100 |     100 |     100 |                   
+  AuthContext.jsx  |     100 |      100 |     100 |     100 |                   
+ src/hooks         |     100 |      100 |     100 |     100 |                   
+  ...ersistence.js |     100 |      100 |     100 |     100 |                   
+ src/pages         |   70.06 |     73.5 |   74.55 |   70.73 |                   
+  ...nvitation.jsx |    1.96 |        0 |       0 |       2 | 7-131             
+  ...ateDetail.jsx |     100 |      100 |     100 |     100 |                   
+  Candidates.jsx   |   91.39 |    89.62 |   89.18 |   93.75 | 49-50,223,316,356 
+  Dashboard.jsx    |     100 |      100 |     100 |     100 |                   
+  ...tPassword.jsx |    6.25 |        0 |       0 |    6.25 | 7-60              
+  JobBoard.jsx     |   90.74 |     86.5 |   93.75 |   91.83 | ...52-353,394-395 
+  JobDetail.jsx    |   80.27 |    86.55 |   89.36 |   80.45 | ...80,186,195-202 
+  JobWizard.jsx    |   70.27 |       50 |      80 |   69.44 | ...47,53-54,59-62 
+  Login.jsx        |   90.47 |    72.72 |     100 |   90.47 | 16,30             
+  ...tPassword.jsx |    2.85 |        0 |       0 |    3.22 | 7-97              
+  ...latesPage.jsx |    5.05 |        0 |       0 |    5.49 | ...50-232,264-344 
+  Tasks.jsx        |   79.53 |    69.04 |   86.53 |   84.39 | ...48,299-303,325 
+  Team.jsx         |     100 |    94.73 |     100 |     100 | 199-208,219,234   
+ src/pages/Admin   |    4.06 |        0 |     3.5 |    4.76 |                   
+  AdminPage.jsx    |     100 |      100 |     100 |     100 |                   
+  ...sionsPage.jsx |      50 |        0 |       0 |      50 | 6,16              
+  ...tingsPage.jsx |    1.05 |        0 |       0 |    1.25 | 13-20,31-451      
+ ...es/Departments |   65.77 |    77.94 |   69.04 |   65.35 |                   
+  ...entDetail.jsx |    1.92 |        0 |       0 |    2.22 | 12-196            
+  ...mentsPage.jsx |     100 |      100 |     100 |     100 |                   
+ ...s/Requisitions |   35.71 |    32.14 |   35.71 |   37.27 |                   
+  ...ionDetail.jsx |   97.67 |     93.1 |     100 |     100 | 47,86,134,209     
+  ...itionForm.jsx |     2.5 |        0 |       0 |     2.7 | 8-161             
+  ...tionsPage.jsx |    4.65 |        0 |       0 |    5.71 | 20-176            
+ ...pages/Settings |   94.39 |    81.02 |   89.47 |   98.36 |                   
+  ...eSettings.jsx |   93.33 |      100 |    87.5 |   96.29 | 48                
+  ...sSettings.jsx |   93.54 |      100 |    90.9 |   96.42 | 47                
+  ...eSettings.jsx |   94.52 |    78.51 |   88.57 |   99.17 | 143               
+  SettingsPage.jsx |     100 |      100 |     100 |     100 |                   
+ src/store         |     100 |      100 |     100 |     100 |                   
+  ...tmentStore.js |     100 |      100 |     100 |     100 |                   
+ src/utils         |   97.77 |       80 |     100 |   97.72 |                   
+  confetti.js      |   97.77 |       80 |     100 |   97.72 | 56                
+-------------------|---------|----------|---------|---------|-------------------

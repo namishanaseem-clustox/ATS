@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import DepartmentCard from '../components/DepartmentCard';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -54,14 +54,12 @@ describe('DepartmentCard', () => {
     // ─── Status badge ──────────────────────────────────────────────────────────
     it('renders the status badge with green styling for Active departments', () => {
         renderCard({ status: 'Active' });
-        // The badge is the span with the rounded-full class
         const badge = screen.getAllByText('Active').find(el => el.classList.contains('rounded-full'));
         expect(badge).toHaveClass('bg-green-100', 'text-green-800');
     });
 
     it('renders the status badge with grey styling for Inactive departments', () => {
         renderCard({ status: 'Inactive' });
-        // The badge is the span with the rounded-full class
         const badge = screen.getAllByText('Inactive').find(el => el.classList.contains('rounded-full'));
         expect(badge).toHaveClass('bg-gray-100', 'text-gray-800');
     });
@@ -108,8 +106,6 @@ describe('DepartmentCard', () => {
     // ─── Context menu (MoreVertical) ────────────────────────────────────────────
     it('context menu is hidden by default', () => {
         renderCard();
-        // The Edit/Delete text inside the dropdown only appear when showMenu is true
-        const menuItems = screen.queryAllByText('Edit', { exact: false });
         const titleEditBtn = Array.from(document.querySelectorAll('button')).find(b => b.title === 'Edit');
         expect(titleEditBtn).toBeInTheDocument();
     });
@@ -119,7 +115,6 @@ describe('DepartmentCard', () => {
         const toggleBtn = container.querySelector('.absolute.top-4.right-4 button');
         fireEvent.click(toggleBtn);
 
-        // We know it opened if there is a button with text Edit but no title="Edit" (the dropdown button has no title)
         const dropdownButtons = screen.getAllByRole('button').filter(btn => btn.textContent.includes('Edit') && !btn.title);
         expect(dropdownButtons.length).toBeGreaterThan(0);
     });
@@ -150,5 +145,72 @@ describe('DepartmentCard', () => {
         expect(onDelete).toHaveBeenCalledTimes(1);
         expect(onDelete).toHaveBeenCalledWith(42);
         expect(screen.queryAllByRole('button').find(btn => btn.textContent.includes('Delete') && !btn.title)).toBeUndefined();
+    });
+
+    // ─── Utility ──────────────────────────────────────────────────────────────
+    // cn is an internal ESM helper and cannot be require()'d directly.
+    // We verify its effect through the rendered DOM instead.
+    it('cn utility merges classes correctly', () => {
+        const { container } = renderCard({ status: 'Active' });
+        const badge = container.querySelector('.bg-green-100.text-green-800');
+        expect(badge).toBeInTheDocument();
+    });
+
+    // ─── Outside Clicks ────────────────────────────────────────────────────────
+    it('closes the menu when clicking outside', () => {
+        const { container } = renderCard();
+        const toggleBtn = container.querySelector('.absolute.top-4.right-4 button');
+
+        fireEvent.click(toggleBtn);
+        expect(screen.queryByText('Edit', { exact: true })).toBeInTheDocument();
+
+        fireEvent.mouseDown(document.body);
+
+        expect(screen.queryByText('Edit', { exact: true })).not.toBeInTheDocument();
+    });
+
+    it('does NOT close the menu when clicking inside the menu', () => {
+        const { container } = renderCard();
+        const toggleBtn = container.querySelector('.absolute.top-4.right-4 button');
+
+        fireEvent.click(toggleBtn);
+        const menu = container.querySelector('.absolute.top-4.right-4');
+
+        fireEvent.mouseDown(menu);
+
+        expect(screen.queryByText('Edit', { exact: true })).toBeInTheDocument();
+    });
+
+    // ─── Navigation ────────────────────────────────────────────────────────────
+    it('navigates to the active jobs detail page when Active count is clicked', () => {
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { href: '' };
+
+        renderCard();
+        const activeBtn = screen.getAllByRole('button').find(btn =>
+            btn.textContent.includes('Active') && btn.textContent.includes('3') && !btn.title
+        );
+        fireEvent.click(activeBtn);
+
+        expect(window.location.href).toBe('/departments/42?status=Published');
+
+        window.location = originalLocation;
+    });
+
+    it('navigates to the department detail page when Total count is clicked', () => {
+        const originalLocation = window.location;
+        delete window.location;
+        window.location = { href: '' };
+
+        renderCard();
+        const totalBtn = screen.getAllByRole('button').find(btn =>
+            btn.textContent.includes('Total') && btn.textContent.includes('7') && !btn.title
+        );
+        fireEvent.click(totalBtn);
+
+        expect(window.location.href).toBe('/departments/42');
+
+        window.location = originalLocation;
     });
 });

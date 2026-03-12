@@ -26,7 +26,11 @@ const RequisitionDetail = () => {
     const approveReq = useMutation({ mutationFn: approveRequisition, onSuccess: invalidateQuery });
     const rejectReq = useMutation({
         mutationFn: ({ id, reason }) => rejectRequisition(id, reason),
-        onSuccess: invalidateQuery
+        onSuccess: () => {
+            invalidateQuery();
+            setIsRejectModalOpen(false);
+            setRejectReason('');
+        }
     });
     const convertReq = useMutation({
         mutationFn: convertRequisitionToJob,
@@ -46,8 +50,6 @@ const RequisitionDetail = () => {
     const submitRejection = () => {
         if (!rejectReason.trim()) return;
         rejectReq.mutate({ id: req.id, reason: rejectReason });
-        setIsRejectModalOpen(false);
-        setRejectReason('');
     };
 
     if (isLoading) return <div className="p-8 text-center text-gray-500">Loading details...</div>;
