@@ -86,8 +86,9 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-dark mb-1">Department Name</label>
+                        <label htmlFor="dept-name" className="block text-sm font-medium text-dark mb-1">Department Name</label>
                         <input
+                            id="dept-name"
                             type="text"
                             name="name"
                             value={formData.name}
@@ -99,8 +100,9 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-dark mb-1">Description</label>
+                        <label htmlFor="dept-description" className="block text-sm font-medium text-dark mb-1">Description</label>
                         <textarea
+                            id="dept-description"
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
@@ -123,8 +125,9 @@ const DepartmentModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-dark mb-1">Location</label>
+                            <label htmlFor="dept-location" className="block text-sm font-medium text-dark mb-1">Location</label>
                             <input
+                                id="dept-location"
                                 type="text"
                                 name="location"
                                 value={formData.location}

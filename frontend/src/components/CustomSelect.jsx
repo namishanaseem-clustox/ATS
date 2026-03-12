@@ -68,11 +68,14 @@ const CustomSelect = ({ label, options, value, onChange, name, disabled = false,
                 width: dropdownPos.width,
                 zIndex: 9999,
             }}
+            role="listbox"
             className="bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
         >
             {options.map((option) => (
                 <div
                     key={option.value}
+                    role="option"
+                    aria-selected={String(option.value) === String(value)}
                     className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 transition-colors ${String(option.value) === String(value) ? 'bg-green-50 text-[#00C853] font-medium' : 'text-gray-900'}`}
                     onMouseDown={(e) => { e.preventDefault(); handleSelect(option.value); }}
                 >
@@ -90,7 +93,7 @@ const CustomSelect = ({ label, options, value, onChange, name, disabled = false,
 
     return (
         <div className={`relative ${className}`}>
-            {label && <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
+            {label && <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label}</label>}
             <div className="relative">
                 <button
                     ref={buttonRef}
@@ -109,6 +112,7 @@ const CustomSelect = ({ label, options, value, onChange, name, disabled = false,
 
                 {/* Hidden input for HTML5 validation */}
                 <input
+                    id={name}
                     type="text"
                     name={name}
                     value={value || ''}

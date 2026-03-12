@@ -120,6 +120,7 @@ const FilterPanel = ({ filters = [], activeFilters = {}, onChange, onClear, alig
                                             return (
                                                 <label
                                                     key={opt.value}
+                                                    htmlFor={`filter-${currentGroup.key}-${opt.value}`}
                                                     className={`flex items-center gap-2.5 px-2 py-1.5 rounded-lg cursor-pointer select-none transition-colors ${checked ? 'bg-green-50' : 'hover:bg-gray-50'
                                                         }`}
                                                 >
@@ -131,6 +132,7 @@ const FilterPanel = ({ filters = [], activeFilters = {}, onChange, onClear, alig
                                                         {checked && <Check size={11} className="text-white" strokeWidth={3} />}
                                                     </span>
                                                     <input
+                                                        id={`filter-${currentGroup.key}-${opt.value}`}
                                                         type="checkbox"
                                                         className="hidden"
                                                         checked={checked}

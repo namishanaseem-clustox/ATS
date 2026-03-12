@@ -260,7 +260,7 @@ const DepartmentsPage = ({ readOnly = false }) => {
                                                     <td className="px-4 py-3.5 whitespace-nowrap">
                                                         <div className="flex items-center">
                                                             <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center rounded-full bg-blue-100 text-primary font-bold text-xs">
-                                                                {dept.name.substring(0, 2).toUpperCase()}
+                                                                {(dept.name || '').substring(0, 2).toUpperCase()}
                                                             </div>
                                                             <div className="ml-3">
                                                                 <div
