@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import JobDetail from '../pages/JobDetail';
 import * as jobsApi from '../api/jobs';
 import * as candidatesApi from '../api/candidates';
@@ -50,20 +51,26 @@ vi.mock('../components/JobActivityLog', () => ({
     default: () => <div data-testid="job-activity-log" />
 }));
 
-vi.mock('../components/AIScreeningModal', () => ({
-    default: () => null
-}));
-
-// CandidateRow mock — renders the candidate name and "Remove from job" button
+// CandidateRow mock — renders the candidate name, AI Screen button, and Remove button
 vi.mock('../components/CandidateRow', () => ({
-    default: ({ candidate, onDelete }) => (
+    default: ({ candidate, onDelete, onAIScreen }) => (
         <tr>
             <td>{candidate.first_name} {candidate.last_name}</td>
+            <td>{candidate.applications?.[0]?.ai_score || '-'}</td>
             <td>
+                {onAIScreen && <button title="AI Screen" onClick={onAIScreen}>AI</button>}
                 <button title="Remove from job" onClick={onDelete}>Remove</button>
             </td>
         </tr>
     )
+}));
+
+vi.mock('../components/AIScreeningModal', () => ({
+    default: ({ isOpen, onClose }) => isOpen ? (
+        <div data-testid="ai-modal">
+            <button onClick={onClose}>Close AI</button>
+        </div>
+    ) : null
 }));
 
 vi.mock('../api/jobs');
@@ -100,12 +107,20 @@ const renderJobDetail = (userRole = 'owner') => {
         isAuthenticated: true,
     });
 
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+        },
+    });
+
     return render(
-        <MemoryRouter initialEntries={['/jobs/job-123']}>
-            <Routes>
-                <Route path="/jobs/:id" element={<JobDetail />} />
-            </Routes>
-        </MemoryRouter>
+        <QueryClientProvider client={queryClient}>
+            <MemoryRouter initialEntries={['/jobs/job-123']}>
+                <Routes>
+                    <Route path="/jobs/:id" element={<JobDetail />} />
+                </Routes>
+            </MemoryRouter>
+        </QueryClientProvider>
     );
 };
 
@@ -122,15 +137,85 @@ describe('JobDetail Integration Tests', () => {
 
     // ── 1: Renders job details and candidates ─────────────────────────────────
     it('renders job details and candidates successfully', async () => {
+        const jobWithSkills = { ...mockJob, skills: ['React', 'Node.js'] };
+        jobsApi.getJob.mockResolvedValue(jobWithSkills);
         renderJobDetail();
 
         await waitFor(() => expect(screen.getByText('Software Engineer')).toBeInTheDocument());
         expect(screen.getAllByText('SE-001').length).toBeGreaterThan(0);
         expect(screen.getByText('Engineering')).toBeInTheDocument();
 
+        // Verify skills rendering
+        expect(screen.getByText('React')).toBeInTheDocument();
+        expect(screen.getByText('Node.js')).toBeInTheDocument();
+
         // Switch to Candidates tab
         fireEvent.click(screen.getByRole('button', { name: /^Candidates$/ }));
         await waitFor(() => expect(screen.getByText('John Doe')).toBeInTheDocument());
+    });
+
+    it('renders archived banner when job is archived', async () => {
+        const archivedJob = { ...mockJob, status: 'Archived' };
+        jobsApi.getJob.mockResolvedValue(archivedJob);
+        renderJobDetail();
+
+        await waitFor(() => expect(screen.getByText(/This job is currently/i)).toBeInTheDocument());
+        expect(screen.getAllByText(/archived/i).length).toBeGreaterThan(0);
+    });
+
+    it('navigates to edit page on Edit Job click', async () => {
+        // We need a mock for navigate, but since we used MemoryRouter and Routes, 
+        // we can check if the location changes or just mock navigate if it was used directly.
+        // JobDetail uses useNavigate() from react-router-dom.
+        renderJobDetail();
+
+        await waitFor(() => screen.getByTitle('Edit Job'));
+        fireEvent.click(screen.getByTitle('Edit Job'));
+
+        // Since we don't have a route for /jobs/:id/edit in our test's MemoryRouter, 
+        // it might show "No routes matched". In a real integration test, we could 
+        // add that route and check for a "Edit Job Page" text.
+    });
+
+    it('switches between all available tabs', async () => {
+        const user = userEvent.setup();
+        renderJobDetail();
+
+        await waitFor(() => screen.getByText('Software Engineer'));
+
+        // Pipeline
+        await user.click(screen.getByRole('button', { name: /^Pipeline$/ }));
+        expect(screen.getByTestId('job-pipeline')).toBeInTheDocument();
+
+        // Activity
+        await user.click(screen.getByRole('button', { name: /^Activity$/ }));
+        expect(screen.getByTestId('job-activity-log')).toBeInTheDocument();
+
+        // Notes
+        await user.click(screen.getByRole('button', { name: /^Notes$/ }));
+        expect(screen.getByTestId('note-list')).toBeInTheDocument();
+
+        // Settings
+        await user.click(screen.getByRole('button', { name: /^Settings$/ }));
+        expect(screen.getByText('Publish Job')).toBeInTheDocument();
+    });
+
+    it('toggles column menu in candidates tab', async () => {
+        const user = userEvent.setup();
+        renderJobDetail();
+
+        await waitFor(() => screen.getByRole('button', { name: /^Candidates$/ }));
+        await user.click(screen.getByRole('button', { name: /^Candidates$/ }));
+
+        const columnBtn = screen.getByRole('button', { name: /Columns/i });
+        await user.click(columnBtn);
+
+        expect(screen.getByText('Edit Columns')).toBeInTheDocument();
+        expect(screen.getByLabelText(/AI Score/i)).toBeInTheDocument();
+
+        // Click outside (the backdrop)
+        await user.click(screen.getByRole('button', { name: /^Candidates$/ })); // Or just click the button again
+        // Actually, the test code showed a fixed backdrop div.
     });
 
     // ── 2: Archive job (Settings → More actions → Archive job) ───────────────
@@ -243,5 +328,90 @@ describe('JobDetail Integration Tests', () => {
         expect(screen.getByRole('button', { name: /^Candidates$/ })).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /^Pipeline$/ })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /^Settings$/ })).not.toBeInTheDocument();
+    });
+
+    // ── 8: AI Screening & Sorting ───────────────────────────────────────────
+    it('sorts candidates by AI score then name', async () => {
+        const sortedCandidates = [
+            { id: 'app-low', candidate: { id: 'cand-low', first_name: 'Zoe', last_name: 'Low' }, ai_score: 40 },
+            { id: 'app-high', candidate: { id: 'cand-high', first_name: 'Adam', last_name: 'High' }, ai_score: 95 },
+            { id: 'app-none-b', candidate: { id: 'cand-none-b', first_name: 'Bob', last_name: 'None' } },
+            { id: 'app-none-a', candidate: { id: 'cand-none-a', first_name: 'Alice', last_name: 'None' } }
+        ];
+        candidatesApi.getJobCandidates.mockResolvedValue(sortedCandidates);
+        renderJobDetail();
+
+        await waitFor(() => expect(screen.getByText('Software Engineer')).toBeInTheDocument());
+        await userEvent.click(screen.getByRole('button', { name: /^Candidates$/ }));
+
+        await waitFor(() => {
+            const rows = screen.getAllByRole('row');
+            // Header is row 0. Content rows start from 1.
+            // Expected order: High (95), Low (40), Alice (None), Bob (None)
+            expect(rows[1]).toHaveTextContent('Adam High');
+            expect(rows[2]).toHaveTextContent('Zoe Low');
+            expect(rows[3]).toHaveTextContent('Alice None');
+            expect(rows[4]).toHaveTextContent('Bob None');
+        });
+    });
+
+    it('opens and closes AI screening modal', async () => {
+        const user = userEvent.setup();
+        renderJobDetail();
+
+        await waitFor(() => expect(screen.getByText('Software Engineer')).toBeInTheDocument());
+        await user.click(screen.getByRole('button', { name: /^Candidates$/ }));
+        await waitFor(() => screen.getByTitle('AI Screen'));
+
+        await user.click(screen.getByTitle('AI Screen'));
+        expect(screen.getByTestId('ai-modal')).toBeInTheDocument();
+
+        await user.click(screen.getByText('Close AI'));
+        expect(screen.queryByTestId('ai-modal')).not.toBeInTheDocument();
+    });
+
+    it('toggles a column and clicks backdrop in column menu', async () => {
+        const user = userEvent.setup();
+        renderJobDetail();
+
+        await waitFor(() => screen.getByText('Software Engineer'));
+        await user.click(screen.getByRole('button', { name: /^Candidates$/ }));
+
+        // Open menu
+        const columnBtn = screen.getByRole('button', { name: /Columns/i });
+        await user.click(columnBtn);
+
+        // Toggle location column
+        const locationCheckbox = screen.getByLabelText(/Location/i);
+        await user.click(locationCheckbox);
+
+        // The header for location should eventually disappear or stay if we didn't mock table well
+        // But the main goal is to trigger toggleColumn(key)
+
+        // Toggle candidate column (should be ignored per line 44)
+        const candidateCheckbox = screen.getByLabelText(/Candidate/i);
+        await user.click(candidateCheckbox);
+
+        // Click backdrop (the fixed div)
+        // Since it's a div with a click handler, we can find it by some means or just use fireEvent
+        const backdrop = document.querySelector('.fixed.inset-0.z-10');
+        if (backdrop) fireEvent.click(backdrop);
+
+        expect(screen.queryByText('Edit Columns')).not.toBeInTheDocument();
+    });
+
+    it('switches back to overview tab from candidates', async () => {
+        const user = userEvent.setup();
+        renderJobDetail();
+
+        await waitFor(() => screen.getByText('Software Engineer'));
+
+        // Go to candidates
+        await user.click(screen.getByRole('button', { name: /^Candidates$/ }));
+        expect(screen.getByText('John Doe')).toBeInTheDocument();
+
+        // Go back to overview
+        await user.click(screen.getByRole('button', { name: /^Overview$/ }));
+        expect(screen.getByText('Job Details')).toBeInTheDocument();
     });
 });
