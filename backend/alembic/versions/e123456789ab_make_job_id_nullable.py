@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 
 # revision identifiers, used by Alembic.
@@ -19,12 +20,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.alter_column('scheduled_activities', 'job_id',
-               existing_type=sa.UUID(),
-               nullable=True)
+    # Create scheduled_activities table (was not created in any earlier migration)
+    op.create_table(
+        'scheduled_activities',
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
+        sa.Column('job_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('jobs.id'), nullable=True),
+        sa.Column('candidate_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('candidates.id'), nullable=True),
+        sa.Column('activity_type', sa.String(), nullable=False, server_default='Task'),
+        sa.Column('title', sa.String(), nullable=False),
+        sa.Column('status', sa.String(), server_default='Pending'),
+        sa.Column('scheduled_at', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('end_time', sa.DateTime(timezone=True), nullable=True),
+        sa.Column('location', sa.String(), nullable=True),
+        sa.Column('description', sa.Text(), nullable=True),
+        sa.Column('participants', postgresql.JSONB(), nullable=True),
+        sa.Column('details', postgresql.JSONB(), nullable=True),
+        sa.Column('created_by', postgresql.UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=True),
+        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
+        sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    )
+    op.create_index(op.f('ix_scheduled_activities_id'), 'scheduled_activities', ['id'], unique=False)
 
 
 def downgrade() -> None:
-    op.alter_column('scheduled_activities', 'job_id',
-               existing_type=sa.UUID(),
-               nullable=False)
+    op.drop_index(op.f('ix_scheduled_activities_id'), table_name='scheduled_activities')
+    op.drop_table('scheduled_activities')
