@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: clustox_test_db
         ports:
           - 5432:5432
         options: >-
@@ -40,11 +40,7 @@ jobs:
           
       - name: Set environment variables for tests
         run: |
-          echo "DATABASE_PORT=5432" >> $GITHUB_ENV
-          echo "DATABASE_PASSWORD=test_password" >> $GITHUB_ENV
-          echo "DATABASE_USER=test_user" >> $GITHUB_ENV
-          echo "DATABASE_DB=test_db" >> $GITHUB_ENV
-          echo "DATABASE_HOST=localhost" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost/clustox_test_db" >> $GITHUB_ENV
           echo "SECRET_KEY=testing_secret_key_12345" >> $GITHUB_ENV
           echo "ENVIRONMENT=testing" >> $GITHUB_ENV
           
@@ -61,7 +57,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
           

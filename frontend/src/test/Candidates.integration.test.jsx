@@ -205,6 +205,9 @@ describe('Candidates Page Integration', () => {
         });
 
         // Re-open and test Upload success
+        await waitFor(() => {
+            expect(screen.getByText(/add your first candidate/i)).toBeInTheDocument();
+        });
         fireEvent.click(screen.getByText(/add your first candidate/i));
         fireEvent.click(screen.getByRole('button', { name: /upload resume/i }));
         fireEvent.click(screen.getByText('Upload Success'));
@@ -213,6 +216,9 @@ describe('Candidates Page Integration', () => {
         });
 
         // Test Close button (in upload tab footer)
+        await waitFor(() => {
+            expect(screen.getByText(/add your first candidate/i)).toBeInTheDocument();
+        });
         fireEvent.click(screen.getByText(/add your first candidate/i));
         fireEvent.click(screen.getByRole('button', { name: /close/i }));
         expect(screen.queryByText('Add New Candidate')).not.toBeInTheDocument();
