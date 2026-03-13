@@ -71,13 +71,18 @@ const ResetPassword = () => {
                             <p className="text-sm font-medium text-gray-700">Password updated! Redirecting to login…</p>
                         </div>
                     ) : (
+                        // ... inside your return statement
                         <form onSubmit={handleSubmit} className="space-y-4">
                             {error && (
                                 <div className="p-3 bg-red-50 border border-red-100 rounded-md text-sm text-red-700">{error}</div>
                             )}
                             <div className="relative">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                                {/* Added htmlFor */}
+                                <label htmlFor="new-password" className="block text-sm font-medium text-gray-700 mb-1">
+                                    New Password
+                                </label>
                                 <input
+                                    id="new-password" // Added id
                                     type={showPw ? 'text' : 'password'}
                                     value={formData.new_password}
                                     onChange={(e) => setFormData(p => ({ ...p, new_password: e.target.value }))}
@@ -90,8 +95,12 @@ const ResetPassword = () => {
                                 </button>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+                                {/* Added htmlFor */}
+                                <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Confirm New Password
+                                </label>
                                 <input
+                                    id="confirm-password" // Added id
                                     type="password"
                                     value={formData.confirm_password}
                                     onChange={(e) => setFormData(p => ({ ...p, confirm_password: e.target.value }))}

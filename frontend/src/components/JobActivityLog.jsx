@@ -101,16 +101,19 @@ const JobActivityLog = ({ activities }) => {
                                             {/* Detailed Changes for Updated/Pipeline */}
                                             {activity.action_type === 'UPDATED' && activity.details && (
                                                 <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded border border-gray-100">
-                                                    {Object.entries(activity.details).map(([key, vals]) => (
-                                                        <div key={key} className="flex flex-col sm:flex-row sm:gap-2 mb-1 last:mb-0">
-                                                            <span className="font-semibold capitalize w-32">{key.replace(/_/g, ' ')}:</span>
-                                                            <div className="flex gap-2">
-                                                                <span className="text-red-500 line-through opacity-70">{String(vals.old)}</span>
-                                                                <span className="text-gray-400">→</span>
-                                                                <span className="text-green-600 font-medium">{String(vals.new)}</span>
+                                                    {Object.entries(activity.details).map(([key, vals]) => {
+                                                        const formatVal = (v) => String(v).length > 20 ? String(v).substring(0, 20) + '...' : String(v);
+                                                        return (
+                                                            <div key={key} className="flex flex-col sm:flex-row sm:gap-2 mb-1 last:mb-0">
+                                                                <span className="font-semibold capitalize w-32">{key.replace(/_/g, ' ')}:</span>
+                                                                <div className="flex gap-2">
+                                                                    <span className="text-red-500 line-through opacity-70">{formatVal(vals.old)}</span>
+                                                                    <span className="text-gray-400">→</span>
+                                                                    <span className="text-green-600 font-medium">{formatVal(vals.new)}</span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </div>
                                             )}
                                         </div>
