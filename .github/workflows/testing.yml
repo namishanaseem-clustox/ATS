@@ -44,6 +44,11 @@ jobs:
           echo "SECRET_KEY=testing_secret_key_12345" >> $GITHUB_ENV
           echo "ENVIRONMENT=testing" >> $GITHUB_ENV
           
+      - name: Run database migrations
+        run: |
+          cd backend
+          DATABASE_URL=postgresql://postgres:postgres@localhost/clustox_test_db alembic upgrade head
+          
       - name: Run Backend Tests
         run: |
           cd backend
