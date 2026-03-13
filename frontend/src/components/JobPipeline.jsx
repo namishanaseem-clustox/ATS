@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { User, RefreshCw, ChevronDown, Check } from 'lucide-react';
+import { User, RefreshCw, ChevronDown, Check, Star } from 'lucide-react';
 import ScoreModal from './ScoreModal';
 import { updateCandidateScore, syncPipelineFromTemplate, changePipelineTemplate } from '../api/jobs';
 import { getPipelineTemplates } from '../api/pipeline';

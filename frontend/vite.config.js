@@ -11,16 +11,23 @@ export default defineConfig({
     css: false,
     coverage: {
       provider: 'v8',
+      // The reporter 'text' shows the table, 'html' lets you see exactly which lines are red in a browser
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{js,jsx}'],
       exclude: [
-        'src/test/**'
+        'src/test/**',
+        'src/main.jsx',          // Entry point (no logic)
+        'src/assets/**',         // Static assets
+        '**/*.d.ts',             // Type definitions
+        'src/utils/constants.js' // Static strings
       ],
+      // Once you are ready to enforce perfection, set these to 100
       thresholds: {
-        lines: 90,
-        functions: 90,
-        branches: 90,
-        statements: 90
+        lines: 95,
+        functions: 95,
+        branches: 95,
+        statements: 95
       }
     },
   },
 })
-
