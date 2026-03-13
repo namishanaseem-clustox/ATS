@@ -26,6 +26,7 @@ def upgrade() -> None:
         sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
         sa.Column('job_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('jobs.id'), nullable=True),
         sa.Column('candidate_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('candidates.id'), nullable=True),
+        sa.Column('scorecard_template_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('scorecard_templates.id'), nullable=True),
         sa.Column('activity_type', sa.String(), nullable=False, server_default='Task'),
         sa.Column('title', sa.String(), nullable=False),
         sa.Column('status', sa.String(), server_default='Pending'),
@@ -41,7 +42,16 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_scheduled_activities_id'), 'scheduled_activities', ['id'], unique=False)
 
+    # Create activity_assignees association table (depends on scheduled_activities and users)
+    op.create_table(
+        'activity_assignees',
+        sa.Column('activity_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('scheduled_activities.id'), primary_key=True, nullable=False),
+        sa.Column('user_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('users.id'), primary_key=True, nullable=False),
+    )
+
 
 def downgrade() -> None:
+    op.drop_table('activity_assignees')
     op.drop_index(op.f('ix_scheduled_activities_id'), table_name='scheduled_activities')
     op.drop_table('scheduled_activities')
+
