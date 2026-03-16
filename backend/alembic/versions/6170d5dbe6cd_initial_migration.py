@@ -37,28 +37,36 @@ def upgrade() -> None:
     op.create_index(op.f('ix_departments_id'), 'departments', ['id'], unique=False)
     op.create_index(op.f('ix_departments_name'), 'departments', ['name'], unique=False)
 
-    # Create users table (depends on departments)
+    # Create users table (minimal set to avoid duplicates in later migrations)
     op.create_table('users',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('full_name', sa.String(), nullable=True),
-    sa.Column('display_name', sa.String(), nullable=True),
-    sa.Column('phone', sa.String(), nullable=True),
-    sa.Column('location', sa.String(), nullable=True),
-    sa.Column('avatar_url', sa.String(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.Column('role', sa.String(), nullable=False, server_default='interviewer'),
     sa.Column('department_id', sa.UUID(), nullable=True),
-    sa.Column('google_access_token', sa.String(), nullable=True),
-    sa.Column('google_refresh_token', sa.String(), nullable=True),
-    sa.Column('google_token_expiry', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['department_id'], ['departments.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
+
+    # Create user_preferences table (minimal set, dropped in 9b971611763b and recreated in aaf123456789)
+    op.create_table('user_preferences',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+
+    # Create pipeline_stages table (minimal set, dropped in 9b971611763b and recreated in 9b971611763b downgrade? wait.)
+    op.create_table('pipeline_stages',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('order', sa.Integer(), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
 
     # Create dismissed_activities table (depends on users)
     op.create_table('dismissed_activities',
@@ -109,6 +117,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_dismissed_activities_notification_key'), table_name='dismissed_activities')
     op.drop_index(op.f('ix_dismissed_activities_id'), table_name='dismissed_activities')
     op.drop_table('dismissed_activities')
+    op.drop_table('pipeline_stages')
+    op.drop_table('user_preferences')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_index(op.f('ix_users_id'), table_name='users')
     op.drop_table('users')
