@@ -17,19 +17,25 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        'user_preferences',
-        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
-        sa.Column('user_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=False, unique=True),
-        sa.Column('notify_new_candidate', sa.Boolean(), nullable=True, default=True),
-        sa.Column('notify_activity_assigned', sa.Boolean(), nullable=True, default=True),
-        sa.Column('notify_feedback_submitted', sa.Boolean(), nullable=True, default=True),
-        sa.Column('notify_stage_change', sa.Boolean(), nullable=True, default=True),
-        sa.Column('timezone', sa.String(), nullable=True, default='UTC'),
-        sa.Column('date_format', sa.String(), nullable=True, default='DD/MM/YYYY'),
-        sa.Column('language', sa.String(), nullable=True, default='en'),
-    )
-    op.create_index('ix_user_preferences_id', 'user_preferences', ['id'], unique=False)
+    # Check if table exists first
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if 'user_preferences' not in tables:
+        op.create_table(
+            'user_preferences',
+            sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
+            sa.Column('user_id', postgresql.UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=False, unique=True),
+            sa.Column('notify_new_candidate', sa.Boolean(), nullable=True, default=True),
+            sa.Column('notify_activity_assigned', sa.Boolean(), nullable=True, default=True),
+            sa.Column('notify_feedback_submitted', sa.Boolean(), nullable=True, default=True),
+            sa.Column('notify_stage_change', sa.Boolean(), nullable=True, default=True),
+            sa.Column('timezone', sa.String(), nullable=True, default='UTC'),
+            sa.Column('date_format', sa.String(), nullable=True, default='DD/MM/YYYY'),
+            sa.Column('language', sa.String(), nullable=True, default='en'),
+        )
+        op.create_index('ix_user_preferences_id', 'user_preferences', ['id'], unique=False)
 
 
 def downgrade() -> None:
