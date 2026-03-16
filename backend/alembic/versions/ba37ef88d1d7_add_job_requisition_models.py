@@ -34,7 +34,7 @@ def upgrade() -> None:
     sa.Column('has_equity_bonus', sa.Boolean(), nullable=True),
     sa.Column('budget_code', sa.String(), nullable=True),
     sa.Column('justification', sa.Text(), nullable=True),
-    sa.Column('status', sa.Enum('DRAFT', 'PENDING_HR', 'PENDING_OWNER', 'OPEN', 'FILLED', 'CANCELLED', name='requisitionstatus'), nullable=True),
+    sa.Column('status', sa.Enum('Draft', 'Pending_HR', 'Pending_Owner', 'Approved', 'Open', 'Filled', 'Cancelled', name='requisitionstatus'), nullable=True),
     sa.Column('hiring_manager_id', sa.UUID(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=True),
     sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),

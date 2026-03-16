@@ -91,8 +91,8 @@ def test_sync_creates_new_event(db_session, mocker):
     mock_service = MagicMock()
     mock_service.events = mock_events
 
-    mocker.patch("app.services.calendar_sync.build", return_value=mock_service)
-    mocker.patch("app.services.calendar_sync.Credentials")  # prevent real OAuth
+    # Mock _get_service directly to bypass the GOOGLE_CLIENT_ID check in CI
+    mocker.patch("app.services.calendar_sync._get_service", return_value=mock_service)
 
     sync_event_to_google(activity, user, db_session)
 
@@ -126,8 +126,8 @@ def test_sync_updates_existing_event(db_session, mocker):
     mock_service = MagicMock()
     mock_service.events = mock_events
 
-    mocker.patch("app.services.calendar_sync.build", return_value=mock_service)
-    mocker.patch("app.services.calendar_sync.Credentials")
+    # Mock _get_service directly to bypass the GOOGLE_CLIENT_ID check in CI
+    mocker.patch("app.services.calendar_sync._get_service", return_value=mock_service)
 
     sync_event_to_google(activity, user, db_session)
 
@@ -170,8 +170,8 @@ def test_delete_removes_event(db_session, mocker):
     mock_service = MagicMock()
     mock_service.events = mock_events
 
-    mocker.patch("app.services.calendar_sync.build", return_value=mock_service)
-    mocker.patch("app.services.calendar_sync.Credentials")
+    # Mock _get_service directly to bypass the GOOGLE_CLIENT_ID check in CI
+    mocker.patch("app.services.calendar_sync._get_service", return_value=mock_service)
 
     delete_event_from_google(activity, user, db_session)
 
